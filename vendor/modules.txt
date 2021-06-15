@@ -1,0 +1,28 @@
+# github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8
+## explicit
+github.com/c9s/goprocinfo/linux
+# github.com/go-logr/logr v0.4.0
+github.com/go-logr/logr
+# github.com/gogo/protobuf v1.3.2
+github.com/gogo/protobuf/proto
+# github.com/konsorten/go-windows-terminal-sequences v1.0.3
+github.com/konsorten/go-windows-terminal-sequences
+# github.com/sirupsen/logrus v1.6.0
+## explicit
+github.com/sirupsen/logrus
+# golang.org/x/sys v0.0.0-20210225134936-a50acf3fe073
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+# gopkg.in/inf.v0 v0.9.1
+gopkg.in/inf.v0
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+## explicit
+gopkg.in/yaml.v3
+# k8s.io/apimachinery v0.21.1
+## explicit
+k8s.io/apimachinery/pkg/api/resource
+k8s.io/apimachinery/pkg/util/clock
+k8s.io/apimachinery/pkg/util/runtime
+k8s.io/apimachinery/pkg/util/wait
+# k8s.io/klog/v2 v2.8.0
+k8s.io/klog/v2

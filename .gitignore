@@ -1,0 +1,9 @@
+/dev
+
+.vscode
+.idea
+.DS_Store
+.cache_ggshield
+*~
+
+kube_reserved_linux_amd64
