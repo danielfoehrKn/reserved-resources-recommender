@@ -3,11 +3,11 @@ VERSION=$(shell cat VERSION | sed 's/-dev//g')
 
 .PHONY: format
 format:
-	@./hack/format.sh main.go types.go
+	@./hack/format.sh main.go
 
 .PHONY: build
 build:
-	@env GOOS=linux GOARCH=amd64 go build -o kube_reserved_linux_amd64 main.go types.go
+	@env GOOS=linux GOARCH=amd64 go build -o kube_reserved_linux_amd64 main.go
 
 .PHONY: all
 all: format build
