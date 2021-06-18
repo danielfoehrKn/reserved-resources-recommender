@@ -40,8 +40,11 @@ import (
 //        slice means under reserving CPU shares for system.slice
 //		- Kubelet, container runtime & OS processes do not get enough CPU time -> node stability threatened
 
-// Idea: reconcile the limit of the kubepods cgroup via kube-reserved to not exceed the OS available
-// memory (prevent "global" OOM). Instead the safer option, kubelet eviction or cgroup-level OOM should be triggered.
+// Idea: reconcile the limit of the kubepods cgroup (via kube-reserved) based on the resource consumption of non-pod processes.
+// Goal:
+//  - proper kube-reserved leads to better scheduling decisions
+//  - not exceed the OS available memory (prevent "global" OOM).
+//  Instead the safer option, kubelet eviction or cgroup-level OOM should be triggered.
 // The kubepods cgroup memory limit is indirectly updated by updating the kubelet kube-reserved
 // and restarting its systemd unit.
 
