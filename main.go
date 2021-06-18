@@ -43,7 +43,7 @@ import (
 // Idea: reconcile the limit of the kubepods cgroup via kube-reserved to not exceed the OS available
 // memory (prevent "global" OOM). Instead the safer option, kubelet eviction or cgroup-level OOM should be triggered.
 // The kubepods cgroup memory limit is indirectly updated by updating the kubelet kube-reserved
-// and restarting its systemdDbus unit.
+// and restarting its systemd unit.
 
 // Terminology
 
@@ -77,9 +77,21 @@ import (
 // cgroup limit kubepods = Node Capacity(10 Gi) - 2Gi = 8 Gi
 
 // WHY THIS SHOULD BE IN THE KUBELET
-// - No need to restart kubelet (API requests!!)
-// - PoC relies on systemdDbus (how does it work on non-systemdDbus OS?)
+// - No need to restart kubelet (API requests + latency to update kubepods cgroup in case of memory leaking pods)
+// - Dynamic kubelet configuration also exits the kubelet process and reloads it
+//    - just an alternative to overwriting the kubelet configuration on the local disk and restart via systemd
+// - PoC relies on systemd (how does it work on non-systemd OS?)
 // - General problem, every managed Kubernetes provider will have the same problem (do not know what workload runs on it)
+
+
+// Open points outside PoC
+// - what happens to high kube-reserved if available memory increases over the minimum threshold (will not be decreased again)
+// - improve behaviour when system.slice consumption changes drastically (e.g when adding 100 pods)
+//    - SPIKES directly cause kubelet to restart (need to average it out somehow!)
+// - this could all be unnecessary if this is part of the kubelet
+// - adjusts the cgroup limit on kubepods directly is not a good idea because kubelet eviction
+// probably does not work any more (TEST OUT)
+
 
 var (
 	log = logrus.New()
@@ -96,7 +108,10 @@ var (
 	// safetyMargin is the additional amount of memory added to the kube-reserved memory compared to what is
 	// actually reserved by other processes + kernel
 	// this is to make sure the cgroup limit hits before the OS OOM
-	safetyMargin = resource.MustParse(defaultMinDeltaAbsolute)
+	safetyMargin = resource.MustParse(safetyMarginValue)
+	// restartKubelet defines if the kubelet shall be restarted to enact the new kube-reserved
+	// default: true
+	enforceKubeletRestart string
 )
 
 const (
@@ -110,13 +125,19 @@ const (
 	// defaultMinThresholdPercent     = "0.3"
 	defaultMinThresholdPercent     = "0.9"
 	defaultMinDeltaAbsolute        = "100Mi"
+	safetyMarginValue        = "200Mi"
 	kubeletServiceName             = "kubelet.service"
-	kubeletServiceMinActiveSeconds = 30.0
+	kubeletServiceMinActiveSeconds = 60.0
 )
 
 func init() {
 	minDeltaAbsolute = os.Getenv("MIN_DELTA_ABSOLUTE")
 	minThresholdPercent = os.Getenv("MIN_THRESHOLD_PERCENT")
+	enforceKubeletRestart = os.Getenv("RESTART_KUBELET")
+
+	if len(enforceKubeletRestart) == 0 {
+		enforceKubeletRestart = "true"
+	}
 }
 
 func main() {
@@ -135,14 +156,14 @@ func main() {
 		log.Fatalf("failed to determine minimum threshold: %v", err)
 	}
 
-	log.Infof("Minimum threshold is %q and minimum delta is %q", minimumThreshold.String(), minimumDelta.String())
+	log.Infof("Restarting kubelet: %v. Minimum threshold is %q and minimum delta is %q", enforceKubeletRestart == "true", minimumThreshold.String(), minimumDelta.String())
 
 	ctx, controllerCancel := context.WithCancel(context.Background())
 	defer controllerCancel()
 
 	systemdConnection, err := systemdDbus.New()
 	if err != nil {
-		log.Fatalf("failed to init connection with systemdDbus socket: %v", err)
+		log.Fatalf("failed to init connection with systemd socket: %v", err)
 	}
 	defer systemdConnection.Close()
 
@@ -151,13 +172,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("fatal error during reconciliation: %v", err)
 		}
+		fmt.Println("----")
 
 		if skip, reason := skipReconciliation(memAvailable, minimumThreshold, systemdConnection); skip {
 			log.Infof("Skipping reconciliation: %s", reason)
 			return
 		}
 
-		if err := reconcileKubeReserved(memTotal, memAvailable, minimumThreshold, minimumDelta, systemdConnection); err != nil {
+		reconcileContext, cancel := context.WithTimeout(ctx, 10 * time.Second)
+		defer cancel()
+
+		if err := reconcileKubeReserved(reconcileContext, memTotal, memAvailable, minimumDelta, systemdConnection); err != nil {
 			log.Warnf("fatal error during reconciliation: %v", err)
 		}
 	}, 10*time.Second, ctx.Done())
@@ -167,20 +192,17 @@ func main() {
 // If should be skipped, returns true as the first, and a reason as the second argument
 func skipReconciliation(memAvailable, minimumThreshold resource.Quantity, connection *systemdDbus.Conn) (bool, string) {
 	// check the last time the kubelet service has been restarted
-	// do not allow restarts if < 20 seconds ago
+	// do not allow restarts if < 30 seconds ago
 	kubeletActiveDuration, err := getSystemdUnitActiveDuration(kubeletServiceName, connection)
 	if err != nil {
-		return true, fmt.Sprintf("unable to determine since how long the kubelet systemdDbus service is already running : %v", err)
+		return true, fmt.Sprintf("unable to determine since how long the kubelet systemd service is already running : %v", err)
 	}
 
 	if kubeletActiveDuration.Seconds() < kubeletServiceMinActiveSeconds {
 		return true, fmt.Sprintf("kubelet is running since less than %f seconds. Skipping", kubeletServiceMinActiveSeconds)
 	}
 
-	// check if available memory has fallen below threshold where action needs to be taken
-	diffAvailableThreshold := memAvailable
-	diffAvailableThreshold.Sub(minimumThreshold)
-	if diffAvailableThreshold.Value() > 0 {
+	if memAvailable.Value() > minimumThreshold.Value() {
 		return true, fmt.Sprintf("Available memory of %s does not fall below threshold of %s. Do nothing.", memAvailable.String(), minimumThreshold.String())
 	}
 
@@ -198,7 +220,7 @@ func getKubepodsMemoryWorkingSet() (resource.Quantity, error) {
 		return resource.Quantity{}, fmt.Errorf("failed to read memory stats for kubepods cgroup: %v", err)
 	}
 
-	memoryWorkingSetBytes := stats.Memory.Usage.Usage  - stats.Memory.InactiveAnon
+	memoryWorkingSetBytes := stats.Memory.Usage.Usage  - stats.Memory.TotalInactiveFile
 	return resource.ParseQuantity(fmt.Sprintf("%d", memoryWorkingSetBytes))
 }
 
@@ -227,16 +249,13 @@ func parseProcMemInfo() (resource.Quantity, resource.Quantity, error) {
 		return resource.Quantity{}, resource.Quantity{}, fmt.Errorf("failed to parse MemTotal field in /proc/meminf (%q) as resource quantity: %v", meminfo.MemTotal, err)
 	}
 
-	return memAvailable, memTotal, nil
+	return memTotal, memAvailable, nil
 }
 
 // reconcileKubeReserved reconciles the memory reserved settings in the kubelet configuration
 // with the actual OS unevictable memory (that should be blocked)
 // this makes sure that the cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
-func reconcileKubeReserved(memTotal, memAvailable, minimumThreshold, minimumDelta resource.Quantity, connection *systemdDbus.Conn) error {
-	log.Infof("Starting kube-reserved reconciliation")
-
-	// TODO: need to get the cgroup stats for kubepods
+func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumDelta resource.Quantity, connection *systemdDbus.Conn) error {
 	kubepodsWorkingSetBytes, err := getKubepodsMemoryWorkingSet()
 	if err != nil {
 		return err
@@ -258,8 +277,8 @@ func reconcileKubeReserved(memTotal, memAvailable, minimumThreshold, minimumDelt
 	}
 
 	// total reserved memory of the kubelet is system + kube-reserved
-	oldReservedMemory := kubeReservedMemory
-	oldReservedMemory.Add(systemReservedMemory)
+	currentReservedMemory := kubeReservedMemory
+	currentReservedMemory.Add(systemReservedMemory)
 
 
 	// Calculation: target reserved memory = MemTotal
@@ -272,27 +291,20 @@ func reconcileKubeReserved(memTotal, memAvailable, minimumThreshold, minimumDelt
 	targetReservedMemory.Add(safetyMargin)
 
 	// difference old reserved settings - target reserved
-	diffOldMinusNewReserved := oldReservedMemory
+	diffOldMinusNewReserved := currentReservedMemory
 	diffOldMinusNewReserved.Sub(targetReservedMemory)
 
-	log.Infof("Total memory: %s; \n" +
-		"Available memory: %q; \n" +
-		"Working set memory kubepods cgroup: %q; \n" +
-		"Target reserved memory: %q; \n" +
-		"Current reserved memory: %q (kube: %q, system: %q).",
-		memTotal.String(),
-		memAvailable.String(),
-		kubepodsWorkingSetBytes.String(),
-		targetReservedMemory.String(),
-		oldReservedMemory.String(),
-		kubeReservedMemory.String(),
-		systemReservedMemory.String())
-
+	log.Infof("Available memory: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
+	log.Infof("Kubepods working set memory: %q (%d percent)", memTotal.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value())*100)))
+	log.Infof("Target reserved memory: %q", targetReservedMemory.String())
+	log.Infof("Current reserved memory: %q (kube: %q, system: %q)", currentReservedMemory.String(), kubeReservedMemory.String(), systemReservedMemory.String())
 
 	// check if diffOldMinusNewReserved > threshold
-	// TODO: corner case if less than safety margin available memory --> then this will never trigger and cause OOM
+	// TODO: is there a corner case if less than safety margin available memory ?
+	// make sure to set memory limit in this case (but not in and endless loop!)
+	// id memAvialbel < minimumDelta -> set reservation to fixed memtotal - memavail - working set + MIN.DELTA????
 	if math.Abs(float64(diffOldMinusNewReserved.Value())) <  float64(minimumDelta.Value()) {
-		log.Infof("SKIPPING: Delta of new reserved memory (%q) and old reserved memory (%q) is %q (minimum delta: %q).", targetReservedMemory.String(), oldReservedMemory.String(), diffOldMinusNewReserved.String(), minimumDelta.String())
+		log.Infof("SKIPPING: Delta of target reserved memory and current reserved memory is %q (minimum delta: %q).", diffOldMinusNewReserved.String(), minimumDelta.String())
 		return nil
 	}
 
@@ -304,21 +316,26 @@ func reconcileKubeReserved(memTotal, memAvailable, minimumThreshold, minimumDelt
 		return err
 	}
 
-	action := "DECREASED"
+	action := "INCREASED"
 	if diffOldMinusNewReserved.Value() > 0 {
-		action = "INCREASED"
+		action = "DECREASED"
 	}
 
 	log.Infof("Successfully %q kube-reserved from %q to %q (including safety margin of %q)", action, kubeReservedMemory.String(), targetKubeReserved.String(), safetyMargin.String())
-	return restartKubelet(err, connection)
+	return restartKubelet(ctx, connection)
 }
 
-// restartKubelet restarts the kubelet systemdDbus service
-func restartKubelet(err error, connection *systemdDbus.Conn) error {
+// restartKubelet restarts the kubelet systemd service
+func restartKubelet(ctx context.Context, connection *systemdDbus.Conn) error {
+	if enforceKubeletRestart != "true" {
+		log.Infof("SKIPPED restart of kubelet")
+		return nil
+	}
+
 	c := make(chan string)
 
 	// mode can be replace, fail, isolate, ignore-dependencies, ignore-requirements.
-	_, err = connection.TryRestartUnit(kubeletServiceName, "replace", c)
+	_, err := connection.TryRestartUnitContext(ctx, kubeletServiceName, "replace", c)
 	if err != nil {
 		return fmt.Errorf("failed to restart kubelet: %v", err)
 	}
@@ -326,14 +343,14 @@ func restartKubelet(err error, connection *systemdDbus.Conn) error {
 	// wait until kubelet is restarted
 	systemdResult := <-c
 	if systemdResult != "done" {
-		return fmt.Errorf("restarting the kubelet systemdDbus service did not succeed. Status returned: %s", systemdResult)
+		return fmt.Errorf("restarting the kubelet systemd service did not succeed. Status returned: %s", systemdResult)
 	}
 
 	log.Infof("Successfully restarted the kubelet")
 	return nil
 }
 
-// getSystemdUnitActiveDuration takes a systemdDbus connection and a unit name
+// getSystemdUnitActiveDuration takes a systemd connection and a unit name
 // returns the duration since when the given service is running
 func getSystemdUnitActiveDuration(unit string, connection *systemdDbus.Conn) (*time.Duration, error) {
 	property, err := connection.GetUnitProperty(unit, "ActiveEnterTimestamp")
@@ -342,18 +359,18 @@ func getSystemdUnitActiveDuration(unit string, connection *systemdDbus.Conn) (*t
 	}
 
 	if property == nil {
-		return nil, fmt.Errorf("cannot determine last start time of kuebelet systemdDbus service. Property %q not found", "ActiveEnterTimestamp")
+		return nil, fmt.Errorf("cannot determine last start time of kuebelet systemd service. Property %q not found", "ActiveEnterTimestamp")
 	}
 
 	stringProperty := fmt.Sprintf("%v", property.Value.Value())
 	activeEnterTimestamp, err := strconv.ParseInt(stringProperty, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("cannot determine last start time of kuebelet systemdDbus service. Property %q cannot be parsed as int64", "ActiveEnterTimestamp")
+		return nil, fmt.Errorf("cannot determine last start time of kuebelet systemd service. Property %q cannot be parsed as int64", "ActiveEnterTimestamp")
 	}
 
 	activeEnterTimestampUTC := time.Unix(0, activeEnterTimestamp * 1000)
 	duration := time.Now().Sub(activeEnterTimestampUTC)
-	log.Debugf("kubelet is running since %q", duration.String())
+	log.Infof("kubelet is running since %q", duration.String())
 	return &duration, nil
 }
 
@@ -402,7 +419,7 @@ func getMinimumAbsoluteThreshold(memTotal uint64) (resource.Quantity, error) {
 
 	value := int64(float64(memTotal) * minThreshold)
 
-	return resource.ParseQuantity(fmt.Sprintf("%dKi", value))
+	return resource.ParseQuantity(fmt.Sprintf("%d", value))
 }
 
 func getMinimumAbsoluteDelta() (resource.Quantity, error) {
@@ -463,4 +480,3 @@ func loadKubeletConfig() (*kubeletv1beta1.KubeletConfiguration, error) {
 
 	return &config, nil
 }
-
