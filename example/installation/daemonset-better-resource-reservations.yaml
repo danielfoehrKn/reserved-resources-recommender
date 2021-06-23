@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: better-resource-reservations
+    gardener.cloud/role: monitoring
+  name: better-resource-reservations
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      component: better-resource-reservations
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        component: better-resource-reservations
+        gardener.cloud/role: monitoring
+        networking.gardener.cloud/from-seed: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
+          env:
+            - name: ENFORCE_RECOMMENDATION
+              value: "true"
+            - name: MIN_DELTA_ABSOLUTE
+              value: 200Mi
+            - name: MIN_THRESHOLD_PERCENT
+              #          0.2 means that it only starts working when available memory < 20 %
+              value: "0.9"
+          imagePullPolicy: Always
+#          livenessProbe:
+#            failureThreshold: 3
+#            httpGet:
+#              path: /
+#              port: 16911
+#              scheme: HTTP
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#            successThreshold: 1
+#            timeoutSeconds: 5
+          name: reconciler
+          ports:
+            - containerPort: 16911
+              hostPort: 16911
+              name: scrape
+              protocol: TCP
+#          readinessProbe:
+#            failureThreshold: 3
+#            httpGet:
+#              path: /
+#              port: 16911
+#              scheme: HTTP
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#            successThreshold: 1
+#            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "20m"
+            limits:
+              memory: "30Mi"
+              cpu: "40m"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /run/systemd/private
+              name: systemd
+              readOnly: true
+            - mountPath: /proc/meminfo
+              name: proc
+              readOnly: true
+            - mountPath: /var/lib/kubelet/config/kubelet
+              name: kubelet-config
+            - mountPath: /sys/fs/cgroup
+              name: cgroup-hierarchy
+              readOnly: true
+
+      dnsPolicy: ClusterFirst
+#      hostNetwork: true
+      hostPID: true
+#      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+#      serviceAccountName: better-resource-reservations
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      volumes:
+        - hostPath:
+            path: /run/systemd/private
+            type: ""
+          name: systemd
+        - hostPath:
+            path: /proc/meminfo
+            type: ""
+          name: proc
+        - hostPath:
+            path: /var/lib/kubelet/config/kubelet
+            type: ""
+          name: kubelet-config
+        - hostPath:
+            path: /sys/fs/cgroup
+            type: ""
+          name: cgroup-hierarchy
+
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate

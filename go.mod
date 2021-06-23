@@ -7,6 +7,7 @@ require (
 	github.com/containerd/cgroups v1.0.1
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/godbus/dbus/v5 v5.0.4 // indirect
+	github.com/prometheus/client_golang v1.7.1
 	github.com/sirupsen/logrus v1.7.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/api v0.21.1

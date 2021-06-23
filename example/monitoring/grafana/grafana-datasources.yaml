@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+  datasources.yaml: |-
+    # config file version
+    apiVersion: 1
+
+    # list of datasources to insert/update depending
+    # whats available in the database
+    datasources:
+    - name: prometheus
+      type: prometheus
+      access: proxy
+      url: prometheus-web:9090
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: false
+      jsonData:
+        timeInterval: 5s
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-better-resource-reservations
+  namespace: monitoring
