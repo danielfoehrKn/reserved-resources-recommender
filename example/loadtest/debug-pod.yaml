@@ -38,7 +38,7 @@ spec:
   enableServiceLinks: true
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-240-9-244.eu-west-1.compute.internal
+  nodeName: ip-10-242-22-25.eu-west-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}

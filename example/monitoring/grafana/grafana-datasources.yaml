@@ -20,4 +20,4 @@ data:
 kind: ConfigMap
 metadata:
   name: grafana-datasources-better-resource-reservations
-  namespace: monitoring
+#  namespace: monitoring

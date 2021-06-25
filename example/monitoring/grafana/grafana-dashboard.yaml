@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-better-resource-reservations
-  namespace: monitoring
+#  namespace: monitoring
 data:
   better-resource-reservations.json: |-
     {

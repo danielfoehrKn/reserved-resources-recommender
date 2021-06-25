@@ -25,7 +25,7 @@ spec:
         - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
           env:
             - name: ENFORCE_RECOMMENDATION
-              value: "true"
+              value: "false"
             - name: MIN_DELTA_ABSOLUTE
               value: 200Mi
             - name: MIN_THRESHOLD_PERCENT

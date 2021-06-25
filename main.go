@@ -66,7 +66,6 @@ import (
 // calculated on cgroups as memory.usage_in_bytes - memory.stat "total_inactive_file"
 // "total_inactive_file" is the amount of Linux Page cache on the inactive LRU list (e.g, files not recently accessed)
 
-
 // Calculation
 // 	kube-reserved memory = MemTotal - MemAvailable  - working_set_bytes for kubepods cgroup
 // 	The kube-reserved should stay rather constant, unless processes outside kubepods need more memory (e.g OS daemons, container runtime, kubelet)
@@ -89,7 +88,6 @@ import (
 //    - just an alternative to overwriting the kubelet configuration on the local disk and restart via systemd
 // - PoC relies on systemd (how does it work on non-systemd OS?)
 // - General problem, every managed Kubernetes provider will have the same problem (do not know what workload runs on it)
-
 
 // Open points outside PoC
 // - what happens to high kube-reserved if available memory increases over the minimum threshold (will not be decreased again)
@@ -179,7 +177,7 @@ var (
 )
 
 const (
- 	gardenerKubeletFilepath = "/var/lib/kubelet/config/kubelet"
+	gardenerKubeletFilepath = "/var/lib/kubelet/config/kubelet"
 	// PoC: assumes kubepods memory controller mounted at /sys/fs/cgroups/memory/kubepods
 	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
 	memoryCgroupRoot = "/sys/fs/cgroup"
@@ -189,7 +187,7 @@ const (
 	// defaultMinThresholdPercent     = "0.3"
 	defaultMinThresholdPercent     = "0.9"
 	defaultMinDeltaAbsolute        = "100Mi"
-	safetyMarginValue        = "200Mi"
+	safetyMarginValue              = "200Mi"
 	kubeletServiceName             = "kubelet.service"
 	kubeletServiceMinActiveSeconds = 60.0
 )
@@ -220,7 +218,7 @@ func main() {
 		log.Fatalf("failed to determine minimum threshold: %v", err)
 	}
 
-	log.Infof("Restarting kubelet: %v. Minimum threshold is %q and minimum delta is %q", enforceRecommendation == "true", minimumThreshold.String(), minimumDelta.String())
+	log.Infof("Enforcing recommendations: %v. Minimum threshold is %q and minimum delta is %q", enforceRecommendation == "true", minimumThreshold.String(), minimumDelta.String())
 
 	ctx, controllerCancel := context.WithCancel(context.Background())
 	defer controllerCancel()
@@ -238,15 +236,10 @@ func main() {
 		}
 		fmt.Println("----")
 
-		if skip, reason := skipReconciliation(memAvailable, minimumThreshold, systemdConnection); skip {
-			log.Infof("Skipping reconciliation: %s", reason)
-			return
-		}
-
-		reconcileContext, cancel := context.WithTimeout(ctx, 10 * time.Second)
+		reconcileContext, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
-		if err := reconcileKubeReserved(reconcileContext, memTotal, memAvailable, minimumDelta, systemdConnection); err != nil {
+		if err := reconcileKubeReserved(reconcileContext, memTotal, memAvailable, minimumDelta, minimumThreshold, systemdConnection); err != nil {
 			log.Warnf("fatal error during reconciliation: %v", err)
 		}
 	}, 10*time.Second, ctx.Done())
@@ -257,7 +250,7 @@ func main() {
 
 // skipReconciliation checks if the reconciliation should be skipped
 // If should be skipped, returns true as the first, and a reason as the second argument
-func skipReconciliation(memAvailable, minimumThreshold resource.Quantity, connection *systemdDbus.Conn) (bool, string) {
+func skipReconciliation(memAvailable, minimumThreshold, minimumDelta, diffOldMinusNewReserved resource.Quantity, connection *systemdDbus.Conn) (bool, string) {
 	// check the last time the kubelet service has been restarted
 	// do not allow restarts if < 30 seconds ago
 	kubeletActiveDuration, err := getSystemdUnitActiveDuration(kubeletServiceName, connection)
@@ -273,6 +266,12 @@ func skipReconciliation(memAvailable, minimumThreshold resource.Quantity, connec
 		return true, fmt.Sprintf("Available memory of %s does not fall below threshold of %s. Do nothing.", memAvailable.String(), minimumThreshold.String())
 	}
 
+	// only if the desired change is > threshold, we consider it significant enough to update the kube reserved
+	// and restart the kubelet
+	if math.Abs(float64(diffOldMinusNewReserved.Value())) < float64(minimumDelta.Value()) {
+		return true, fmt.Sprintf("SKIPPING: Delta of target reserved memory and current reserved memory is %q (minimum delta: %q).", diffOldMinusNewReserved.String(), minimumDelta.String())
+	}
+
 	return false, ""
 }
 
@@ -286,7 +285,7 @@ func getKubepodsMemoryWorkingSet() (resource.Quantity, error) {
 		return resource.Quantity{}, fmt.Errorf("failed to read memory stats for kubepods cgroup: %v", err)
 	}
 
-	memoryWorkingSetBytes := stats.Memory.Usage.Usage  - stats.Memory.TotalInactiveFile
+	memoryWorkingSetBytes := stats.Memory.Usage.Usage - stats.Memory.TotalInactiveFile
 	return resource.ParseQuantity(fmt.Sprintf("%d", memoryWorkingSetBytes))
 }
 
@@ -321,7 +320,7 @@ func parseProcMemInfo() (resource.Quantity, resource.Quantity, error) {
 // reconcileKubeReserved reconciles the memory reserved settings in the kubelet configuration
 // with the actual OS unevictable memory (that should be blocked)
 // this makes sure that the cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
-func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumDelta resource.Quantity, connection *systemdDbus.Conn) error {
+func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumDelta, minimumThreshold resource.Quantity, systemdConnection *systemdDbus.Conn) error {
 	kubepodsWorkingSetBytes, err := getKubepodsMemoryWorkingSet()
 	if err != nil {
 		return err
@@ -346,7 +345,6 @@ func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumD
 	currentReservedMemory := kubeReservedMemory
 	currentReservedMemory.Add(systemReservedMemory)
 
-
 	// Calculation: target reserved memory = MemTotal
 	// - MemAvailable
 	// - working_set_bytes of kubepods cgroup
@@ -363,29 +361,24 @@ func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumD
 
 	log.Infof("Available memory: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
 	log.Infof("Used memory: %q (%d percent)", currentUsedMemory.String(), int64(math.Round(float64(currentUsedMemory.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Kubepods working set memory: %q (%d percent)", memTotal.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value())*100)))
+	log.Infof("Kubepods working set memory: %q (%d percent)", memTotal.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
 	log.Infof("Target reserved memory: %q (%d percent)", targetReservedMemory.String(), int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)))
 	log.Infof("Current reserved memory: %q (%d percent, kube: %q, system: %q)", currentReservedMemory.String(), int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)), kubeReservedMemory.String(), systemReservedMemory.String())
 
 	// record prometheus metrics
 	metricMemAvailable.Set(float64(memAvailable.Value()))
-	metricMemAvailablePercent.Set(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100))
+	metricMemAvailablePercent.Set(math.Round(float64(memAvailable.Value()) / float64(memTotal.Value()) * 100))
 	metricMemUsed.Set(float64(currentUsedMemory.Value()))
-	metricMemUsedPercent.Set(math.Round(float64(currentUsedMemory.Value())/float64(memTotal.Value())*100))
+	metricMemUsedPercent.Set(math.Round(float64(currentUsedMemory.Value()) / float64(memTotal.Value()) * 100))
 	metricKubepodsWorkingSetMemory.Set(float64(kubepodsWorkingSetBytes.Value()))
-	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value())*100))
+	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
-	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100))
+	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value()) / float64(memTotal.Value()) * 100))
 	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
-	metricCurrentReservedMemoryPercent.Set(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100))
+	metricCurrentReservedMemoryPercent.Set(math.Round(float64(currentReservedMemory.Value()) / float64(memTotal.Value()) * 100))
 
-
-	// check if diffOldMinusNewReserved > threshold
-	// TODO: is there a corner case if less than safety margin available memory ?
-	// make sure to set memory limit in this case (but not in and endless loop!)
-	// id memAvialbel < minimumDelta -> set reservation to fixed memtotal - memavail - working set + MIN.DELTA????
-	if math.Abs(float64(diffOldMinusNewReserved.Value())) <  float64(minimumDelta.Value()) {
-		log.Infof("SKIPPING: Delta of target reserved memory and current reserved memory is %q (minimum delta: %q).", diffOldMinusNewReserved.String(), minimumDelta.String())
+	if skip, reason := skipReconciliation(memAvailable, minimumThreshold, minimumDelta, minimumThreshold, systemdConnection); skip {
+		log.Infof("Skipping reconciliation: %s", reason)
 		return nil
 	}
 
@@ -407,7 +400,7 @@ func reconcileKubeReserved(ctx context.Context, memTotal, memAvailable, minimumD
 	}
 
 	log.Infof("Successfully %q kube-reserved from %q to %q (including safety margin of %q)", action, kubeReservedMemory.String(), targetKubeReserved.String(), safetyMargin.String())
-	return restartKubelet(ctx, connection)
+	return restartKubelet(ctx, systemdConnection)
 }
 
 // restartKubelet restarts the kubelet systemd service
@@ -448,7 +441,7 @@ func getSystemdUnitActiveDuration(unit string, connection *systemdDbus.Conn) (*t
 		return nil, fmt.Errorf("cannot determine last start time of kuebelet systemd service. Property %q cannot be parsed as int64", "ActiveEnterTimestamp")
 	}
 
-	activeEnterTimestampUTC := time.Unix(0, activeEnterTimestamp * 1000)
+	activeEnterTimestampUTC := time.Unix(0, activeEnterTimestamp*1000)
 	duration := time.Now().Sub(activeEnterTimestampUTC)
 	log.Infof("kubelet is running since %q", duration.String())
 	return &duration, nil
@@ -535,7 +528,6 @@ func getSystemReservedMemory(config kubeletv1beta1.KubeletConfiguration) (resour
 	// parse memory (can be BinarySI or DecimalSI)
 	return resource.ParseQuantity(mem)
 }
-
 
 // loadKubeletConfig loads the kubeconfig file from the default location for gardener nodes
 func loadKubeletConfig() (*kubeletv1beta1.KubeletConfiguration, error) {

@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus-deployment
-  namespace: monitoring
+  name: prometheus-deployment-better-resource-reservations
+#  namespace: monitoring
   labels:
     app: prometheus-server
 spec:
@@ -51,7 +51,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-web
-  namespace: monitoring
+#  namespace: monitoring
 spec:
   ports:
     - port: 9090
