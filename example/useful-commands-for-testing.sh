@@ -43,3 +43,7 @@ kubectl port-forward svc/prometheus-web 8080:9090 -n monitoring
 #visit http://localhost:3000
 kubectl port-forward svc/grafana 3000:3000 -n monitoring
 # configure data source with URL: prometheus-web:9090
+
+
+# get pod for pod ip displayed in the Grafana Dashboards  (I do not have a label with the pod name)
+k get endpoints -o yaml | grep -i "<part of the IP>" -A 10

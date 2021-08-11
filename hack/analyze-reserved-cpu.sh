@@ -77,7 +77,7 @@ kubepods_target_cpu_shares=$(printf "%.0f" $kubepods_target_cpu_shares)
 # --> The writer of the k8s kube-reserved did not understand that cpu.shares are relative
 #  See: https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-821224980
 # Solution: K8s should also set the cpu.shares on the system.slice:
-# https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-672154398
+# https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-868452156
 
 
 

@@ -17,6 +17,7 @@ data:
       editable: false
       jsonData:
         timeInterval: 5s
+        httpMethod: POST
 kind: ConfigMap
 metadata:
   name: grafana-datasources-better-resource-reservations

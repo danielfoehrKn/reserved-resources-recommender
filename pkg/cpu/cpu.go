@@ -24,11 +24,6 @@ const (
 )
 
 var (
-	// TODO: 3 Grafana Dashboards
-	//  - node_cgroup_system_slice_min_guaranteed_cpu vs. node_cgroup_system_slice_cpu_percent
-	//  - kubelet_target_reserved_cpu vs. kubelet_current_reserved_cpu
-	// - How much CPU the workload is using: node_cgroup_kubepods_cpu_percent
-	// TODO: Dashboard per node!
 	metricSystemSliceMinGuaranteedCPU = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_cgroup_system_slice_min_guaranteed_cpu",
 		Help: "The minimum guaranteed CPU time of the system.slice cgroup based on the cpu.shares (1024)",
@@ -135,8 +130,8 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 	// record prometheus metrics
 	metricCores.Set(float64(numCPU))
 	metricSystemSliceMinGuaranteedCPU.Set(math.Round(float64(systemSliceGuaranteedCPUTimePercent)))
-	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
-	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
+	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
+	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
 	metricCurrentReservedCPU.Set(float64(currentKubeReservedCPU))
 	metricTargetReservedCPU.Set(float64(targetKubeReservedCPU))
 
