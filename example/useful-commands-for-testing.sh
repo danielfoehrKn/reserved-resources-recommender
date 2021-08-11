@@ -1,4 +1,5 @@
 kubectl exec -ti debugpod-d060239 -- bash -c "chroot /hostroot"
+
 # These are commands useful during demoing
 # the idea is to not rely on a constant exec shell as the kubelet can be restarted any time
 # use each command in a diff. terminal window
@@ -33,6 +34,7 @@ journalctl -u kubelet -f | grep -i "pods ranked"
 # metrics from single pods
 k port-forward pod/better-resource-reservations-<pod-id-from-daemonset>  16911:16911
 watch 'curl localhost:16911/metrics | grep -e "node_memory" -e "kubelet_"'
+curl localhost:16911/metrics | grep -e "node_cgroup_" -e "kubelet_"
 
 # metrics via prometheus, visit http://localhost:8080/targets
 kubectl port-forward svc/prometheus-web 8080:9090 -n monitoring
