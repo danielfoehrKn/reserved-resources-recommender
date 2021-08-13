@@ -38,7 +38,7 @@ spec:
   enableServiceLinks: true
   hostNetwork: true
   hostPID: true
-  nodeName: shoot--garden--az-us1-cpu-worker-etcd-z1-75f68-m9qxb
+  nodeName: shoot--garden--az-eu3-cpu-worker-etcd-z1-77cc7-kfwhs
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}

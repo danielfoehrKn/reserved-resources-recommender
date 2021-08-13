@@ -153,25 +153,38 @@ func ReconcileKubeReservedMemory(
 	targetReservedMemory.Sub(kubepodsWorkingSetBytes)
 	targetReservedMemory.Add(memorySafetyMargin)
 
+	log.Infof("Available memory from /proc/mem: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
+	log.Infof("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
+	log.Infof("Kubepods working set memory: %q (%d percent)", kubepodsWorkingSetBytes.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
+	log.Infof("System.slice working set memory: %q (%d percent)", systemSliceWorkingSetBytes.String(), int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
+
+	// record prometheus metrics
+	metricMemAvailable.Set(float64(memAvailable.Value()))
+	metricMemAvailablePercent.Set(math.Round(float64(memAvailable.Value()) / float64(memTotal.Value()) * 100))
+	metricMemUsed.Set(float64(currentlyUsedMemory.Value()))
+	metricMemUsedPercent.Set(math.Round(float64(currentlyUsedMemory.Value()) / float64(memTotal.Value()) * 100))
+	metricKubepodsWorkingSetMemory.Set(float64(kubepodsWorkingSetBytes.Value()))
+	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricSystemSliceWorkingSetMemory.Set(float64(systemSliceWorkingSetBytes.Value()))
+	metricSystemSliceWorkingSetMemoryPercent.Set(math.Round(float64(systemSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
+	metricCurrentReservedMemoryPercent.Set(math.Round(float64(currentReservedMemory.Value()) / float64(memTotal.Value()) * 100))
+
 	// in case the target reserved memory is negative, that means that the kubepods cgroup memory working set
-	// was larger than the OS thinks is even used overall --> cgroupv1 account is most likely off
-	// in this case, we use the memory working set of the system.slice directly, knowing that we are most
-	// likely over reserving memory (however, it seems that with more memory used  on the system, the accounting
-	// gets more accurate)
+	// was larger than the OS thinks is even used overall --> cgroupv1 accounting is most likely off
+	// in this case, we rather choose to not report a target reserved memory via metrics.
+	// If desired, the systemSliceWorkingSetBytes can be used knowing that this will most
+	// likely over reserve memory
 	if targetReservedMemory.Value() < 0 {
-		log.Debugf("Setting target reserved memory to system.slice working set")
-		targetReservedMemory = systemSliceWorkingSetBytes
+		log.Infof("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
+		metricTargetReservedMemoryBytes.Set(-1)
+		metricTargetReservedMemoryPercent.Set(0)
+		return nil, false, "", nil
 	}
 
 	// difference old reserved settings - target reserved
 	diffOldMinusNewReserved := currentReservedMemory
 	diffOldMinusNewReserved.Sub(targetReservedMemory)
-
-	log.Infof("Available memory: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Kubepods working set memory: %q (%d percent)", kubepodsWorkingSetBytes.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
-	// log.Infof("Target reserved memory: %q (%d percent)", targetReservedMemory.String(), int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)))
-	// log.Infof("Current reserved memory: %q (%d percent, kube: %q, system: %q)", currentReservedMemory.String(), int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)), kubeReservedMemory.String(), systemReservedMemory.String())
 
 	action := "INCREASE"
 	if diffOldMinusNewReserved.Value() > 0 {
@@ -189,19 +202,8 @@ func ReconcileKubeReservedMemory(
 		)
 
 	// record prometheus metrics
-	metricMemAvailable.Set(float64(memAvailable.Value()))
-	metricMemAvailablePercent.Set(math.Round(float64(memAvailable.Value()) / float64(memTotal.Value()) * 100))
-	metricMemUsed.Set(float64(currentlyUsedMemory.Value()))
-	metricMemUsedPercent.Set(math.Round(float64(currentlyUsedMemory.Value()) / float64(memTotal.Value()) * 100))
-	metricKubepodsWorkingSetMemory.Set(float64(kubepodsWorkingSetBytes.Value()))
-	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
-	metricSystemSliceWorkingSetMemory.Set(float64(systemSliceWorkingSetBytes.Value()))
-	metricSystemSliceWorkingSetMemoryPercent.Set(math.Round(float64(systemSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
 	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value()) / float64(memTotal.Value()) * 100))
-	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
-	metricCurrentReservedMemoryPercent.Set(math.Round(float64(currentReservedMemory.Value()) / float64(memTotal.Value()) * 100))
-
 
 	// kube-reserved = reserved memory - system-reserved
 	// because we only manipulate kube-reserved in this PoC
