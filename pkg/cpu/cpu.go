@@ -44,6 +44,16 @@ var (
 		Help: "The CPU consumption of the system.slice cgroup in percent",
 	})
 
+	metricSystemSliceFreeCPUTime = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_system_slice_free_cpu_time",
+		Help: "The freely absolute available CPU time for the system.slice cgroup in percent (100 = 1 core)",
+	})
+
+	metricKubepodsFreeCPUTime = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_kubepods_free_cpu_time",
+		Help: "The freely absolute available CPU time for the kubepods cgroup in percent (100 = 1 core)",
+	})
+
 	metricTargetReservedCPU = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_target_reserved_cpu",
 		Help: "The target kubelet reserved CPU",
@@ -72,11 +82,10 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 
 	// System.slice's relative CPU time for all cores = (Active cgroup CPU shares) / (sum of all possible CPU shares of the cgroup SIBLINGS)
 	// System.slice's relative CPU time for one core = Total CPU time for all cores * number of cores
-	var systemSliceGuaranteedCPUTime float32
-	systemSliceGuaranteedCPUTime = (float32(systemSliceCPUShares) / (float32(systemSliceCPUShares) + float32(kubepodsCPUShares))) * float32(numCPU)
-	systemSliceGuaranteedCPUTimePercent := systemSliceGuaranteedCPUTime * 100
+	systemSliceGuaranteedCPUTimePercent := ((float64(systemSliceCPUShares) / (float64(systemSliceCPUShares) + float64(kubepodsCPUShares))) * float64(numCPU)) * 100
+	kubepodsGuaranteedCPUTimePercent := ((float64(kubepodsCPUShares) / (float64(systemSliceCPUShares) + float64(kubepodsCPUShares))) * float64(numCPU)) * 100
 
-	log.Infof("system.slice is guaranteed %.2f percent CPU time on this %d core machine. \n", systemSliceGuaranteedCPUTimePercent, numCPU)
+	log.Infof("Guaranteed CPU time on this %d core machine: system.slice:  %.2f percent | kubepods:  %.2f percent CPU time. \n", numCPU, systemSliceGuaranteedCPUTimePercent, kubepodsGuaranteedCPUTimePercent)
 
 	systemSliceCPUTime, kubepodsCPUTime, err := measureCPUUsage(log, reconciliationPeriod)
 	if err != nil {
@@ -113,7 +122,7 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 		// this is a problem, as cpu.shares work as a ratio against its siblings
 		// See: https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-821224980
 		targetKubeReservedCPU = defaultMinimumReservedCPU
-		log.Infof("defaulting reserved CPU to minimum")
+		log.Debugf("defaulting reserved CPU to minimum")
 	}
 
 	// no need to read the kubelet configuration to get the current reserved CPU
@@ -129,11 +138,20 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 
 	// record prometheus metrics
 	metricCores.Set(float64(numCPU))
-	metricSystemSliceMinGuaranteedCPU.Set(math.Round(float64(systemSliceGuaranteedCPUTimePercent)))
+	metricSystemSliceMinGuaranteedCPU.Set(math.Round(systemSliceGuaranteedCPUTimePercent))
 	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
 	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
 	metricCurrentReservedCPU.Set(float64(currentKubeReservedCPU))
 	metricTargetReservedCPU.Set(float64(targetKubeReservedCPU))
+
+	// calculated metrics
+	// only because all allotted CPU shares have been used for a cgroup, does not mean there is resource contention
+	// as a cgroup can use more than their "fair share" if another cgroup does not need all of theirs
+	kubepodsFreeCPUTime := kubepodsGuaranteedCPUTimePercent - kubepodsCPUTimePercent
+	metricKubepodsFreeCPUTime.Set(kubepodsFreeCPUTime)
+
+	systemSliceFreeCPUTime := systemSliceGuaranteedCPUTimePercent - systemSliceCPUTimePercent
+	metricSystemSliceFreeCPUTime.Set(systemSliceFreeCPUTime)
 
 	return nil
 }

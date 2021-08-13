@@ -21,6 +21,10 @@ spec:
         networking.gardener.cloud/to-public-networks: allowed
     spec:
       automountServiceAccountToken: false
+      nodeSelector:
+#     do not run on the  etcd worker pool for now
+#        worker.gardener.cloud/pool: cpu-worker
+        worker.gardener.cloud/pool: cpu-worker-etcd
       containers:
         - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
           env:

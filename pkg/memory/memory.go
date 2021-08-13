@@ -22,6 +22,7 @@ const (
 	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
 	cgroupRoot = "/sys/fs/cgroup"
 	kubepodsMemoryCgroupName = "kubepods"
+	systemSliceMemoryCgroupName = "system.slice"
 )
 
 
@@ -68,6 +69,16 @@ var (
 		Help: "The working set memory of the kubepods cgroup in percent of the total memory",
 	})
 
+	metricSystemSliceWorkingSetMemory = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_system_slice_memory_working_set_bytes",
+		Help: "The working set memory of the system slice cgroup in bytes",
+	})
+
+	metricSystemSliceWorkingSetMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_system_slice_memory_working_set_percent",
+		Help: "The working set memory of the system slice cgroup in percent of the total memory",
+	})
+
 	metricMemTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_memory_MemTotal",
 		Help: "The MemTotal from /proc/meminfo",
@@ -107,7 +118,12 @@ func ReconcileKubeReservedMemory(
 		log.Fatalf("fatal error during reconciliation: %v", err)
 	}
 
-	kubepodsWorkingSetBytes, err := getKubepodsMemoryWorkingSet()
+	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(kubepodsMemoryCgroupName)
+	if err != nil {
+		return nil, false, "", err
+	}
+
+	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(systemSliceMemoryCgroupName)
 	if err != nil {
 		return nil, false, "", err
 	}
@@ -126,7 +142,8 @@ func ReconcileKubeReservedMemory(
 	currentReservedMemory := kubeReservedMemory
 	currentReservedMemory.Add(systemReservedMemory)
 
-	// Calculation: target reserved memory = MemTotal
+	// Calculation: target reserved memory =
+	// MemTotal
 	// - MemAvailable
 	// - working_set_bytes of kubepods cgroup
 	// + safety margin
@@ -136,13 +153,23 @@ func ReconcileKubeReservedMemory(
 	targetReservedMemory.Sub(kubepodsWorkingSetBytes)
 	targetReservedMemory.Add(memorySafetyMargin)
 
+	// in case the target reserved memory is negative, that means that the kubepods cgroup memory working set
+	// was larger than the OS thinks is even used overall --> cgroupv1 account is most likely off
+	// in this case, we use the memory working set of the system.slice directly, knowing that we are most
+	// likely over reserving memory (however, it seems that with more memory used  on the system, the accounting
+	// gets more accurate)
+	if targetReservedMemory.Value() < 0 {
+		log.Debugf("Setting target reserved memory to system.slice working set")
+		targetReservedMemory = systemSliceWorkingSetBytes
+	}
+
 	// difference old reserved settings - target reserved
 	diffOldMinusNewReserved := currentReservedMemory
 	diffOldMinusNewReserved.Sub(targetReservedMemory)
 
 	log.Infof("Available memory: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
 	log.Infof("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Kubepods working set memory: %q (%d percent)", memTotal.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
+	log.Infof("Kubepods working set memory: %q (%d percent)", kubepodsWorkingSetBytes.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
 	// log.Infof("Target reserved memory: %q (%d percent)", targetReservedMemory.String(), int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)))
 	// log.Infof("Current reserved memory: %q (%d percent, kube: %q, system: %q)", currentReservedMemory.String(), int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)), kubeReservedMemory.String(), systemReservedMemory.String())
 
@@ -168,6 +195,8 @@ func ReconcileKubeReservedMemory(
 	metricMemUsedPercent.Set(math.Round(float64(currentlyUsedMemory.Value()) / float64(memTotal.Value()) * 100))
 	metricKubepodsWorkingSetMemory.Set(float64(kubepodsWorkingSetBytes.Value()))
 	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricSystemSliceWorkingSetMemory.Set(float64(systemSliceWorkingSetBytes.Value()))
+	metricSystemSliceWorkingSetMemoryPercent.Set(math.Round(float64(systemSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
 	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value()) / float64(memTotal.Value()) * 100))
 	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
@@ -200,14 +229,13 @@ func shouldUpdateKubeReserved(memAvailable, minimumThreshold, minimumDelta, diff
 	return true, ""
 }
 
-
-// getKubepodsMemoryWorkingSet reads the kubepods memory cgroup and calculates
+// getMemoryWorkingSet reads the given unit's memory cgroup and calculates
 // the working set bytes
-func getKubepodsMemoryWorkingSet() (resource.Quantity, error) {
+func getMemoryWorkingSet(unit string) (resource.Quantity, error) {
 	memoryController := cgroups.NewMemory(cgroupRoot)
 
 	stats := &cgroupstatsv1.Metrics{}
-	if err := memoryController.Stat(kubepodsMemoryCgroupName, stats); err != nil {
+	if err := memoryController.Stat(unit, stats); err != nil {
 		return resource.Quantity{}, fmt.Errorf("failed to read memory stats for kubepods cgroup: %v", err)
 	}
 

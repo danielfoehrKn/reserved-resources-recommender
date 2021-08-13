@@ -33,18 +33,6 @@ data:
       "panels": [
         {
           "datasource": null,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 0
-          },
-          "id": 4,
-          "title": "Row title",
-          "type": "row"
-        },
-        {
-          "datasource": null,
           "description": "in m (e.g 80m == 8% of one core)",
           "fieldConfig": {
             "defaults": {
@@ -100,7 +88,7 @@ data:
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 1
+            "y": 0
           },
           "id": 2,
           "options": {
@@ -190,7 +178,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 1
+            "y": 0
           },
           "id": 6,
           "options": {
@@ -213,6 +201,170 @@ data:
             }
           ],
           "title": "Maximum Target Reserved CPU over all nodes",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "A negative value of 100 means that the pod processes in kubepods need 1 more CPU core that minimally guaranteed in resource. contention scenarios.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "id": 16,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "node_cgroup_kubepods_free_cpu_time",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Kubepods free CPU time (min. guaranteed - actual usage) (negative value means more usage than reserved)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "A negative value of 100 means that the processes in system.slice need 1 more CPU core that minimally guaranteed in resource. contention scenarios.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 9
+          },
+          "id": 14,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "node_cgroup_system_slice_free_cpu_time",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "System.slice free CPU time (min. guaranteed - actual usage) (negative value means more usage than reserved)",
           "type": "timeseries"
         },
         {
@@ -273,7 +425,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 9
+            "y": 16
           },
           "id": 10,
           "options": {
@@ -300,7 +452,7 @@ data:
         },
         {
           "datasource": null,
-          "description": "Min. guaranteed usage due to 1024 cpu.shares on the system.slice cgroup",
+          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -355,7 +507,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 10
+            "y": 17
           },
           "id": 8,
           "options": {
@@ -371,13 +523,6 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "node_cgroup_system_slice_min_guaranteed_cpu",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            },
-            {
-              "exemplar": true,
               "expr": "node_cgroup_system_slice_cpu_percent",
               "hide": false,
               "interval": "",
@@ -385,7 +530,7 @@ data:
               "refId": "B"
             }
           ],
-          "title": "System.slice min. guaranteed CPU vs. current CPU usage",
+          "title": "System.slice current CPU usage (100 = one core)",
           "type": "timeseries"
         },
         {
@@ -438,38 +583,13 @@ data:
                 ]
               }
             },
-            "overrides": [
-              {
-                "__systemRef": "hideSeriesFrom",
-                "matcher": {
-                  "id": "byNames",
-                  "options": {
-                    "mode": "exclude",
-                    "names": [
-                      "node_num_cpu_cores{instance=\"100.96.0.7:16911\", job=\"better-resource-reservations\"}"
-                    ],
-                    "prefix": "All except:",
-                    "readOnly": true
-                  }
-                },
-                "properties": [
-                  {
-                    "id": "custom.hideFrom",
-                    "value": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": true
-                    }
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 18
+            "y": 25
           },
           "id": 12,
           "options": {
@@ -511,14 +631,14 @@ data:
         "list": []
       },
       "time": {
-        "from": "now-6h",
+        "from": "now-1h",
         "to": "now"
       },
       "timepicker": {},
       "timezone": "",
       "title": "CPU Reservations",
       "uid": "vxuzp3Mnk",
-      "version": 3
+      "version": 1
     }
   memory-reservations.json: |-
     {
