@@ -21,12 +21,15 @@ spec:
         networking.gardener.cloud/to-public-networks: allowed
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
+      priorityClassName: better-resource-reservations
+
+      #      nodeSelector:
 #     do not run on the  etcd worker pool for now
 #        worker.gardener.cloud/pool: cpu-worker
-        worker.gardener.cloud/pool: cpu-worker-etcd
+#        worker.gardener.cloud/pool: cpu-worker
       containers:
         - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
+          name: reconciler
           env:
             - name: ENFORCE_RECOMMENDATION
               value: "false"
@@ -46,7 +49,6 @@ spec:
 #            periodSeconds: 10
 #            successThreshold: 1
 #            timeoutSeconds: 5
-          name: reconciler
           ports:
             - containerPort: 16911
               hostPort: 16911

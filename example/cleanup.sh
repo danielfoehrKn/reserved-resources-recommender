@@ -1,4 +1,5 @@
 kubectl delete daemonset.apps/better-resource-reservations
+kubectl delete priorityclass better-resource-reservations
 
 kubectl delete clusterrole.rbac.authorization.k8s.io/prometheus-better-resource-reservations
 kubectl delete clusterrolebinding.rbac.authorization.k8s.io/prometheus-better-resource-reservations

@@ -1,6 +1,66 @@
 # Better Kubelet Resource Reservations
 
+Recommends memory and CPU kube/system reserved settings based on actual resource consumption.
+No more guessing.
+
 **Warning**: This is a PoC!
+
+## Installation
+
+Either via a [single pod](example/installation/pod-better-resource-reservations.yaml) or preferably via a daemonset which can be found [here](example/installation/daemonset-better-resource-reservations.yaml).
+The container process will log recommendations to the command line and expose metrics which can be consumed by prometheus (see below for [monitoring example](#exposed-metrics)).
+
+```
+time="2021-08-20T04:42:05Z" level=info msg="Available memory from /proc/mem: \"31685712Ki\" (55 percent)"
+time="2021-08-20T04:42:05Z" level=info msg="Used memory: \"25928920Ki\" (45 percent)"
+time="2021-08-20T04:42:05Z" level=info msg="Kubepods working set memory: \"25805238272\" (44 percent)"
+time="2021-08-20T04:42:05Z" level=info msg="System.slice working set memory: \"9752219648\" (17 percent)"
+time="2021-08-20T04:42:05Z" level=info msg="RECOMMENDATION: DECREASE reserved memory from \"1Gi\" (2 percent, kube: \"1Gi\", system: \"0\") to \"933292Ki\" (2 percent)"
+
+time="2021-08-20T04:42:05Z" level=info msg="Guaranteed CPU time on this 16 core machine: system.slice:  94.56 percent | kubepods:  1505.44 percent CPU time. \n"
+time="2021-08-20T04:41:45Z" level=info msg="CPU usage: system.slice: 54.21 percent. kubepods: 299.36 percent"
+time="2021-08-20T04:41:45Z" level=info msg="kubepods CPU shares. Current: 16302 | Target: 29198"
+time="2021-08-20T04:41:45Z" level=info msg="RECOMMENDATION: DECREASE reserved CPU from 82 m to 80 m"
+```
+
+## Exposed Metrics
+
+Each pod exposes a set of memory and CPU related metrics which can be fed into Prometheus.
+
+**Memory metrics**
+- kubelet_reserved_memory_bytes: The kubelet reserved memory in bytes as configured in the kubelet configuration file
+- kubelet_reserved_memory_percent: The kubelet reserved memory in percent calculated as (current reserved memory / MemTotal)
+- kubelet_target_reserved_memory_bytes: The target kubelet reserved memory calculated as MemTotal - MemAvailable - memory working set kubepods cgroup
+- kubelet_target_reserved_memory_percent: The target kubelet reserved memory in percent calculated as (target reserved memory / MemTotal)
+- node_cgroup_kubepods_memory_working_set_bytes: The working set memory of the kubepods cgroup in bytes
+- node_cgroup_kubepods_memory_working_set_percent: The working set memory of the kubepods cgroup in percent of the total memory
+- node_cgroup_system_slice_memory_working_set_bytes: The working set memory of the system slice cgroup in bytes
+- node_cgroup_system_slice_memory_working_set_percent: The working set memory of the system slice cgroup in percent of the total memory
+- node_memory_MemTotal: The MemTotal from /proc/meminfo
+- node_memory_MemAvailable: The MemAvailable from /proc/meminfo
+- node_memory_MemAvailable_percent: The MemAvailable in percent of the total memory
+- node_memory_used: The not reclaimable memory calculated from /proc/meminfo MemTotal - MemAvailable. (unlike measurement from root memory cgroup)
+- node_memory_used_percent: The not reclaimable memory in percent calculated from /proc/meminfo MemTotal - MemAvailable. (unlike measurement from root memory cgroup)
+
+
+**CPU metrics**
+- node_cgroup_system_slice_min_guaranteed_cpu: The minimum guaranteed CPU time of the system.slice cgroup based on the cpu.shares (1024)
+- node_num_cpu_cores: The number of CPU cores of this node
+- node_cgroup_kubepods_cpu_percent: The CPU consumption of the kubepods cgroup in percent of the last 10 seconds
+- node_cgroup_system_slice_cpu_percent: The CPU consumption of the system.slice cgroup in percent
+- node_cgroup_system_slice_free_cpu_time: The freely absolute available CPU time for the system.slice cgroup in percent (100 = 1 core)
+- node_cgroup_kubepods_free_cpu_time: The freely absolute available CPU time for the kubepods cgroup in percent (100 = 1 core)
+- kubelet_target_reserved_cpu: The target kubelet reserved CPU
+- kubelet_current_reserved_cpu: The current kubelet reserved CPU
+
+An already configured monitoring stack for these metrics with Prometheus and tailored Grafana dashboards can be found [here](example/monitoring).
+
+Example memory dashboard:
+![Memory dashboard](docs/pics/grafana-dashboard-memory-example.png)
+
+Example CPU dashboard:
+![cpu dashboard](docs/pics/grafana-dashboard-cpu-example.png)
+
 
 ## Problem statement:
 
