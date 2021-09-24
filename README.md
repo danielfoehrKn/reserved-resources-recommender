@@ -59,6 +59,9 @@ An already configured monitoring stack for these metrics with Prometheus and tai
 Example memory dashboard:
 ![Memory dashboard](docs/pics/grafana-dashboard-memory-example.png)
 
+Example memory aggregated metrics:
+![Memory Agregated Dashboard](docs/pics/grafana-dashboard-aggregations-example.png)
+
 Example CPU dashboard:
 ![cpu dashboard](docs/pics/grafana-dashboard-cpu-example.png)
 
