@@ -18,10 +18,12 @@ spec:
         - name: ENFORCE_RECOMMENDATION
           value: "false"
         - name: MIN_DELTA_ABSOLUTE
-          value: 200Mi
+          value: 2Mi
         - name: MIN_THRESHOLD_PERCENT
 #          0.2 means that it only starts working when available memory < 20 %
           value: "0.9"
+        - name: KUBELET_CONFIG_PATH
+          value: "/Users/d060239/go/src/github.com/danielfoehrkn/better-resource-reservations/example/kubelet/config"
       resources:
         requests:
           memory: "16Mi"
@@ -42,13 +44,15 @@ spec:
           name: proc
         - mountPath: /var/lib/kubelet/config/kubelet
           name: kubelet-config
+        - mountPath: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
+          name: kubelet-dynamic-resource-reservations-socket
         - mountPath: /sys/fs/cgroup
           name: cgroup-hierarchy
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-250-10-12.eu-north-1.compute.internal
+  nodeName: lima-docker
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
@@ -81,6 +85,10 @@ spec:
         path: /var/lib/kubelet/config/kubelet
         type: ""
       name: kubelet-config
+    - hostPath:
+        path: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
+        type: "File"
+      name: kubelet-dynamic-resource-reservations-socket
     - hostPath:
         path: /sys/fs/cgroup
         type: ""

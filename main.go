@@ -3,18 +3,27 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"time"
 
-	systemdDbus "github.com/coreos/go-systemd/v22/dbus"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/cpu"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/kubelet"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/memory"
+	resources "github.com/danielfoehrkn/resource-reservations-grpc/pkg/proto/gen/resource-reservations"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/wait"
+)
+
+const (
+	defaultGardenerKubeletFilePath = "/var/lib/kubelet/config/kubelet"
+	defaultMemorySafetyMarginAbsolute = "100Mi"
+	defaultCgroupsHierarchyRoot = "/sys/fs/cgroup"
 )
 
 var (
@@ -22,35 +31,65 @@ var (
 	// enforceRecommendation defines if the kubelet config shall be changed and the kubelet process shall be restarted to enact the new kube-reserved
 	// default: true
 	enforceRecommendation string
-	// minThresholdPercent defines the minimum percentage of OS memory available, that triggeres an update & restart of the kubelet
+	// minMemoryThresholdPercent defines the minimum percentage of OS memory available, that triggeres an update & restart of the kubelet
 	// This is a mechanism to reduce unnecessary kubelet restarts when there is enough memory available.
 	// Example: a value of 0.2 means that only if the OS memory available is in the range of 0 - 20% available, the kubelet
 	// reserved-memory should be updated
-	minThresholdPercent string
-	// minDeltaAbsolute is the minimum absolut difference between kube-reserved memory and the actual available memory.
-	// If the difference is greater, the kube-reserved config will be updated and the kubelet restarted.
-	// This is to avoid too many kubelet restarts.
+	minMemoryThresholdPercent string
+	// minMemoryDeltaAbsolute is the minimum absolut difference between kube-reserved memory and the actual available memory.
+	// If the difference is greater, the kube-reserved config will be updated.
 	// values must be a resource.Quantity
-	minDeltaAbsolute string
-)
-
-const (
-	kubeletServiceName             = "kubelet.service"
-	kubeletServiceMinActiveSeconds = 60.0
+	minMemoryDeltaAbsolute string
+	// kubeletStateDirectory  is the directory that contains the kubelet's state
+	// defaults to: /var/lib/kubelet/
+	kubeletDirectory string
+	// kubeletConfigPath is the path to the kubelet's configuration file
+	// defaults to: /var/lib/kubelet/config/kubelet
+	kubeletConfigPath string
+	// memorySafetyMarginAbsolute is the additional amount of memory added to the kube-reserved memory compared to what is
+	// actually reserved by other processes + kernel
+	// this is to make sure the cgroup limit hits before the OS OOM in order to safely prevent a global OOM
+	// defaults to 100Mi
+	memorySafetyMarginAbsolute resource.Quantity
+	// cgroupsHierarchyRoot defines where the root of the cgroup fs is mounted
+	// defaults to "/sys/fs/cgroup"
+	cgroupsHierarchyRoot string
 )
 
 func init() {
-	minDeltaAbsolute = os.Getenv("MIN_DELTA_ABSOLUTE")
-	minThresholdPercent = os.Getenv("MIN_THRESHOLD_PERCENT")
+	minMemoryDeltaAbsolute = os.Getenv("MIN_DELTA_ABSOLUTE")
+	minMemoryThresholdPercent = os.Getenv("MIN_THRESHOLD_PERCENT")
 	enforceRecommendation = os.Getenv("ENFORCE_RECOMMENDATION")
+	kubeletDirectory = os.Getenv("KUBELET_DIRECTORY")
+	kubeletConfigPath = os.Getenv("KUBELET_CONFIG_PATH")
+	memorySafetyMarginString := os.Getenv("MEMORY_SAFETY_MARGIN_ABSOLUTE")
+	cgroupsHierarchyRoot = os.Getenv("CGROUPS_HIERARCHY_ROOT")
 
 	if len(enforceRecommendation) == 0 {
 		enforceRecommendation = "true"
 	}
+
+	if len(kubeletDirectory) == 0 {
+		kubeletDirectory = "/var/lib/kubelet/"
+	}
+
+	if len(kubeletConfigPath) == 0 {
+		kubeletConfigPath = defaultGardenerKubeletFilePath
+	}
+
+	if len(memorySafetyMarginString) == 0 {
+		memorySafetyMarginAbsolute = resource.MustParse(defaultMemorySafetyMarginAbsolute)
+	} else {
+		memorySafetyMarginAbsolute = resource.MustParse(memorySafetyMarginString)
+	}
+
+	if len(cgroupsHierarchyRoot) == 0 {
+		cgroupsHierarchyRoot = defaultCgroupsHierarchyRoot
+	}
 }
 
 func main() {
-	minimumDelta, err := memory.GetMemoryMinimumAbsoluteDelta(minDeltaAbsolute)
+	minimumDelta, err := memory.GetMemoryMinimumAbsoluteDelta(minMemoryDeltaAbsolute)
 	if err != nil {
 		log.Fatalf("failed to determine minimum delta: %v", err)
 	}
@@ -62,21 +101,47 @@ func main() {
 
 	// determine the threshold when the memory reconciliation should act
 	// Skip reconciliation, when there is more memory available in the OS than this threshold
-	minimumThreshold, err := memory.GetMemoryMinimumAbsoluteThreshold(uint64(memTotal.Value()), minThresholdPercent)
+	minimumThreshold, err := memory.GetMemoryMinimumAbsoluteThreshold(uint64(memTotal.Value()), minMemoryThresholdPercent)
 	if err != nil {
 		log.Fatalf("failed to determine minimum threshold: %v", err)
 	}
 
 	log.Infof("Enforcing recommendations: %v. Minimum threshold is %q and minimum delta is %q", enforceRecommendation == "true", minimumThreshold.String(), minimumDelta.String())
 
+	var (
+		client         resources.ResourceReservationsClient
+		grpcConnection *grpc.ClientConn
+	)
+	if enforceRecommendation == "true" {
+		// check that the feature --dyanmic-resource-reservations is enabled by verifying
+		// that the Unix socket exists (this is brittle and assumes inside knowledge)
+		dynamicResourceReservationsSocket := fmt.Sprintf("%s/%s", kubeletDirectory, "dynamic-resource-reservations/kubelet.sock")
+		if _, err := os.Stat(dynamicResourceReservationsSocket); err != nil {
+			log.Fatalln(fmt.Errorf("failed to find the dynamic resource reservations Unix socket at %q. Make sure that the kubelet config directory is correct and that the kubelet flag --dynamic-resource-reservations is activated", err))
+		}
+
+		dialer := func(ctx context.Context, addr string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", addr)
+		}
+
+		// Get grpc client to communicate with kubelet's dynamic resource reservations grpc server
+		grpcConnection, err = grpc.Dial(dynamicResourceReservationsSocket, grpc.WithInsecure(), grpc.WithContextDialer(dialer))
+		if err != nil {
+			log.Infof("failed to connect to kubelet's dynamic resource reservations grpc server: %v", err)
+			os.Exit(1)
+		}
+
+		client = resources.NewResourceReservationsClient(grpcConnection)
+		log.Infof("created resource reservations grpc client")
+	}
+
+	if grpcConnection != nil {
+		defer grpcConnection.Close()
+	}
+
 	ctx, controllerCancel := context.WithCancel(context.Background())
 	defer controllerCancel()
-
-	systemdConnection, err := systemdDbus.New()
-	if err != nil {
-		log.Fatalf("failed to init connection with systemd socket: %v", err)
-	}
-	defer systemdConnection.Close()
 
 	reconciliationPeriod := 20 * time.Second
 
@@ -86,95 +151,64 @@ func main() {
 
 		fmt.Println("----")
 
-		if err := reconcileKubeReserved(reconcileContext, minimumDelta, minimumThreshold, systemdConnection, reconciliationPeriod); err != nil {
-			log.Warnf("fatal error during reconciliation: %v", err)
+		if err := reconcileKubeReserved(reconcileContext, client, minimumDelta, minimumThreshold, reconciliationPeriod); err != nil {
+			log.Warnf("error during reconciliation: %v", err)
 		}
 	}, reconciliationPeriod, ctx.Done())
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(":16911", nil)
+	log.Warnf("terminating server....")
 }
 
 // reconcileKubeReserved reconciles the memory reserved settings in the kubelet configuration
 // with the actual OS unevictable memory (that should be blocked)
 // this makes sure that the cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
-func reconcileKubeReserved(ctx context.Context, minimumDelta, minimumThreshold resource.Quantity, systemdConnection *systemdDbus.Conn, reconciliationPeriod time.Duration) error {
-
-	config, err := kubelet.LoadKubeletConfig()
+func reconcileKubeReserved(ctx context.Context, client resources.ResourceReservationsClient, minimumDelta, minimumThreshold resource.Quantity, reconciliationPeriod time.Duration) error {
+	config, err := kubelet.LoadKubeletConfig(kubeletConfigPath)
 	if err != nil {
 		return fmt.Errorf("failed to load kubelet config: %v", err)
 	}
 
-	targetReservedMemory, shouldUpdateReservedMemory, reasonMemory, err := memory.ReconcileKubeReservedMemory(log, config, minimumDelta, minimumThreshold)
+	systemReserved, kubeReserved, err := kubelet.GetResourceReservations(ctx, client)
 	if err != nil {
-		return fmt.Errorf("failed to to reconcile rreserved memory: %w", err)
+		return fmt.Errorf("failed to retrieve current resource reservations from the kubelet: %v", err)
 	}
 
-	if err := cpu.ReconcileKubeReservedCPU(log, reconciliationPeriod); err != nil {
-		return fmt.Errorf("failed to to reconcile rreserved memory: %w", err)
+	targetReservedMemory, shouldUpdateReservedMemory, reasonMemory, err := memory.ReconcileKubeReservedMemory(log, systemReserved[string(corev1.ResourceMemory)], kubeReserved[string(corev1.ResourceMemory)], minimumDelta, minimumThreshold, memorySafetyMarginAbsolute)
+	if err != nil {
+		return fmt.Errorf("failed to to reconcile reserved memory: %w", err)
 	}
 
-	// if we are not restarting the  kubelet.service, then we can return here
+	log.Infof("----")
+
+	// does not return a recommendation when CPU resource reservations should be updated
+	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
+	targetKubeReservedCPU, err := cpu.ReconcileKubeReservedCPU(log, reconciliationPeriod, cgroupsHierarchyRoot)
+	if err != nil {
+		return fmt.Errorf("failed to to reconcile reserved cpu: %w", err)
+	}
+
 	if enforceRecommendation != "true" {
 		return nil
 	}
 
-	// CPU currently does not return a recommendation to be enforced
-	shouldUpdateReservedCPU := false
-	if !shouldUpdateReservedMemory && !shouldUpdateReservedCPU {
-		log.Infof("Both memory and CPU reservations should not be updated. Reason: %v", reasonMemory)
+	if !shouldUpdateReservedMemory {
+		log.Infof("Memory reservations should not be updated. Reason: %v", reasonMemory)
 		return nil
 	}
 
-	if skip, reason := shouldSkipKubeletRestart(log, systemdConnection); skip {
-		log.Infof("Skipping kubelet restart: %s", reason)
-		return nil
+	// use the grpc API to update the resource reservations
+	if err := kubelet.UpdateResourceReservations(ctx, client, *targetReservedMemory, *targetKubeReservedCPU); err != nil {
+		return fmt.Errorf("failed to update kubelet's resource reservations: %w", err)
 	}
 
-	if err := kubelet.UpdateKubeReserved(*targetReservedMemory, config); err != nil {
+	// to keep the kubelet configuration file in sync with the recommendation provided over grpc
+	// this way, even if the kubelet process is restarted, the right kube-reserved settings are set
+	if err := kubelet.UpdateKubeReservedInConfigFile(*targetReservedMemory, config, kubeletConfigPath); err != nil {
 		return err
 	}
 
-	if err := restartKubelet(ctx, systemdConnection); err != nil {
-		return err
-	}
-
-	log.Infof("Successfully updated kube-reserved in the kubelet config and restarted the kubelet service")
-	return nil
-}
-
-// shouldSkipKubeletRestart checks if the reconciliation should be skipped
-// If should be skipped, returns true as the first, and a reason as the second argument
-func shouldSkipKubeletRestart(log *logrus.Logger, connection *systemdDbus.Conn) (bool, string) {
-	// check the last time the kubelet service has been restarted
-	// do not allow restarts if < 30 seconds ago
-	kubeletActiveDuration, err := kubelet.GetKubeletSystemdUnitActiveDuration(log, connection)
-	if err != nil {
-		return true, fmt.Sprintf("unable to determine since how long the kubelet systemd service is already running : %v", err)
-	}
-
-	if kubeletActiveDuration.Seconds() < kubeletServiceMinActiveSeconds {
-		return true, fmt.Sprintf("kubelet is running since less than %f seconds. Skipping", kubeletServiceMinActiveSeconds)
-	}
-
-	return false, ""
-}
-
-// restartKubelet restarts the kubelet systemd service
-func restartKubelet(ctx context.Context, connection *systemdDbus.Conn) error {
-	c := make(chan string)
-
-	// mode can be replace, fail, isolate, ignore-dependencies, ignore-requirements.
-	_, err := connection.TryRestartUnitContext(ctx, kubeletServiceName, "replace", c)
-	if err != nil {
-		return fmt.Errorf("failed to restart kubelet: %v", err)
-	}
-
-	// wait until kubelet is restarted
-	systemdResult := <-c
-	if systemdResult != "done" {
-		return fmt.Errorf("restarting the kubelet systemd service did not succeed. Status returned: %s", systemdResult)
-	}
-
+	log.Infof("Successfully updated kubelet's resource reservations")
 	return nil
 }

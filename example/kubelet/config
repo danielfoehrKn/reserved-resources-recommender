@@ -1,0 +1,64 @@
+# should be in /var/lib/kubelet/config/kubelet
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    cacheTTL: 2m0s
+    enabled: true
+  x509:
+    clientCAFile: /Users/d060239/go/src/github.com/gardener/gardener/hack/local-development/local-garden/certificates/certs/ca.crt
+cgroupDriver: cgroupfs
+cgroupRoot: /
+cgroupsPerQOS: true
+clusterDNS:
+- 10.223.0.10
+clusterDomain: cluster.local
+cpuCFSQuota: true
+enableDebuggingHandlers: true
+enableServer: true
+enforceNodeAllocatable:
+- pods
+eventBurst: 50
+eventRecordQPS: 50
+evictionHard:
+  imagefs.available: 5%
+  imagefs.inodesFree: 5%
+  memory.available: 100Mi
+  nodefs.available: 5%
+  nodefs.inodesFree: 5%
+evictionMaxPodGracePeriod: 90
+evictionMinimumReclaim:
+  imagefs.available: 0Mi
+  imagefs.inodesFree: 0Mi
+  memory.available: 0Mi
+  nodefs.available: 0Mi
+  nodefs.inodesFree: 0Mi
+evictionPressureTransitionPeriod: 4m0s
+evictionSoft:
+  imagefs.available: 10%
+  imagefs.inodesFree: 10%
+  memory.available: 200Mi
+  nodefs.available: 10%
+  nodefs.inodesFree: 10%
+evictionSoftGracePeriod:
+  imagefs.available: 1m30s
+  imagefs.inodesFree: 1m30s
+  memory.available: 1m30s
+  nodefs.available: 1m30s
+  nodefs.inodesFree: 1m30s
+failSwapOn: false
+kubeAPIBurst: 50
+kubeAPIQPS: 50
+kubeReserved:
+  cpu: 80m
+  memory: 1Gi
+  pid: 20k
+maxPods: 110
+nodeStatusReportFrequency: 0s
+nodeStatusUpdateFrequency: 10s
+resolvConf: /etc/resolv.conf
+syncFrequency: 1m0s
+featureGates:
+  DynamicResourceReservations: true

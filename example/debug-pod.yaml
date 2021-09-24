@@ -38,7 +38,7 @@ spec:
   enableServiceLinks: true
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-242-26-178.us-gov-west-1.compute.internal
+  nodeName: shoot--d060239--dev-seed-gcp-cpu-worker-z1-c7c5b-tvsfl
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}

@@ -1,0 +1,232 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: calico-node
+  namespace: kube-system
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: calico-node
+  template:
+    metadata:
+      annotations:
+        checksum/configmap-calico: 3bd46cb7beef613e0b3225b3776526289b7ba8abd2ae8dad55b1451c9465ae06
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      creationTimestamp: null
+      labels:
+        gardener.cloud/role: system-component
+        k8s-app: calico-node
+        networking.gardener.cloud/to-apiserver: allowed
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        shoot.gardener.cloud/no-cleanup: "true"
+    spec:
+      containers:
+        - env:
+            - name: USE_POD_CIDR
+              value: "true"
+            - name: FELIX_PROMETHEUSMETRICSENABLED
+              value: "true"
+            - name: FELIX_PROMETHEUSMETRICSPORT
+              value: "9091"
+            - name: DATASTORE_TYPE
+              value: kubernetes
+            - name: FELIX_TYPHAK8SSERVICENAME
+              valueFrom:
+                configMapKeyRef:
+                  key: typha_service_name
+                  name: calico-config
+            - name: FELIX_LOGSEVERITYSCREEN
+              value: error
+            - name: CLUSTER_TYPE
+              value: k8s,bgp
+            - name: CALICO_DISABLE_FILE_LOGGING
+              value: "true"
+            - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+              value: ACCEPT
+            - name: IP
+              value: autodetect
+            - name: FELIX_IPV6SUPPORT
+              value: "false"
+            - name: FELIX_IPINIPMTU
+              valueFrom:
+                configMapKeyRef:
+                  key: veth_mtu
+                  name: calico-config
+            - name: WAIT_FOR_DATASTORE
+              value: "true"
+            - name: CALICO_IPV4POOL_CIDR
+              value: 100.96.0.0/11
+            - name: FELIX_IPINIPENABLED
+              value: "true"
+            - name: CALICO_IPV4POOL_IPIP
+              value: Always
+            - name: CALICO_NETWORKING_BACKEND
+              valueFrom:
+                configMapKeyRef:
+                  key: calico_backend
+                  name: calico-config
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: FELIX_HEALTHENABLED
+              value: "true"
+            - name: FELIX_NATPORTRANGE
+              value: 32768:65535
+          image: eu.gcr.io/sap-se-gcr-k8s-public/quay_io/calico/node@sha256:1c7c28b9aeb86b6b25820aca7dcd2f5d72de3e2b955e956c3fd8b09e5ce0ecbc
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - /bin/calico-node
+                - -felix-live
+                - -bird-live
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: calico-node
+          ports:
+            - containerPort: 9091
+              hostPort: 9091
+              name: metrics
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/calico-node
+                - -felix-ready
+                - -bird-ready
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 800m
+              memory: 700Mi
+            requests:
+              cpu: 250m
+              memory: 100Mi
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
+            - mountPath: /run/xtables.lock
+              name: xtables-lock
+            - mountPath: /var/run/calico
+              name: var-run-calico
+            - mountPath: /var/lib/calico
+              name: var-lib-calico
+            - mountPath: /var/run/nodeagent
+              name: policysync
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      initContainers:
+        - command:
+            - /install-cni.sh
+          env:
+            - name: CNI_CONF_NAME
+              value: 10-calico.conflist
+            - name: CNI_NETWORK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  key: cni_network_config
+                  name: calico-config
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CNI_MTU
+              valueFrom:
+                configMapKeyRef:
+                  key: veth_mtu
+                  name: calico-config
+            - name: SLEEP
+              value: "false"
+          image: eu.gcr.io/sap-se-gcr-k8s-public/quay_io/calico/cni@sha256:a3c80fe00c382e7a74dffcfabd1f58b6ea5f5b17bb438a6f8bf7be5429155762
+          imagePullPolicy: IfNotPresent
+          name: install-cni
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /host/opt/cni/bin
+              name: cni-bin-dir
+            - mountPath: /host/etc/cni/net.d
+              name: cni-net-dir
+        - image: eu.gcr.io/sap-se-gcr-k8s-public/quay_io/calico/pod2daemon-flexvol@sha256:44dd5549d4cb7d4eb760ee00c14a7c7327fcb004edd0da97c146c29a79d6c7b3
+          imagePullPolicy: IfNotPresent
+          name: flexvol-driver
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /host/driver
+              name: flexvol-driver-host
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: calico-node
+      serviceAccountName: calico-node
+      terminationGracePeriodSeconds: 0
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      volumes:
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+        - hostPath:
+            path: /var/run/calico
+            type: ""
+          name: var-run-calico
+        - hostPath:
+            path: /var/lib/calico
+            type: ""
+          name: var-lib-calico
+        - hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+          name: xtables-lock
+        - hostPath:
+            path: /opt/cni/bin
+            type: ""
+          name: cni-bin-dir
+        - hostPath:
+            path: /etc/cni/net.d
+            type: ""
+          name: cni-net-dir
+        - hostPath:
+            path: /var/run/nodeagent
+            type: DirectoryOrCreate
+          name: policysync
+        - hostPath:
+            path: /var/lib/kubelet/volumeplugins/nodeagent~uds
+            type: DirectoryOrCreate
+          name: flexvol-driver-host
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+

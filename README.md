@@ -44,6 +44,7 @@ Each pod exposes a set of memory and CPU related metrics which can be fed into P
 
 
 **CPU metrics**
+- node_cpu_usage_percent: The overall CPU usage based on /proc/stats
 - node_cgroup_system_slice_min_guaranteed_cpu: The minimum guaranteed CPU time of the system.slice cgroup based on the cpu.shares (1024)
 - node_num_cpu_cores: The number of CPU cores of this node
 - node_cgroup_kubepods_cpu_percent: The CPU consumption of the kubepods cgroup in percent of the last 10 seconds

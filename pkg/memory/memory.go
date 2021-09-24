@@ -11,13 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kubeletv1beta1 "k8s.io/kubelet/config/v1beta1"
 )
 
 const (
-	memorySafetyMarginValue        = "200Mi"
 	// PoC: assumes kubepods memory controller mounted at /sys/fs/cgroups/memory/kubepods
 	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
 	cgroupRoot = "/sys/fs/cgroup"
@@ -27,17 +24,15 @@ const (
 
 
 var (
-	// memorySafetyMargin is the additional amount of memory added to the kube-reserved memory compared to what is
-	// actually reserved by other processes + kernel
-	// this is to make sure the cgroup limit hits before the OS OOM
-	memorySafetyMargin = resource.MustParse(memorySafetyMarginValue)
 	// defaultMinThresholdPercent is the default minimum percentage of OS memory available, that triggeres an update & restart of the kubelet
 	// 0.9 means that it should reconcile if less than 90% of OS memory is available
 	defaultMinThresholdPercent     = "0.9"
 	// defaultMinDeltaAbsolute is the default minimum absolut difference between kube-reserved memory and the actual
 	// available memory which makes an update of the reserved memory necessary
 	// if < 100MI difference in actual vs. desired, do not update / restart the kubelet
-	defaultMinDeltaAbsolute        = "100Mi"
+	// TODO: WHAT IS A SENSIBLE VALUE HERE TO NOT CAUSE TOO MUCH LOAD ON THE KUBELET?
+	// SUPPOSE LIKE 100 MI?
+	defaultMinDeltaAbsolute        = "2Mi"
 
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_reserved_memory_bytes",
@@ -109,9 +104,12 @@ var (
 // the actual (target) memory consumption of system.slice
 func ReconcileKubeReservedMemory(
 	log *logrus.Logger,
-	kubeletConfig *kubeletv1beta1.KubeletConfiguration,
+	systemReservedMemoryString string,
+	kubeReservedMemoryString string,
 	minimumDelta,
-	minimumThreshold resource.Quantity) (*resource.Quantity, bool, string, error) {
+	minimumThreshold ,
+	memorySafetyMarginAbsolute resource.Quantity,
+	) (*resource.Quantity, bool, string, error) {
 
 	memTotal, memAvailable, err := ParseProcMemInfo()
 	if err != nil {
@@ -128,15 +126,20 @@ func ReconcileKubeReservedMemory(
 		return nil, false, "", err
 	}
 
-	kubeReservedMemory, err := getKubeReservedMemory(*kubeletConfig)
-	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to parse kube-reserved memory as resource quantity: %v", err)
+	systemReservedMemory := resource.Quantity{}
+	if len(systemReservedMemoryString) > 0 {
+		systemReservedMemory, err = resource.ParseQuantity(systemReservedMemoryString)
+		if err != nil {
+			return nil, false, "", fmt.Errorf("failed to parse system reserved resources: %v", err)
+		}
 	}
 
-	systemReservedMemory, err := getSystemReservedMemory(*kubeletConfig)
+	kubeReservedMemory, err := resource.ParseQuantity(kubeReservedMemoryString)
 	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to parse system-reserved memory as resource quantity: %v", err)
+		return nil, false, "", fmt.Errorf("failed to parse kube reserved resources %v", err)
 	}
+
+	log.Infof("Current kube reserved memory: %q. Current system reserved memory: %q", kubeReservedMemory.String(), systemReservedMemory.String())
 
 	// total reserved memory of the kubelet is system + kube-reserved
 	currentReservedMemory := kubeReservedMemory
@@ -151,7 +154,7 @@ func ReconcileKubeReservedMemory(
 	targetReservedMemory.Sub(memAvailable)
 	currentlyUsedMemory := targetReservedMemory
 	targetReservedMemory.Sub(kubepodsWorkingSetBytes)
-	targetReservedMemory.Add(memorySafetyMargin)
+	targetReservedMemory.Add(memorySafetyMarginAbsolute)
 
 	log.Infof("Available memory from /proc/mem: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
 	log.Infof("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
@@ -191,7 +194,7 @@ func ReconcileKubeReservedMemory(
 		action = "DECREASE"
 	}
 
-	log.Infof("RECOMMENDATION: %s reserved memory from %q (%d percent, kube: %q, system: %q) to %q (%d percent)",
+	log.Infof("MEMORY RECOMMENDATION: %s reserved memory from %q (%d percent, kube: %q, system: %q) to %q (%d percent)",
 		action,
 		currentReservedMemory.String(),
 		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
@@ -244,33 +247,6 @@ func getMemoryWorkingSet(unit string) (resource.Quantity, error) {
 	memoryWorkingSetBytes := stats.Memory.Usage.Usage - stats.Memory.TotalInactiveFile
 	return resource.ParseQuantity(fmt.Sprintf("%d", memoryWorkingSetBytes))
 }
-
-// getCurrentKubeReservedMemory takes the kubelet configuration and
-// returns the the kube reserved memory or the the kubelet default if not set
-func getKubeReservedMemory(config kubeletv1beta1.KubeletConfiguration) (resource.Quantity, error) {
-	mem, ok := config.KubeReserved[string(corev1.ResourceMemory)]
-	if !ok {
-		// currently not set in config. Defaulted by kubelet to 100Mi
-		return resource.MustParse("100Mi"), nil
-	}
-
-	// parse memory (can be BinarySI or DecimalSI)
-	return resource.ParseQuantity(mem)
-}
-
-// getSystemReservedMemory takes the kubelet configuration and
-// returns the the system reserved memory or nil if not set
-func getSystemReservedMemory(config kubeletv1beta1.KubeletConfiguration) (resource.Quantity, error) {
-	mem, ok := config.SystemReserved[string(corev1.ResourceMemory)]
-	if !ok {
-		// there is no default system-reserved memory
-		return resource.Quantity{}, nil
-	}
-
-	// parse memory (can be BinarySI or DecimalSI)
-	return resource.ParseQuantity(mem)
-}
-
 
 // ParseProcMemInfo parses /proc/meminfo and returns MemTotal, MemAvailable or an error
 func ParseProcMemInfo() (resource.Quantity, resource.Quantity, error) {
