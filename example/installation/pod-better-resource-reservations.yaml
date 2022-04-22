@@ -10,8 +10,9 @@ metadata:
     networking.gardener.cloud/to-shoot-apiserver: allowed
   name: better-resource-reservations
 spec:
+#  priorityClassName: system-cluster-critical
   containers:
-    - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
+    - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations@sha256:6ad52db3045bf7b4bcba96f50bfbf98313885e1d5174645db7902ebe44883810
       imagePullPolicy: Always
       name: reconciler
       env:
@@ -44,15 +45,15 @@ spec:
           name: proc
         - mountPath: /var/lib/kubelet/config/kubelet
           name: kubelet-config
-        - mountPath: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
-          name: kubelet-dynamic-resource-reservations-socket
+#        - mountPath: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
+#          name: kubelet-dynamic-resource-reservations-socket
         - mountPath: /sys/fs/cgroup
           name: cgroup-hierarchy
   dnsPolicy: ClusterFirst
-  enableServiceLinks: true
+  enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: lima-docker
+  nodeName: ip-10-250-0-160.eu-central-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
@@ -85,10 +86,11 @@ spec:
         path: /var/lib/kubelet/config/kubelet
         type: ""
       name: kubelet-config
-    - hostPath:
-        path: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
-        type: "File"
-      name: kubelet-dynamic-resource-reservations-socket
+#    - hostPath:
+#        path: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
+        # will fail if the kibelet does not use the dynamic-resource-reservations flag
+#        type: "File"
+#      name: kubelet-dynamic-resource-reservations-socket
     - hostPath:
         path: /sys/fs/cgroup
         type: ""

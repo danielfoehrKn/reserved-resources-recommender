@@ -8,8 +8,10 @@ metadata:
     component: better-resource-reservations
     networking.gardener.cloud/to-dns: allowed
     networking.gardener.cloud/to-shoot-apiserver: allowed
-  name: better-resource-reservations2
+  name: better-resource-reservations
 spec:
+  # ensure scheduling
+  priorityClassName: system-cluster-critical
   containers:
     - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
       imagePullPolicy: Always
@@ -18,7 +20,7 @@ spec:
         - name: ENFORCE_RECOMMENDATION
           value: "true"
         - name: MIN_DELTA_ABSOLUTE
-          value: 2Mi
+          value: 1Mi
         - name: MIN_THRESHOLD_PERCENT
 #          0.2 means that it only starts working when available memory < 20 %
           value: "0.9"

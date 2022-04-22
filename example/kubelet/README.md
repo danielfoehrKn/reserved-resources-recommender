@@ -36,7 +36,7 @@ sudo ./kubelet \
 --cni-conf-dir=/etc/cni/net.d/ \
 --kubeconfig=/Users/d060239/go/src/github.com/gardener/gardener/hack/local-development/local-garden/kubeconfigs/default-admin.conf \
 --network-plugin=cni \
---v=2
+--v=4
 ```
 
 The kubelet should create a Node in `NotReady` state.

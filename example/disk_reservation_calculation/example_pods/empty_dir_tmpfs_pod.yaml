@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubernetes.io/psp: gardener.privileged
+  labels:
+    app: root
+    networking.gardener.cloud/to-dns: allowed
+    networking.gardener.cloud/to-shoot-apiserver: allowed
+  name: pod-emptydir-tmpfs-example
+spec:
+  #  priorityClassName: system-cluster-critical
+  nodeName: shoot--d060239--dev-seed-gcp-cpu-worker-z1-66bf7-xjzzn
+  containers:
+    - image: nicolaka/netshoot
+      imagePullPolicy: Always
+      name: root-container
+      stdin: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+        - mountPath: /cache
+          name: cache-volume-memory
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: false
+  hostNetwork: true
+  hostPID: true
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  volumes:
+    - name: cache-volume-memory
+      emptyDir:
+        medium: "Memory"
+
+

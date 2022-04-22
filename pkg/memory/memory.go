@@ -177,7 +177,7 @@ func ReconcileKubeReservedMemory(
 	// was larger than the OS thinks is even used overall --> cgroupv1 accounting is most likely off
 	// in this case, we rather choose to not report a target reserved memory via metrics.
 	// If desired, the systemSliceWorkingSetBytes can be used knowing that this will most
-	// likely over reserve memory
+	// likely over-reserve memory
 	if targetReservedMemory.Value() < 0 {
 		log.Infof("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
 		metricTargetReservedMemoryBytes.Set(-1)

@@ -66,7 +66,7 @@ func init() {
 	cgroupsHierarchyRoot = os.Getenv("CGROUPS_HIERARCHY_ROOT")
 
 	if len(enforceRecommendation) == 0 {
-		enforceRecommendation = "true"
+		enforceRecommendation = "false"
 	}
 
 	if len(kubeletDirectory) == 0 {

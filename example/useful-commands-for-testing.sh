@@ -1,4 +1,4 @@
-kubectl exec -ti debugpod-d060239 -- bash -c "chroot /hostroot"
+k exec -ti debugpod-d060239 -- bash -c "chroot /hostroot"
 
 # These are commands useful during demoing
 # the idea is to not rely on a constant exec shell as the kubelet can be restarted any time
@@ -20,6 +20,8 @@ watch "kubectl exec -ti debugpod-d060239 -- bash -c \"chroot /hostroot /bin/bash
 watch "kubectl exec -ti debugpod-d060239 -- bash -c \"chroot /hostroot /bin/bash -c './get-cgroup-memory.sh system.slice'\""
 
 # dmesg get kernel logs (watch does not show whole logs)
+# For cgrou-level oom: Memory cgroup out of memory: Killed process 1796292 (ruby) total-vm:452120kB, anon-rss:157260kB
+# For global OOM: "Out of memory: Killed process"
 kubectl exec -ti debugpod-d060239 -- bash -c "chroot /hostroot /bin/bash -c 'dmesg -T'"
 
 # last kubelet restart time

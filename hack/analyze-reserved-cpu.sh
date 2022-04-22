@@ -95,7 +95,7 @@ EOF
 )
 
 # I cannot set more cpu shares on kubepods than 1024 * num_cores (if kube-reserved=0m)
-# because this is  how K8s sets the shares
+# because this is how K8s sets the shares
 if [ $kubepods_target_cpu_shares -gt $total_cpu_shares ];
 then
   # system reserved shall be minimum default of 80m

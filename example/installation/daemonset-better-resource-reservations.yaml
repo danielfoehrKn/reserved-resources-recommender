@@ -28,7 +28,7 @@ spec:
 #        worker.gardener.cloud/pool: cpu-worker
 #        worker.gardener.cloud/pool: cpu-worker
       containers:
-        - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations:latest
+        - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations@sha256:6ad52db3045bf7b4bcba96f50bfbf98313885e1d5174645db7902ebe44883810
           name: reconciler
           env:
             - name: ENFORCE_RECOMMENDATION

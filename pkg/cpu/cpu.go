@@ -99,8 +99,8 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 	//  => Similar to why we read /proc/meminfo for memory and then calculate the CPU that is left based on that.
 	// Reason:
 	// - cgroup accounting in system.slice fails to account for processes outside system.slice  (like when starting process from user shell, will end up in user.slice)
-	//   - Example: cat /dev/zero > /dev/null   --> will not be account for in system.slice becasue it is in users.slice (check `ps -o cgroup <pid>`)
-	// - cpu acccount information in cgroups v1 was not designed to be absolutely precise and can be way off.
+	//   - Example: cat /dev/zero > /dev/null   --> will not be account for in system.slice because it is in users.slice (check `ps -o cgroup <pid>`)
+	// - cpu accounting information in cgroups v1 was not designed to be absolutely precise and can be way off.
 	// Please refer to the following URL for more information: https://www.idnt.net/en-US/kb/941772
 	overallCPUNonIdleTime, systemSliceCPUTime, kubepodsCPUTime, err := measureAverageCPUUsage(log, cgroupsHierarchyCPU, reconciliationPeriod)
 	if err != nil {
@@ -177,6 +177,7 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
 	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
 	metricOverallCPUUsagePercent.Set(math.Round(overallCPUNonIdleTimePercent))
+	// TODO: add metric that calculates the normal overall CPU utilisation of the node as: (metricOverallCPUUsagePercent/num_cores)
 	metricCurrentReservedCPU.Set(float64(currentKubeReservedCPU))
 	metricTargetReservedCPU.Set(float64(targetKubeReservedCPU))
 
@@ -250,7 +251,7 @@ func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, reco
 
 
 	// /proc/stats cpu stats are in given in Jiffies (duration of 1 tick of the system timer interrupt.)
-	// So we cannot just divide the diff by the elpased time measure with time.Now() - nanoseconds.
+	// So we cannot just divide the diff by the elapsed time measure with time.Now() - nanoseconds.
 	// First would need to convert the Jiffies to nanoseconds using USR_HERTZ -> the length of a clock tick.
 	// It is easier however, to just calculate the relation between idling and processing CPU time to get the usage during sleep()
 	diffTotal := stopTotalCPUTime - startCPUTime
@@ -279,7 +280,7 @@ func readProcStats(err error) (uint64, uint64, error) {
 	// time spent since system startKubepods on CPU idle or IO Wait
 	idleCPUTime := statsCurr.CPUStatAll.Idle + statsCurr.CPUStatAll.IOWait
 
-	// sum em all up to get the total amount of CPU time that has been spent since system startKubepods of processing
+	// sum em all up to get the total amount of CPU time that has been spent since system start Kubepods of processing
 	totalCPUTime :=
 		statsCurr.CPUStatAll.User +
 		statsCurr.CPUStatAll.Nice +
