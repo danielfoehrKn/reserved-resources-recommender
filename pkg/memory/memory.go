@@ -3,11 +3,13 @@ package memory
 import (
 	"fmt"
 	"math"
-	"strconv"
+	"os"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
 	"github.com/containerd/cgroups"
 	cgroupstatsv1 "github.com/containerd/cgroups/stats/v1"
+	"github.com/dustin/go-humanize"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
@@ -27,12 +29,6 @@ var (
 	// defaultMinThresholdPercent is the default minimum percentage of OS memory available, that triggeres an update & restart of the kubelet
 	// 0.9 means that it should reconcile if less than 90% of OS memory is available
 	defaultMinThresholdPercent     = "0.9"
-	// defaultMinDeltaAbsolute is the default minimum absolut difference between kube-reserved memory and the actual
-	// available memory which makes an update of the reserved memory necessary
-	// if < 100MI difference in actual vs. desired, do not update / restart the kubelet
-	// TODO: WHAT IS A SENSIBLE VALUE HERE TO NOT CAUSE TOO MUCH LOAD ON THE KUBELET?
-	// SUPPOSE LIKE 100 MI?
-	defaultMinDeltaAbsolute        = "2Mi"
 
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_reserved_memory_bytes",
@@ -100,16 +96,11 @@ var (
 	})
 )
 
-// ReconcileKubeReservedMemory reconciles the current kube-reserved memory settings against
-// the actual (target) memory consumption of system.slice
-func ReconcileKubeReservedMemory(
+// RecommendReservedMemory recommends a memory reservation for non-pod processes.
+// The recommendation can be split across kube- and system-reserved and hard-eviction.
+func RecommendReservedMemory(
 	log *logrus.Logger,
-	systemReservedMemoryString string,
-	kubeReservedMemoryString string,
-	minimumDelta,
-	minimumThreshold ,
-	memorySafetyMarginAbsolute resource.Quantity,
-	) (*resource.Quantity, bool, string, error) {
+	memorySafetyMarginAbsolute resource.Quantity) error {
 
 	memTotal, memAvailable, err := ParseProcMemInfo()
 	if err != nil {
@@ -118,32 +109,25 @@ func ReconcileKubeReservedMemory(
 
 	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(kubepodsMemoryCgroupName)
 	if err != nil {
-		return nil, false, "", err
+		return err
 	}
 
 	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(systemSliceMemoryCgroupName)
 	if err != nil {
-		return nil, false, "", err
+		return err
 	}
 
-	systemReservedMemory := resource.Quantity{}
-	if len(systemReservedMemoryString) > 0 {
-		systemReservedMemory, err = resource.ParseQuantity(systemReservedMemoryString)
-		if err != nil {
-			return nil, false, "", fmt.Errorf("failed to parse system reserved resources: %v", err)
-		}
-	}
-
-	kubeReservedMemory, err := resource.ParseQuantity(kubeReservedMemoryString)
+	kubepodsLimitInBytes, err := getMemoryLimitInBytes(kubepodsMemoryCgroupName)
 	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to parse kube reserved resources %v", err)
+		return err
 	}
 
-	log.Infof("Current kube reserved memory: %q. Current system reserved memory: %q", kubeReservedMemory.String(), systemReservedMemory.String())
-
-	// total reserved memory of the kubelet is system + kube-reserved
-	currentReservedMemory := kubeReservedMemory
-	currentReservedMemory.Add(systemReservedMemory)
+	// Calculate the reserved memory based on the memory limit on the kubepods cgroup
+	// Memory limit on the kubepods cgroup = Capacity - kube-reserved - system-reserved - hard eviction
+	// To know how the reservation is distributed amongst (kube-reserved,system-reserved,hard eviction),
+	// we would have to read the kubelet configuration
+	currentReservedMemory := memTotal
+	currentReservedMemory.Sub(kubepodsLimitInBytes)
 
 	// Calculation: target reserved memory =
 	// MemTotal
@@ -156,10 +140,10 @@ func ReconcileKubeReservedMemory(
 	targetReservedMemory.Sub(kubepodsWorkingSetBytes)
 	targetReservedMemory.Add(memorySafetyMarginAbsolute)
 
-	log.Infof("Available memory from /proc/mem: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
-	log.Infof("Kubepods working set memory: %q (%d percent)", kubepodsWorkingSetBytes.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
-	log.Infof("System.slice working set memory: %q (%d percent)", systemSliceWorkingSetBytes.String(), int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
+	log.Debugf("Available memory from /proc/mem: %q (%d percent)", memAvailable.String(), int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)))
+	log.Debugf("Used memory: %q (%d percent)", currentlyUsedMemory.String(), int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)))
+	log.Debugf("Kubepods working set memory: %q (%d percent)", kubepodsWorkingSetBytes.String(), int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
+	log.Debugf("System.slice working set memory: %q (%d percent)", systemSliceWorkingSetBytes.String(), int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)))
 
 	// record prometheus metrics
 	metricMemAvailable.Set(float64(memAvailable.Value()))
@@ -182,56 +166,69 @@ func ReconcileKubeReservedMemory(
 		log.Infof("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
 		metricTargetReservedMemoryBytes.Set(-1)
 		metricTargetReservedMemoryPercent.Set(0)
-		return nil, false, "", nil
+		return nil
 	}
 
-	// difference old reserved settings - target reserved
-	diffOldMinusNewReserved := currentReservedMemory
-	diffOldMinusNewReserved.Sub(targetReservedMemory)
-
-	action := "INCREASE"
-	if diffOldMinusNewReserved.Value() > 0 {
-		action = "DECREASE"
-	}
-
-	log.Infof("MEMORY RECOMMENDATION: %s reserved memory from %q (%d percent, kube: %q, system: %q) to %q (%d percent)",
-		action,
-		currentReservedMemory.String(),
-		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
-		kubeReservedMemory.String(),
-		systemReservedMemory.String(),
+	log.Debugf("Recommended memory reservation: %q (%s, %d percent). Currenlty reserved (kube-reserved + system-reserved): %q (%d percent)",
+		humanize.IBytes(uint64(targetReservedMemory.Value())),
 		targetReservedMemory.String(),
 		int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)),
+		currentReservedMemory.String(),
+		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
 		)
 
 	// record prometheus metrics
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
 	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value()) / float64(memTotal.Value()) * 100))
 
-	// kube-reserved = reserved memory - system-reserved
-	// because we only manipulate kube-reserved in this PoC
-	targetKubeReserved := targetReservedMemory // includes safety margin
-	targetKubeReserved.Sub(systemReservedMemory)
+	logRecommendation(
+		humanize.IBytes(uint64(memAvailable.Value())),
+		int64(math.Round(float64(memAvailable.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(currentlyUsedMemory.Value())),
+		int64(math.Round(float64(currentlyUsedMemory.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(kubepodsWorkingSetBytes.Value())),
+		int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(systemSliceWorkingSetBytes.Value())),
+		int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(currentReservedMemory.Value())),
+		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(targetReservedMemory.Value())),
+		targetReservedMemory.String(),
+		int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)),
+		)
 
-	shouldBeUpdated, reason := shouldUpdateKubeReserved(memAvailable, minimumThreshold, minimumDelta, diffOldMinusNewReserved)
-
-	return &targetKubeReserved, shouldBeUpdated, reason, nil
+	return nil
 }
 
-// shouldUpdateKubeReserved checks if the kube-reserved values should be updated
-// If should not  be updated, returns false as the first, and a reason as the second argument
-func shouldUpdateKubeReserved(memAvailable, minimumThreshold, minimumDelta, diffOldMinusNewReserved resource.Quantity) (bool, string) {
-	if memAvailable.Value() > minimumThreshold.Value() {
-		return false, fmt.Sprintf("Available memory of %s does not fall below threshold of %s. Do nothing.", memAvailable.String(), minimumThreshold.String())
-	}
+func logRecommendation(
+	availableMemoryProcMem string,
+	availableMemoryProcMemPercentTotal int64,
+	usedMemoryProcMem string,
+	usedMemoryProcMemPercentTotal int64,
+	kubepodsWorkingSet string,
+	kubepodsWorkingSetPercentTotal int64,
+	systemSliceWorkingSet string,
+	systemSliceWorkingSetPercentTotal int64,
+	currentReservedMemory string,
+	currentReservedMemoryPercentTotal int64,
+	targetReservedMemory string,
+	targetReservedMemoryPrecise string,
+	targetReservedMemoryPercentTotal int64) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Memory Metric", "Value"})
 
-	// only if the desired change is > threshold, we consider it significant enough to update the kube reserved
-	// and restart the kubelet
-	if math.Abs(float64(diffOldMinusNewReserved.Value())) < float64(minimumDelta.Value()) {
-		return false, fmt.Sprintf("SKIPPING: Delta of target reserved memory and current reserved memory is %q (minimum delta: %q).", diffOldMinusNewReserved.String(), minimumDelta.String())
-	}
+	t.AppendRows([]table.Row{
+		{"Available (/proc/mem)", fmt.Sprintf("%s (%d%%)", availableMemoryProcMem, availableMemoryProcMemPercentTotal)},
+		{"Used (Capacity - Available)", fmt.Sprintf("%s (%d%%)", usedMemoryProcMem, usedMemoryProcMemPercentTotal)},
+		{"Kubepods working set", fmt.Sprintf("%s (%d%%)", kubepodsWorkingSet, kubepodsWorkingSetPercentTotal)},
+		{"System.slice working set", fmt.Sprintf("%s (%d%%)", systemSliceWorkingSet, systemSliceWorkingSetPercentTotal)},
+		{"Current reservation (kube+system reserved)", fmt.Sprintf("%s (%d%%)", currentReservedMemory, currentReservedMemoryPercentTotal)},
+	})
 
-	return true, ""
+	t.AppendSeparator()
+	t.AppendRow(table.Row{"RECOMMENDATION", fmt.Sprintf("%s (%s, %d%%)", targetReservedMemory, targetReservedMemoryPrecise, targetReservedMemoryPercentTotal)})
+	t.Render()
 }
 
 // getMemoryWorkingSet reads the given unit's memory cgroup and calculates
@@ -246,6 +243,20 @@ func getMemoryWorkingSet(unit string) (resource.Quantity, error) {
 
 	memoryWorkingSetBytes := stats.Memory.Usage.Usage - stats.Memory.TotalInactiveFile
 	return resource.ParseQuantity(fmt.Sprintf("%d", memoryWorkingSetBytes))
+}
+
+// getMemoryWorkingSet reads the given unit's memory cgroup to return the memory limit in bytes
+func getMemoryLimitInBytes(unit string) (resource.Quantity, error) {
+	memoryController := cgroups.NewMemory(cgroupRoot)
+
+	stats := &cgroupstatsv1.Metrics{}
+	if err := memoryController.Stat(unit, stats); err != nil {
+		return resource.Quantity{}, fmt.Errorf("failed to read memory stats for kubepods cgroup: %v", err)
+	}
+
+	out := fmt.Sprintf("%d", stats.Memory.Usage.Limit)
+	fmt.Sprintf("memory limit for unit %s is %s", unit, out)
+	return resource.ParseQuantity(out)
 }
 
 // ParseProcMemInfo parses /proc/meminfo and returns MemTotal, MemAvailable or an error
@@ -276,36 +287,3 @@ func ParseProcMemInfo() (resource.Quantity, resource.Quantity, error) {
 	return memTotal, memAvailable, nil
 }
 
-
-// GetMemoryMinimumAbsoluteThreshold uses the given minThresholdPercent (originated from an environment variable) or
-// uses the defaultMinThresholdPercent to calculate the defaultMinDeltaAbsolute value.
-// Returns the minimum difference (e.g 200 Mi) between kube-reserved memory and the actual
-// available memory which makes an update of the reserved memory necessary.
-func GetMemoryMinimumAbsoluteThreshold(memTotal uint64, minThresholdPercent string) (resource.Quantity, error) {
-	if len(minThresholdPercent) == 0 {
-		minThresholdPercent = defaultMinThresholdPercent
-	}
-
-	minThreshold, err := strconv.ParseFloat(minThresholdPercent, 64)
-	if err != nil {
-		return resource.Quantity{}, err
-	}
-
-	if minThreshold < 0 || minThreshold >= 1 {
-		return resource.Quantity{}, fmt.Errorf("MIN_THRESHOLD_PERCENT has to be in range 0 - 1")
-	}
-
-	value := int64(float64(memTotal) * minThreshold)
-
-	return resource.ParseQuantity(fmt.Sprintf("%d", value))
-}
-
-// GetMemoryMinimumAbsoluteDelta parses the given minDeltaAbsolute (originated from an environment variable)
-// or returns the defaultMinDeltaAbsolute
-func GetMemoryMinimumAbsoluteDelta(minDeltaAbsolute string) (resource.Quantity, error) {
-	if len(minDeltaAbsolute) == 0 {
-		minDeltaAbsolute = defaultMinDeltaAbsolute
-	}
-
-	return resource.ParseQuantity(minDeltaAbsolute)
-}

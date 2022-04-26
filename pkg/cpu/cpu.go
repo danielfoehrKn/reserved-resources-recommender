@@ -3,15 +3,15 @@ package cpu
 import (
 	"fmt"
 	"math"
+	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 const (
@@ -70,20 +70,19 @@ var (
 	})
 )
 
-// ReconcileKubeReservedCPU reconciles the current kube-reserved CPU settings against
+// RecommendReservedCPU reconciles the current kube-reserved CPU settings against
 // the actual (target) CPU consumption of system.slice
-func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string) (*resource.Quantity, error) {
-	numCPU := int64(runtime.NumCPU())
+func RecommendReservedCPU(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string, numCPU int64) error {
 	cgroupsHierarchyCPU := fmt.Sprintf("%s/cpu", cgroupsHierarchyRoot)
 
 	systemSliceCPUShares, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUShares)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	kubepodsCPUShares, err := getCPUStat(cgroupsHierarchyCPU, cgroupKubepods, cgroupStatCPUShares)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// System.slice's relative CPU time for ALL cores = (Active cgroup CPU shares) / (sum of all possible CPU shares of the cgroup SIBLINGS)
@@ -91,48 +90,66 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 	systemSliceGuaranteedCPUTimePercent := ((float64(systemSliceCPUShares) / (float64(systemSliceCPUShares) + float64(kubepodsCPUShares))) * float64(numCPU)) * 100
 	kubepodsGuaranteedCPUTimePercent := ((float64(kubepodsCPUShares) / (float64(systemSliceCPUShares) + float64(kubepodsCPUShares))) * float64(numCPU)) * 100
 
-	log.Infof("Guaranteed CPU time on this %d core machine: system.slice:  %.2f percent | kubepods:  %.2f percent CPU time. \n", numCPU, systemSliceGuaranteedCPUTimePercent, kubepodsGuaranteedCPUTimePercent)
+	log.Debugf("Guaranteed CPU time: system.slice:  %.2f percent (%d shares) | kubepods:  %.2f percent (%d shares). \n", systemSliceGuaranteedCPUTimePercent, systemSliceCPUShares, kubepodsGuaranteedCPUTimePercent, kubepodsCPUShares)
 
-	// measure overall CPU usage using `/proc/stats` and cpu usage of cgroups using the cgroupfs
+	// Measure overall CPU usage using `/proc/stats` and cpu usage of cgroups using the cgroupfs
 	// For Linux, to determine the overall CPU usage, use the info exposed by the kernel in `/proc/stats` instead of
 	// cgroups on system.slice or the root cgroup hierarchy.
-	//  => Similar to why we read /proc/meminfo for memory and then calculate the CPU that is left based on that.
+	// Why do we not just check the cgroup CPU usage stats on system.slice to obtain CPU usage for all non-pod processes?
 	// Reason:
+	// - Similar to why we read /proc/meminfo for memory and then calculate the CPU that is left based on that.
 	// - cgroup accounting in system.slice fails to account for processes outside system.slice  (like when starting process from user shell, will end up in user.slice)
 	//   - Example: cat /dev/zero > /dev/null   --> will not be account for in system.slice because it is in users.slice (check `ps -o cgroup <pid>`)
-	// - cpu accounting information in cgroups v1 was not designed to be absolutely precise and can be way off.
+	// - CPU accounting information in cgroups v1 was not designed to be absolutely precise and can be way off.
 	// Please refer to the following URL for more information: https://www.idnt.net/en-US/kb/941772
-	overallCPUNonIdleTime, systemSliceCPUTime, kubepodsCPUTime, err := measureAverageCPUUsage(log, cgroupsHierarchyCPU, reconciliationPeriod)
+	overallCPUNonIdleTime, systemSliceCPUTime, kubepodsCPUTime, err := measureAverageCPUUsage(log, cgroupsHierarchyCPU, reconciliationPeriod, numCPU)
 	if err != nil {
-		return nil, fmt.Errorf("failed to measure relative CPU time: %w", err)
+		return fmt.Errorf("failed to measure relative CPU time: %w", err)
 	}
 
 	// Calculation:
-	//   CPU usage without kubepods = total CPU Usage  - cpu usage kubepods (can be inaccurate)
-	// After, use then use below formula to calculate kubepodsTargetCPUShares (now I know systemSliceCPUTime which is more precise now)
-	overallCPUUsageWithoutKubepods := overallCPUNonIdleTime - kubepodsCPUTime
+	// - CPU usage without kubepods = total CPU Usage  - cpu usage kubepods (can be inaccurate)
+	// - After, use below formula to calculate kubepodsTargetCPUShares (now I know systemSliceCPUTime which is more precise now)
+	// e.g overallCPUNonIdleTime(2.02 = 2 cores) - kubepodsCPUTime(1.7 core)
+	cpuUsageNonPodProcesses := overallCPUNonIdleTime - kubepodsCPUTime
 
 	// for metrics and logging
 	overallCPUNonIdleTimePercent := overallCPUNonIdleTime * 100
 	kubepodsCPUTimePercent := kubepodsCPUTime * 100
 	systemSliceCPUTimePercent := systemSliceCPUTime * 100
 
+	log.Debugf("CPU total via /proc/stat: %.2f percent| non-pod processes: %.2f percent | system.slice via cgroupfs: %.2f percent | kubepods via cgroupfs: %.2f percent", overallCPUNonIdleTimePercent, cpuUsageNonPodProcesses * 100, systemSliceCPUTimePercent, kubepodsCPUTimePercent)
 
-	log.Infof("CPU usage: CPU usage overall: %.2f | Total without kubepods: %.2f percent | system.slice via cgroupfs: %.2f percent | kubepods via cgroupfs: %.2f percent", overallCPUNonIdleTimePercent, overallCPUUsageWithoutKubepods * 100, systemSliceCPUTimePercent, kubepodsCPUTimePercent)
+	// For the calculation, take the higher of the two cpu utilisations reported for system.slice
+	//  -> They should in theory be identical, but are mostly a bit different probably due to best-effort accounting on the cgroup
+	//  -> this might cause a slight over-reservation
+	cpuTimeNonPodProcesses := systemSliceCPUTime
+	if cpuUsageNonPodProcesses > systemSliceCPUTime {
+		cpuTimeNonPodProcesses = cpuUsageNonPodProcesses
+	}
 
 	// Uses the same formula from above (just resolved to the target kubepodsCPUShares and not using percent (not multiplied by 100)).
 	// We know the:
-		// systemSliceCPUShares -> from cgroupfs (sibling of kubepods)
-		// overallCPUUsageWithoutKubepods (like systemSliceCPUTime in above formula, only precisely measure via /proc/stats and as if it would be the total CPU usage)
+		// - systemSliceCPUShares -> from cgroupfs (sibling of kubepods)
+		// - cpuUsageNonPodProcesses (like systemSliceCPUTime in above formula, only precisely measure via /proc/stats and as if it would be the total CPU usage)
 
-	// Caveat: in this formula, system.slice is the only cgroup sibling of kubepods that is considered to consume any CPU shares (measured via /proc/stats - kubepods consumption)
-	// this can lead to inaccurate target cpu shares for kubepods if  there are other cgroups that consume much CPU time
+	// Caveat: in this formula, system.slice is the only cgroup sibling of kubepods that is considered to consume any CPU shares (measured via /proc/stats - kubepods consumption).
+	// This can lead to inaccurate target cpu shares for kubepods if  there are other cgroups that consume much CPU time
 	//   - the ratio between the kubepods cpu shares and the other cgroups will be off (because we calculate as if there are only 2 cgroups)
 	// Hierarchically, we assume:
 	// L0: root
 	// L1 - system.slice(usually 1024 shares) , kubepods (to be calculated)
-	kubepodsTargetCPUShares := int64(((float64(systemSliceCPUShares) * float64(numCPU)) / overallCPUUsageWithoutKubepods) - float64(systemSliceCPUShares))
-	log.Infof("CPU shares: kubepods current: %d | kubepods target: %d | system.slice current: %d", kubepodsCPUShares, kubepodsTargetCPUShares, systemSliceCPUShares)
+	// Example:
+	//  - system.slice: 1024 shares
+	//  - CPU usage non-pod processes according to /proc/stat: 37.69% (calculated via total from /proc/stat - measurement for kubepods from cgroup)
+	//  - kubepods cpu usage via cgroupfs: 206.99 percent
+	//  - numCores = 16
+	// Goal: we want that system.slice gets only 37.69% CPU time via CPU Shares
+	// 42446 shares = ((1024 * 16) / 0.3769) - 1024
+	// This makes sense (surprisingly) as that means that system.slice only gets 2.5% (42446 / 1024) of total CPU time. Which over all cores is 38.5 % (that's what we want).
+	// Of course, if kubepods requires much more CPU it might also be that system.slice requires more than only 38.5 %, then this will be visible when executing the recommender again.
+	kubepodsTargetCPUShares := int64(((float64(systemSliceCPUShares) * float64(numCPU)) / cpuTimeNonPodProcesses) - float64(systemSliceCPUShares))
+	log.Debugf("CPU shares: kubepods current: %d | kubepods target: %d | system.slice current: %d", kubepodsCPUShares, kubepodsTargetCPUShares, systemSliceCPUShares)
 
 	// totalCPUShares set by the kubelet based on the amount of cores (not a Linux requirement)
 	totalCPUShares := numCPU * 1024
@@ -151,8 +168,11 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 
 		// Please also note: Kubernetes STATICALLY SETS (or: does not change) the systems.slice cpu.shares to 1024
 		// this is a problem, as cpu.shares work as a ratio against its siblings
-		// See: https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-821224980
 		// targetKubeReservedCPU = defaultMinimumReservedCPU
+		// Hence, unfortunately, enforcing CPU reservations does not make any sense at this point
+		// - Please see: https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-897217732
+		// - Problem: By reserving 5 cores on a 94 core machine, Linux actually only granted 0.1 cores more in relation to system.slice.
+		// => the scheduler prevents actual workload of 5 cores to be scheduled which makes it not usable -,-
 		targetKubeReservedCPU = 0
 		log.Debugf("defaulting reserved CPU to minimum")
 	}
@@ -161,17 +181,43 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 	// it can be deduced by looking at the kubepods cpu.shares
 	currentKubeReservedCPU := totalCPUShares - kubepodsCPUShares
 
-	if currentKubeReservedCPU == targetKubeReservedCPU {
-		log.Infof("CPU RECOMMENDATION: Reserved CPU of %dm fits recommendation", currentKubeReservedCPU)
-	} else if currentKubeReservedCPU - targetKubeReservedCPU > 0 {
-		action := "DECREASE"
-		log.Infof("CPU RECOMMENDATION: %s reserved CPU from %dm to %dm", action, currentKubeReservedCPU, targetKubeReservedCPU)
-	} else {
-		action := "INCREASE"
-		log.Infof("CPU RECOMMENDATION: %s reserved CPU from %dm to %dm", action, currentKubeReservedCPU, targetKubeReservedCPU)
-	}
+	log.Debugf("Recommended reserved CPU: %dm (current: %dm). Reason: reserving %.2f percent CPU for non-pod processes requires %d CPU shares for kubepods with system.slice having %d CPU shares.", targetKubeReservedCPU, currentKubeReservedCPU, cpuUsageNonPodProcesses * 100, kubepodsTargetCPUShares, systemSliceCPUShares)
+
+	logRecommendation(
+		overallCPUNonIdleTimePercent,
+		systemSliceGuaranteedCPUTimePercent,
+		kubepodsGuaranteedCPUTimePercent,
+		kubepodsCPUShares,
+		cpuUsageNonPodProcesses * 100,
+		systemSliceCPUTimePercent,
+		kubepodsCPUTimePercent,
+		targetKubeReservedCPU,
+		currentKubeReservedCPU,
+		kubepodsTargetCPUShares,
+		systemSliceCPUShares)
 
 	// record prometheus metrics
+	recordMetrics(
+		numCPU,
+		systemSliceGuaranteedCPUTimePercent,
+		kubepodsCPUTimePercent,
+		systemSliceCPUTimePercent,
+		overallCPUNonIdleTimePercent,
+		currentKubeReservedCPU,
+		targetKubeReservedCPU,
+		kubepodsGuaranteedCPUTimePercent)
+
+	return nil
+}
+
+func recordMetrics(numCPU int64,
+	systemSliceGuaranteedCPUTimePercent float64,
+	kubepodsCPUTimePercent float64,
+	systemSliceCPUTimePercent float64,
+	overallCPUNonIdleTimePercent float64,
+	currentKubeReservedCPU int64,
+	targetKubeReservedCPU int64,
+	kubepodsGuaranteedCPUTimePercent float64) {
 	metricCores.Set(float64(numCPU))
 	metricSystemSliceMinGuaranteedCPU.Set(math.Round(systemSliceGuaranteedCPUTimePercent))
 	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
@@ -189,9 +235,37 @@ func ReconcileKubeReservedCPU(log *logrus.Logger, reconciliationPeriod time.Dura
 
 	systemSliceFreeCPUTime := systemSliceGuaranteedCPUTimePercent - systemSliceCPUTimePercent
 	metricSystemSliceFreeCPUTime.Set(systemSliceFreeCPUTime)
+}
 
-	quantity := resource.MustParse(fmt.Sprintf("%dm", targetKubeReservedCPU))
-	return &quantity, nil
+func logRecommendation(
+	overallCPUNonIdleTimePercent float64,
+	systemSliceGuaranteedCPUTimePercent float64,
+	kubepodsGuaranteedCPUTimePercent float64,
+	currentKubepodsCPUShares int64,
+	cpuUsageNonPodProcesses float64,
+	systemSliceCPUTimePercent float64,
+	kubepodsCPUTimePercent float64,
+	targetKubeReservedCPU int64,
+	currentKubeReservedCPU int64,
+	kubepodsTargetCPUShares int64,
+	systemSliceCPUShares int64) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"CPU Metric", "Value"})
+
+	t.AppendRows([]table.Row{
+		{"Total CPU usage via /proc/stat", fmt.Sprintf("%.2f%%", overallCPUNonIdleTimePercent)},
+		{"Current guaranteed CPU time", fmt.Sprintf("system.slice: %.2f%% | kubepods: %.2f%%", systemSliceGuaranteedCPUTimePercent, kubepodsGuaranteedCPUTimePercent)},
+		{"Current CPU shares", fmt.Sprintf("system.slice: %d | kubepods: %d", systemSliceCPUShares, currentKubepodsCPUShares)},
+		{"CPU usage non-pod processes", fmt.Sprintf("%.2f%%", cpuUsageNonPodProcesses)},
+		{"CPU usage system.slice (cgroupfs)", fmt.Sprintf("%.2f%%", systemSliceCPUTimePercent)},
+		{"CPU usage kubepods (cgroupfs)", fmt.Sprintf("%.2f%%", kubepodsCPUTimePercent)},
+		{"Current reservation", fmt.Sprintf("%dm", currentKubeReservedCPU)},
+	})
+
+	t.AppendSeparator()
+	t.AppendRow(table.Row{"RECOMMENDATION", fmt.Sprintf("%dm (kubepods CPU shares: %d)", targetKubeReservedCPU, kubepodsTargetCPUShares)})
+	t.Render()
 }
 
 // getCPUStat reads a numerical cgroup stat from the cgroupFS
@@ -206,11 +280,10 @@ func getCPUStat(cgroupsHierarchyCPU, cgroup, cpuStat string) (int64, error) {
 }
 
 // measureAverageCPUUsage measures the relative CPU usage of the kubepods and system.slice cgroup over a period of time
-// compared to the overall CPU time of all CPU cores
-// a return value of 1.1 means that the cgroup has used 110% of the CPU time of one core
-func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, reconciliationPeriod time.Duration) (float64, float64, float64, error) {
+// compared to the overall CPU time of all CPU cores.
+// A return value of 1.1 means that the cgroup has used 110% of the CPU time of one core
+func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, period time.Duration, numCPU int64) (float64, float64, float64, error) {
 	startSystemSlice := time.Now().UnixNano()
-
 	startSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUUsage)
 	if err != nil {
 		return 0, 0, 0, err
@@ -223,13 +296,12 @@ func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, reco
 	}
 
 	// measure CPU usage outside kubepods with /proc/stats
-	startCPUTime, startIdleCPUTime, err := readProcStats(err)
+	startTotalCPUTime, startIdleCPUTime, err := readProcStats(err)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
-	duration := reconciliationPeriod / 2
-	time.Sleep(duration)
+	time.Sleep(period)
 
 	stopSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUUsage)
 	if err != nil {
@@ -249,20 +321,22 @@ func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, reco
 		return 0, 0, 0, err
 	}
 
-
-	// /proc/stats cpu stats are in given in Jiffies (duration of 1 tick of the system timer interrupt.)
+	// For more information on CPU usage calculation using /proc/stats, please refer to: https://rosettacode.org/wiki/Linux_CPU_utilization
+	// - /proc/stats cpu stats are in given in Jiffies (duration of 1 tick of the system timer interrupt.)
 	// So we cannot just divide the diff by the elapsed time measure with time.Now() - nanoseconds.
 	// First would need to convert the Jiffies to nanoseconds using USR_HERTZ -> the length of a clock tick.
 	// It is easier however, to just calculate the relation between idling and processing CPU time to get the usage during sleep()
-	diffTotal := stopTotalCPUTime - startCPUTime
+	diffTotal := stopTotalCPUTime - startTotalCPUTime
 	diffIdle := stopIdleCPUTime - startIdleCPUTime
 	log.Debugf("Jiffie diff total: %d | diffIdle: %d", diffTotal, diffIdle)
-	procStatOverallCPUUsage := (float64(diffTotal) - float64(diffIdle)) / float64(diffTotal)
-	log.Debugf("Overall CPU usage is %.2f percent", procStatOverallCPUUsage * 100)
 
+	idleQuotient := float64(diffIdle) / float64(diffTotal)
+	procStatOverallCPUUsage := (1 - idleQuotient) * float64(numCPU)
+	log.Debugf("CPU usage from /proc/stat is %.2f percent (%.2f cores of %d)", procStatOverallCPUUsage * 100, procStatOverallCPUUsage, numCPU)
 
 	elapsedTimeKubepods := float64(stopKubepods) - float64(startKubepods)
 	elapsedTimeSystemSlice := float64(stopSystemSlice) - float64(startSystemSlice)
+
 	systemSliceRelativeCPUUsage := (float64(stopSystemSliceCPUUsage) - float64(startSystemSliceCPUUsage)) / elapsedTimeSystemSlice
 	kubepodsRelativeCPUUsage := (float64(stopKubepodsCPUUsage) - float64(startKubepodsCPUUsage)) / elapsedTimeKubepods
 	return procStatOverallCPUUsage, systemSliceRelativeCPUUsage, kubepodsRelativeCPUUsage, nil
@@ -274,7 +348,7 @@ func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, reco
 func readProcStats(err error) (uint64, uint64, error) {
 	statsCurr, err := linuxproc.ReadStat("/proc/stat")
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to rad from /proc/stat to determine current CPU usage")
+		return 0, 0, fmt.Errorf("failed to read from /proc/stat to determine current CPU usage")
 	}
 
 	// time spent since system startKubepods on CPU idle or IO Wait
@@ -287,9 +361,10 @@ func readProcStats(err error) (uint64, uint64, error) {
 		statsCurr.CPUStatAll.System +
 		statsCurr.CPUStatAll.IRQ +
 		statsCurr.CPUStatAll.SoftIRQ +
+		statsCurr.CPUStatAll.GuestNice +
 		statsCurr.CPUStatAll.Steal +
 			// also add idle to make up total
 			idleCPUTime
+
 	return totalCPUTime, idleCPUTime, nil
 }
-

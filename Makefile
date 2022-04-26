@@ -2,12 +2,12 @@ DATE=$(shell date -u +%Y-%m-%d)
 VERSION=$(shell cat VERSION | sed 's/-dev//g')
 EFFECTIVE_VERSION:=$(VERSION)-$(shell git rev-parse HEAD)
 
-REGISTRY                               := eu.gcr.io/gardener-project/gardener
-IMAGE_REPOSITORY             := $(REGISTRY)/better-resource-reservations
+REGISTRY                     := eu.gcr.io/gardener-project/gardener
+IMAGE_REPOSITORY             := $(REGISTRY)/reserved-resources-recommender
 
 .PHONY: format
 format:
-	@./hack/format.sh main.go
+	@go fmt
 
 .PHONY: build
 build:
@@ -21,7 +21,13 @@ revendor:
 	@GO111MODULE=on go mod vendor
 	@GO111MODULE=on go mod tidy
 
-.PHONY: docker-images
-docker-images:
-	@echo "Building docker image with version and tag $(EFFECTIVE_VERSION)"
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION)  -t $(IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -t $(IMAGE_REPOSITORY):latest  -f Dockerfile .
+.PHONY: images
+images:
+	@echo "Building OCI image with version and tag $(EFFECTIVE_VERSION)"
+	@nerdctl build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION)  -t $(IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile .
+	@nerdctl tag eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:$(EFFECTIVE_VERSION) eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
+
+.PHONY: push-images
+push-images:
+	@echo "Pushing OCI image with version and tag $(EFFECTIVE_VERSION)"
+	@nerdctl push eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest

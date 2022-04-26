@@ -1,11 +1,11 @@
-FROM golang:1.16.4 AS builder
+FROM golang:1.17.9 AS builder
 
 WORKDIR /
 COPY . .
 
 RUN make build
 
-FROM alpine:3.9 AS runner
+FROM alpine:3.13.2 AS runner
 
 COPY --from=builder /reserved_linux_amd64 /reserved_linux_amd64
 

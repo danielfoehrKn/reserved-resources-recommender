@@ -50,7 +50,6 @@ printf "cgroup $cgroup: %.2f percent CPU \n" $system_slice_actual_usage_percenta
 # calculate if system.slice gets enough CPU time
 # if it does not, kube.reserved CPU has to be increased in order to decrease the CPU shares
 # on the kubepods cgroup
-
 kubepods_target_cpu_shares=$(bc -l <<EOF
  (($system_slice_cpu_shares * $num_cpu_cores) / $system_slice_actual_usage) - $system_slice_cpu_shares
 EOF
@@ -79,10 +78,7 @@ kubepods_target_cpu_shares=$(printf "%.0f" $kubepods_target_cpu_shares)
 # Solution: K8s should also set the cpu.shares on the system.slice:
 # https://github.com/kubernetes/kubernetes/issues/72881#issuecomment-868452156
 
-
-
 printf "kubepods CPU shares. Current: %.0f. Target: %.0f \n" $kubepods_cpu_shares $kubepods_target_cpu_shares
-
 
 total_cpu_shares=$(bc -l <<EOF
  $num_cpu_cores * 1024

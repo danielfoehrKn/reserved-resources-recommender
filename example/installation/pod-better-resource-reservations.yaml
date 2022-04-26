@@ -5,26 +5,24 @@ metadata:
     kubernetes.io/psp: gardener.privileged
   labels:
     app: root
-    component: better-resource-reservations
+    component: reserved-resources-recommender
     networking.gardener.cloud/to-dns: allowed
     networking.gardener.cloud/to-shoot-apiserver: allowed
-  name: better-resource-reservations
+  name: reserved-resources-recommender
 spec:
 #  priorityClassName: system-cluster-critical
   containers:
-    - image: eu.gcr.io/gardener-project/gardener/better-resource-reservations@sha256:6ad52db3045bf7b4bcba96f50bfbf98313885e1d5174645db7902ebe44883810
+    - image: eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
       imagePullPolicy: Always
       name: reconciler
       env:
-        - name: ENFORCE_RECOMMENDATION
-          value: "false"
-        - name: MIN_DELTA_ABSOLUTE
-          value: 2Mi
-        - name: MIN_THRESHOLD_PERCENT
-#          0.2 means that it only starts working when available memory < 20 %
-          value: "0.9"
-        - name: KUBELET_CONFIG_PATH
-          value: "/Users/d060239/go/src/github.com/danielfoehrkn/better-resource-reservations/example/kubelet/config"
+        - name: MEMORY_SAFETY_MARGIN_ABSOLUTE
+          value: 100Mi
+        - name: CGROUPS_HIERARCHY_ROOT
+          value: "/sys/fs/cgroup"
+        - name: KUBELET_DIRECTORY
+          # also adjust Volume if this is changed
+          value: "/var/lib/kubelet/"
       resources:
         requests:
           memory: "16Mi"
@@ -39,12 +37,12 @@ spec:
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
       volumeMounts:
-        - mountPath: /run/systemd/private
-          name: systemd
+#        - mountPath: /run/systemd/private
+#          name: systemd
         - mountPath: /proc/meminfo
           name: proc
-        - mountPath: /var/lib/kubelet/config/kubelet
-          name: kubelet-config
+        - mountPath: /var/lib/kubelet
+          name: kubelet
 #        - mountPath: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
 #          name: kubelet-dynamic-resource-reservations-socket
         - mountPath: /sys/fs/cgroup
@@ -53,7 +51,7 @@ spec:
   enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-250-0-160.eu-central-1.compute.internal
+  nodeName: shoot--d060239--dev-seed-gcp-test-z1-5f5fc-d5bm4
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
@@ -74,25 +72,21 @@ spec:
       operator: Equal
       value: etcd
   volumes:
+#    - hostPath:
+#        path: /run/systemd/private
+#        type: ""
+#      name: systemd
     - hostPath:
-        path: /run/systemd/private
+        path: /var/lib/kubelet
         type: ""
-      name: systemd
+      name: kubelet
     - hostPath:
         path: /proc/meminfo
         type: ""
       name: proc
     - hostPath:
-        path: /var/lib/kubelet/config/kubelet
-        type: ""
-      name: kubelet-config
-#    - hostPath:
-#        path: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
-        # will fail if the kibelet does not use the dynamic-resource-reservations flag
-#        type: "File"
-#      name: kubelet-dynamic-resource-reservations-socket
-    - hostPath:
         path: /sys/fs/cgroup
         type: ""
       name: cgroup-hierarchy
+      # TODO: add all host paths for disk based calculations
 
