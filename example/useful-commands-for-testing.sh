@@ -33,18 +33,20 @@ watch "kubectl get pod debugpod-d060239 -o json | jq -r .spec.nodeName |  read n
 # kubelet eviction happened
 journalctl -u kubelet -f | grep -i "pods ranked"
 
-# metrics from single pods
+# metrics from single pod
 k port-forward pod/better-resource-reservations-<pod-id-from-daemonset>  16911:16911
 watch 'curl localhost:16911/metrics | grep -e "node_memory" -e "kubelet_"'
 curl localhost:16911/metrics | grep -e "node_cgroup_" -e "kubelet_"
 
 # metrics via prometheus, visit http://localhost:8080/targets
-kubectl port-forward svc/prometheus-web 8080:9090 -n monitoring
+k port-forward svc/prometheus-web 8080:9090 -n monitoring
 
 # grafana (default password and user: admin)
 #visit http://localhost:3000
-kubectl port-forward svc/grafana 3000:3000 -n monitoring
+k port-forward svc/grafana-reserved-resources-recommender 3000:3000
 # configure data source with URL: prometheus-web:9090
+
+# the $node varible: label_values(kubelet_target_reserved_cpu{job="reserved-resources-recommender"}, instance)
 
 
 # get pod for pod ip displayed in the Grafana Dashboards  (I do not have a label with the pod name)

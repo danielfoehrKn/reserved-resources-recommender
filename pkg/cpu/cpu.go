@@ -8,10 +8,10 @@ import (
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 const (
@@ -70,9 +70,9 @@ var (
 	})
 )
 
-// RecommendReservedCPU reconciles the current kube-reserved CPU settings against
-// the actual (target) CPU consumption of system.slice
-func RecommendReservedCPU(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string, numCPU int64) error {
+// RecommendCPUReservations recommends kubelet CPU reservations by
+// measuring overall, kubepods and system.slice CPU consumption and comparing those measurements against current CPU reservations (based on CPU shares of the cgroups)
+func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string, numCPU int64) error {
 	cgroupsHierarchyCPU := fmt.Sprintf("%s/cpu", cgroupsHierarchyRoot)
 
 	systemSliceCPUShares, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUShares)
@@ -223,7 +223,6 @@ func recordMetrics(numCPU int64,
 	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
 	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
 	metricOverallCPUUsagePercent.Set(math.Round(overallCPUNonIdleTimePercent))
-	// TODO: add metric that calculates the normal overall CPU utilisation of the node as: (metricOverallCPUUsagePercent/num_cores)
 	metricCurrentReservedCPU.Set(float64(currentKubeReservedCPU))
 	metricTargetReservedCPU.Set(float64(targetKubeReservedCPU))
 

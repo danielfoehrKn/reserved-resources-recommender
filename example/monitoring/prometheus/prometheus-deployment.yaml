@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus-deployment-better-resource-reservations
+  name: prometheus-deployment-reserved-resources-recommender
 #  namespace: monitoring
   labels:
     app: prometheus-server
@@ -15,11 +15,16 @@ spec:
       labels:
         app: prometheus-server
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        runAsGroup: 65534
+        fsGroup: 2000
       containers:
         - name: prometheus
           image: prom/prometheus
           args:
-            - "--storage.tsdb.retention.time=12h"
+            - "--storage.tsdb.retention.time=128h"
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus/"
           ports:
@@ -41,23 +46,8 @@ spec:
         - name: prometheus-config-volume
           configMap:
             defaultMode: 420
-            name: prometheus-server-conf
+            name: prometheus-server-conf-reserved-resources-recommender
 
         - name: prometheus-storage-volume
-          emptyDir: {}
-
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: prometheus-web
-#  namespace: monitoring
-spec:
-  ports:
-    - port: 9090
-      protocol: TCP
-  selector:
-    app: prometheus-server
-  sessionAffinity: None
-  type: ClusterIP
+          persistentVolumeClaim:
+            claimName: prometheus-reserved-resources-recommender

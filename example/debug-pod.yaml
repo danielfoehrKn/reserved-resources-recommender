@@ -14,14 +14,14 @@ spec:
     - image: nicolaka/netshoot
       imagePullPolicy: Always
       name: root-container
-      resources:
-#         QoS garuanteed to make sure evicted late by kubelet and Linux OOM killer (oom_score_adj is low)
-        requests:
-          memory: "1Gi"
-          cpu: "500m"
-        limits:
-          memory: "1Gi"
-          cpu: "500m"
+#      resources:
+##       QoS guaranteed to make sure evicted late by kubelet and Linux OOM killer (oom_score_adj is low)
+#        requests:
+#          memory: "1Gi"
+#          cpu: "500m"
+#        limits:
+#          memory: "1Gi"
+#          cpu: "500m"
       securityContext:
         privileged: true
         runAsUser: 0
@@ -39,7 +39,7 @@ spec:
   enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: shoot--d060239--dev-seed-gcp-test-z1-5f5fc-d5bm4
+#  nodeName: gardener-local-control-plane
 #  nodeName: ip-10-242-24-151.eu-central-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler

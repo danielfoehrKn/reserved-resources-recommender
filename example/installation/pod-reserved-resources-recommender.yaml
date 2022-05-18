@@ -16,20 +16,26 @@ spec:
       imagePullPolicy: Always
       name: reconciler
       env:
+        - name: PERIOD
+          value: "30s"
         - name: MEMORY_SAFETY_MARGIN_ABSOLUTE
-          value: 100Mi
+          value: 200Mi
         - name: CGROUPS_HIERARCHY_ROOT
           value: "/sys/fs/cgroup"
-        - name: KUBELET_DIRECTORY
+        - name: CGROUPS_CONTAINERD_ROOT
+          value: "system.slice/containerd.service"
+        - name: CGROUPS_KUBELET_ROOT
+          value: "system.slice/kubelet.service"
           # also adjust Volume if this is changed
+        - name: KUBELET_DIRECTORY
           value: "/var/lib/kubelet/"
       resources:
         requests:
           memory: "16Mi"
           cpu: "20m"
-        limits:
-          memory: "30Mi"
-          cpu: "40m"
+#        limits:
+#          memory: "30Mi"
+#          cpu: "40m"
       securityContext:
         privileged: true
         runAsUser: 0
@@ -37,21 +43,29 @@ spec:
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
       volumeMounts:
-#        - mountPath: /run/systemd/private
-#          name: systemd
-        - mountPath: /proc/meminfo
-          name: proc
-        - mountPath: /var/lib/kubelet
-          name: kubelet
-#        - mountPath: /var/lib/kubelet/dynamic-resource-reservations/kubelet.sock
-#          name: kubelet-dynamic-resource-reservations-socket
-        - mountPath: /sys/fs/cgroup
-          name: cgroup-hierarchy
+        - name: kubelet
+          mountPath: /var/lib/kubelet
+          readOnly: true
+        - name: cgroup-hierarchy
+          mountPath: /sys/fs/cgroup
+          readOnly: true
+        - name: dev
+          mountPath: /dev
+          readOnly: true
+        - name: containerd-root
+          mountPath: /var/lib/containerd
+          readOnly: true
+        - name: containerd-state
+          mountPath: /run/containerd
+          readOnly: true
+        - name: pod-logs
+          mountPath: /var/log/pods
+          readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: shoot--d060239--dev-seed-gcp-test-z1-5f5fc-d5bm4
+  nodeName: ip-10-242-28-239.eu-west-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
@@ -72,21 +86,34 @@ spec:
       operator: Equal
       value: etcd
   volumes:
-#    - hostPath:
-#        path: /run/systemd/private
-#        type: ""
-#      name: systemd
-    - hostPath:
+    - name: kubelet
+      hostPath:
         path: /var/lib/kubelet
-        type: ""
-      name: kubelet
-    - hostPath:
-        path: /proc/meminfo
-        type: ""
-      name: proc
-    - hostPath:
+        type: "Directory"
+    - name: cgroup-hierarchy
+      hostPath:
         path: /sys/fs/cgroup
-        type: ""
-      name: cgroup-hierarchy
-      # TODO: add all host paths for disk based calculations
+        type: "Directory"
+    - name: dev
+      hostPath:
+        path: /dev
+        type: "Directory"
+    - name: containerd-root
+      hostPath:
+        path: /var/lib/containerd
+        type: "Directory"
+    - name: containerd-state
+      hostPath:
+        path: /run/containerd
+        type: "Directory"
+    - name: pod-logs
+      hostPath:
+        path: /var/log/pods
+        type: "Directory"
+
+      #    - name: proc
+#      hostPath:
+#        path: /proc/meminfo
+#        type: "Directory"
+
 

@@ -13,5 +13,5 @@ data:
         path: /var/lib/grafana/dashboards
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-providers
+  name: grafana-dashboard-providers-reserved-resources-recommender
 #  namespace: monitoring

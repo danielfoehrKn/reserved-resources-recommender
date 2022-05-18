@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/cpu"
+	"github.com/danielfoehrkn/better-kube-reserved/pkg/disk"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/memory"
 	"github.com/dustin/go-humanize"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -19,9 +20,10 @@ import (
 
 const (
 	defaultMemorySafetyMarginAbsolute = "100Mi"
-	defaultCgroupsHierarchyRoot       = "/sys/fs/cgroup"
-	// TODO: required for the disk-based reservation recommendation
-	defaultKubeletDirectory = "/var/lib/kubelet/"
+	defaultCgroupsHierarchyRoot           = "/sys/fs/cgroup"
+	defaultContainerdCgroupsHierarchyRoot = "system.slice/containerd.service"
+	defaultKubeletCgroupsHierarchyRoot    = "system.slice/kubelet.service"
+	defaultKubeletDirectory               = "/var/lib/kubelet/"
 )
 
 var (
@@ -40,6 +42,12 @@ var (
 	// cgroupsHierarchyRoot defines where the root of the cgroup fs is mounted
 	// defaults to "/sys/fs/cgroup"
 	cgroupsHierarchyRoot string
+	// containerdCgroupsRoot defines where the root of the containerd's cgroup fs is mounted under the cgroups hierarchy root
+	// defaults to "system.slice/containerd.service"
+	containerdCgroupsRoot string
+	// kubeletCgroupsRoot defines where the root of the kubelet's cgroup fs is mounted under the cgroups hierarchy root
+	// defaults to "system.slice/kubelet.service"
+	kubeletCgroupsRoot string
 	// period is the measurement period (e.g every 30 seconds).
 	// The recommender also uses this time to check the cpu reservation
 	period time.Duration
@@ -49,6 +57,8 @@ func init() {
 	kubeletDirectory = os.Getenv("KUBELET_DIRECTORY")
 	memorySafetyMarginString := os.Getenv("MEMORY_SAFETY_MARGIN_ABSOLUTE")
 	cgroupsHierarchyRoot = os.Getenv("CGROUPS_HIERARCHY_ROOT")
+	containerdCgroupsRoot = os.Getenv("CGROUPS_CONTAINERD_ROOT")
+	kubeletCgroupsRoot = os.Getenv("CGROUPS_KUBELET_ROOT")
 	periodString := os.Getenv("PERIOD")
 
 	if len(kubeletDirectory) == 0 {
@@ -63,6 +73,14 @@ func init() {
 
 	if len(cgroupsHierarchyRoot) == 0 {
 		cgroupsHierarchyRoot = defaultCgroupsHierarchyRoot
+	}
+
+	if len(containerdCgroupsRoot) == 0 {
+		containerdCgroupsRoot = defaultContainerdCgroupsHierarchyRoot
+	}
+
+	if len(kubeletCgroupsRoot) == 0 {
+		kubeletCgroupsRoot = defaultKubeletCgroupsHierarchyRoot
 	}
 
 	if len(periodString) == 0 {
@@ -102,7 +120,9 @@ func main() {
 	}, period * 2, ctx.Done())
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":16911", nil)
+	if err := http.ListenAndServe(":16911", nil); err != nil {
+		log.Fatalf("terminating server: %v", err)
+	}
 	log.Warnf("terminating server....")
 }
 
@@ -112,16 +132,22 @@ func main() {
 // - CPU -> Goal: Give fair amount of CPU shares to kubepods cgroup still leaving enough CPU time for non-pod processes (container runtime, kubelet, ...) to operate.
 // - Disk -> Goal: Accurate disk reservations allows good scheduling decisions for pods with ephemeral size requests
 func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64) error {
-	// does not return a recommendation when CPU resource reservations should be updated
-	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
-	if err := cpu.RecommendReservedCPU(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU); err != nil {
-		return fmt.Errorf("failed to to reconcile reserved cpu: %w", err)
+	if err := disk.RecommendDiskReservation(log, "", "", ""); err != nil {
+		return fmt.Errorf("failed to make disk recommendation: %w", err)
 	}
 
 	fmt.Println("")
 
-	if err := memory.RecommendReservedMemory(log, memorySafetyMarginAbsolute); err != nil {
-		return fmt.Errorf("failed to to reconcile reserved memory: %w", err)
+	// does not return a recommendation when CPU resource reservations should be updated
+	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
+	if err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU); err != nil {
+		return fmt.Errorf("failed to make CPU recommendation: %w", err)
+	}
+
+	fmt.Println("")
+
+	if err := memory.RecommendReservedMemory(log, memorySafetyMarginAbsolute, cgroupsHierarchyRoot, containerdCgroupsRoot, kubeletCgroupsRoot); err != nil {
+		return fmt.Errorf("failed to make memory recommendation: %w", err)
 	}
 
 	return nil

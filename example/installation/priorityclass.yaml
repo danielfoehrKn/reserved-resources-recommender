@@ -1,7 +1,7 @@
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: better-resource-reservations
+  name: reserved-resources-recommender
 value: 1000000000
 globalDefault: false
-description: "This class is used to ensure that the better-resource-reservations pod has a high priority and is not preempted in favor of other pods."
+description: "This class is used to ensure that the reserved-resources-recommender pod has a high priority and is not preempted in favor of other pods."

@@ -10,15 +10,15 @@ data:
     - name: prometheus
       type: prometheus
       access: proxy
-      url: prometheus-web:9090
+      url: prometheus-web-reserved-resources-recommender:9090
       basicAuth: false
       isDefault: true
       version: 1
       editable: false
       jsonData:
-        timeInterval: 5s
+        timeInterval: 10s
         httpMethod: POST
 kind: ConfigMap
 metadata:
-  name: grafana-datasources-better-resource-reservations
+  name: grafana-datasources-reserved-resources-recommender
 #  namespace: monitoring

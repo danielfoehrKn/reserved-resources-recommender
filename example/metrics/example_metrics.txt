@@ -1,0 +1,259 @@
+$ curl localhost:16911/metrics
+
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 0
+go_gc_duration_seconds{quantile="0.25"} 0
+go_gc_duration_seconds{quantile="0.5"} 0
+go_gc_duration_seconds{quantile="0.75"} 0
+go_gc_duration_seconds{quantile="1"} 0
+go_gc_duration_seconds_sum 0
+go_gc_duration_seconds_count 0
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 9
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.17.9"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 2.030008e+06
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated, even if freed.
+# TYPE go_memstats_alloc_bytes_total counter
+go_memstats_alloc_bytes_total 2.030008e+06
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table.
+# TYPE go_memstats_buck_hash_sys_bytes gauge
+go_memstats_buck_hash_sys_bytes 4731
+# HELP go_memstats_frees_total Total number of frees.
+# TYPE go_memstats_frees_total counter
+go_memstats_frees_total 453
+# HELP go_memstats_gc_cpu_fraction The fraction of this program's available CPU time used by the GC since the program started.
+# TYPE go_memstats_gc_cpu_fraction gauge
+go_memstats_gc_cpu_fraction 0
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata.
+# TYPE go_memstats_gc_sys_bytes gauge
+go_memstats_gc_sys_bytes 4.134848e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 2.030008e+06
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used.
+# TYPE go_memstats_heap_idle_bytes gauge
+go_memstats_heap_idle_bytes 4.481024e+06
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 3.416064e+06
+# HELP go_memstats_heap_objects Number of allocated objects.
+# TYPE go_memstats_heap_objects gauge
+go_memstats_heap_objects 8419
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS.
+# TYPE go_memstats_heap_released_bytes gauge
+go_memstats_heap_released_bytes 4.448256e+06
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system.
+# TYPE go_memstats_heap_sys_bytes gauge
+go_memstats_heap_sys_bytes 7.897088e+06
+# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+# TYPE go_memstats_last_gc_time_seconds gauge
+go_memstats_last_gc_time_seconds 0
+# HELP go_memstats_lookups_total Total number of pointer lookups.
+# TYPE go_memstats_lookups_total counter
+go_memstats_lookups_total 0
+# HELP go_memstats_mallocs_total Total number of mallocs.
+# TYPE go_memstats_mallocs_total counter
+go_memstats_mallocs_total 8872
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 19200
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system.
+# TYPE go_memstats_mcache_sys_bytes gauge
+go_memstats_mcache_sys_bytes 32768
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 63104
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system.
+# TYPE go_memstats_mspan_sys_bytes gauge
+go_memstats_mspan_sys_bytes 65536
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place.
+# TYPE go_memstats_next_gc_bytes gauge
+go_memstats_next_gc_bytes 4.473924e+06
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations.
+# TYPE go_memstats_other_sys_bytes gauge
+go_memstats_other_sys_bytes 827861
+# HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 491520
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator.
+# TYPE go_memstats_stack_sys_bytes gauge
+go_memstats_stack_sys_bytes 491520
+# HELP go_memstats_sys_bytes Number of bytes obtained from system.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes 1.3454352e+07
+# HELP go_threads Number of OS threads created.
+# TYPE go_threads gauge
+go_threads 6
+# HELP kubelet_current_reserved_cpu The current kubelet reserved CPU
+# TYPE kubelet_current_reserved_cpu gauge
+kubelet_current_reserved_cpu 82
+# HELP kubelet_plugin_size_bytes The size of kubelet plugins
+# TYPE kubelet_plugin_size_bytes gauge
+kubelet_plugin_size_bytes 12288
+# HELP kubelet_plugin_size_percent The size of kubelet plugins as (size / root_disk_capacity)
+# TYPE kubelet_plugin_size_percent gauge
+kubelet_plugin_size_percent 2.341549697884965e-05
+# HELP kubelet_reserved_memory_bytes The kubelet reserved memory in bytes as configured in the kubelet configuration file
+# TYPE kubelet_reserved_memory_bytes gauge
+kubelet_reserved_memory_bytes 1.073741824e+09
+# HELP kubelet_reserved_memory_percent The kubelet reserved memory in percent calculated as (current reserved memory / MemTotal)
+# TYPE kubelet_reserved_memory_percent gauge
+kubelet_reserved_memory_percent 2
+# HELP kubelet_target_reserved_cpu The target kubelet reserved CPU
+# TYPE kubelet_target_reserved_cpu gauge
+kubelet_target_reserved_cpu 0
+# HELP kubelet_target_reserved_disk_bytes The recommended reserved bytes for the kubelet disk reservation
+# TYPE kubelet_target_reserved_disk_bytes gauge
+kubelet_target_reserved_disk_bytes 3.679948183e+09
+# HELP kubelet_target_reserved_disk_percent The recommended reserved bytes for the kubelet disk reservation as (size / root_disk_capacity)
+# TYPE kubelet_target_reserved_disk_percent gauge
+kubelet_target_reserved_disk_percent 7.0123547820117
+# HELP kubelet_target_reserved_memory_bytes The target kubelet reserved memory calculated as MemTotal - MemAvailable - memory working set kubepods cgroup
+# TYPE kubelet_target_reserved_memory_bytes gauge
+kubelet_target_reserved_memory_bytes 1.3051232256e+10
+# HELP kubelet_target_reserved_memory_percent The target kubelet reserved memory in percent calculated as (target reserved memory / MemTotal)
+# TYPE kubelet_target_reserved_memory_percent gauge
+kubelet_target_reserved_memory_percent 20
+# HELP node_cgroup_containerd_service_memory_working_set_bytes The working set memory of the containerd cgroup in bytes
+# TYPE node_cgroup_containerd_service_memory_working_set_bytes gauge
+node_cgroup_containerd_service_memory_working_set_bytes 1.826453504e+10
+# HELP node_cgroup_containerd_service_memory_working_set_percent The working set memory of the containerd cgroup in percent of the total memory
+# TYPE node_cgroup_containerd_service_memory_working_set_percent gauge
+node_cgroup_containerd_service_memory_working_set_percent 28
+# HELP node_cgroup_kubelet_service_memory_working_set_bytes The working set memory of the kubelet cgroup in bytes
+# TYPE node_cgroup_kubelet_service_memory_working_set_bytes gauge
+node_cgroup_kubelet_service_memory_working_set_bytes 1.087852544e+09
+# HELP node_cgroup_kubelet_service_memory_working_set_percent The working set memory of the kubelet cgroup in percent of the total memory
+# TYPE node_cgroup_kubelet_service_memory_working_set_percent gauge
+node_cgroup_kubelet_service_memory_working_set_percent 2
+# HELP node_cgroup_kubepods_cpu_percent The CPU consumption of the kubepods cgroup in percent
+# TYPE node_cgroup_kubepods_cpu_percent gauge
+node_cgroup_kubepods_cpu_percent 210
+# HELP node_cgroup_kubepods_free_cpu_time The freely absolute available CPU time for the kubepods cgroup in percent (100 = 1 core)
+# TYPE node_cgroup_kubepods_free_cpu_time gauge
+node_cgroup_kubepods_free_cpu_time 1295.3105271814688
+# HELP node_cgroup_kubepods_memory_working_set_bytes The working set memory of the kubepods cgroup in bytes
+# TYPE node_cgroup_kubepods_memory_working_set_bytes gauge
+node_cgroup_kubepods_memory_working_set_bytes 2.0122763264e+10
+# HELP node_cgroup_kubepods_memory_working_set_percent The working set memory of the kubepods cgroup in percent of the total memory
+# TYPE node_cgroup_kubepods_memory_working_set_percent gauge
+node_cgroup_kubepods_memory_working_set_percent 31
+# HELP node_cgroup_system_slice_cpu_percent The CPU consumption of the system.slice cgroup in percent
+# TYPE node_cgroup_system_slice_cpu_percent gauge
+node_cgroup_system_slice_cpu_percent 41
+# HELP node_cgroup_system_slice_free_cpu_time The freely absolute available CPU time for the system.slice cgroup in percent (100 = 1 core)
+# TYPE node_cgroup_system_slice_free_cpu_time gauge
+node_cgroup_system_slice_free_cpu_time 53.681069737468505
+# HELP node_cgroup_system_slice_memory_working_set_bytes The working set memory of the system slice cgroup in bytes
+# TYPE node_cgroup_system_slice_memory_working_set_bytes gauge
+node_cgroup_system_slice_memory_working_set_bytes 2.4036614144e+10
+# HELP node_cgroup_system_slice_memory_working_set_percent The working set memory of the system slice cgroup in percent of the total memory
+# TYPE node_cgroup_system_slice_memory_working_set_percent gauge
+node_cgroup_system_slice_memory_working_set_percent 36
+# HELP node_cgroup_system_slice_min_guaranteed_cpu The minimum guaranteed CPU time of the system.slice cgroup based on the cpu.shares (1024)
+# TYPE node_cgroup_system_slice_min_guaranteed_cpu gauge
+node_cgroup_system_slice_min_guaranteed_cpu 95
+# HELP node_containerd_content_store_size_bytes The size of the containerd content store
+# TYPE node_containerd_content_store_size_bytes gauge
+node_containerd_content_store_size_bytes 4.524781276e+09
+# HELP node_containerd_content_store_size_percent The size of the containerd content store as (size / root_disk_capacity)
+# TYPE node_containerd_content_store_size_percent gauge
+node_containerd_content_store_size_percent 8.622233259939247
+# HELP node_containerd_overlayfs_snapshotter_size_bytes The size of the overlayfs snapshotter
+# TYPE node_containerd_overlayfs_snapshotter_size_bytes gauge
+node_containerd_overlayfs_snapshotter_size_bytes 1.3639532513e+10
+# HELP node_containerd_overlayfs_snapshotter_size_percent The size of the overlayfs snapshotter as (size / root_disk_capacity)
+# TYPE node_containerd_overlayfs_snapshotter_size_percent gauge
+node_containerd_overlayfs_snapshotter_size_percent 25.990920601487066
+# HELP node_containerd_state_size_bytes The size of the containerd state directory
+# TYPE node_containerd_state_size_bytes gauge
+node_containerd_state_size_bytes 1.361792e+07
+# HELP node_containerd_state_size_percent The size of the containerd state directory as (size / root_disk_capacity)
+# TYPE node_containerd_state_size_percent gauge
+node_containerd_state_size_percent 0.025949736703956398
+# HELP node_cpu_usage_percent The overall CPU usage based on /proc/stats
+# TYPE node_cpu_usage_percent gauge
+node_cpu_usage_percent 247
+# HELP node_disk_available_bytes The available bytes in the filesystem mounted on the root disk
+# TYPE node_disk_available_bytes gauge
+node_disk_available_bytes 2.8872429568e+10
+# HELP node_disk_available_percent The kubelet reserved memory in percent calculated as (size / root_disk_capacity)
+# TYPE node_disk_available_percent gauge
+node_disk_available_percent 55.01808978853787
+# HELP node_disk_reserved_bytes The available bytes in the filesystem mounted on the root disk
+# TYPE node_disk_reserved_bytes gauge
+node_disk_reserved_bytes 2.965581312e+09
+# HELP node_disk_reserved_percent The kubelet reserved memory in percent calculated as (size / root_disk_capacity)
+# TYPE node_disk_reserved_percent gauge
+node_disk_reserved_percent 5.651087260064207
+# HELP node_disk_used_bytes The available bytes in the filesystem mounted on the root disk
+# TYPE node_disk_used_bytes gauge
+node_disk_used_bytes 2.0640055296e+10
+# HELP node_disk_used_percent The kubelet reserved memory in percent calculated as (size / root_disk_capacity)
+# TYPE node_disk_used_percent gauge
+node_disk_used_percent 39.33082295139793
+# HELP node_memory_MemAvailable The MemAvailable from /proc/meminfo
+# TYPE node_memory_MemAvailable gauge
+node_memory_MemAvailable 3.2940535808e+10
+# HELP node_memory_MemAvailable_percent The MemAvailable in percent of the total memory
+# TYPE node_memory_MemAvailable_percent gauge
+node_memory_MemAvailable_percent 50
+# HELP node_memory_MemTotal The MemTotal from /proc/meminfo
+# TYPE node_memory_MemTotal gauge
+node_memory_MemTotal 0
+# HELP node_memory_used The not reclaimable memory calculated from /proc/meminfo MemTotal - MemAvailable. (unlike measurement from root memory cgroup)
+# TYPE node_memory_used gauge
+node_memory_used 3.296428032e+10
+# HELP node_memory_used_percent The not reclaimable memory in percent calculated from /proc/meminfo MemTotal - MemAvailable. (unlike measurement from root memory cgroup)
+# TYPE node_memory_used_percent gauge
+node_memory_used_percent 50
+# HELP node_num_cpu_cores The number of CPU cores of this node
+# TYPE node_num_cpu_cores gauge
+node_num_cpu_cores 16
+# HELP node_pod_logs_size The size of the pod logs as (size / root_disk_capacity)
+# TYPE node_pod_logs_size gauge
+node_pod_logs_size 5.2193712e+08
+# HELP node_pod_logs_size_percent The size of pod logs
+# TYPE node_pod_logs_size_percent gauge
+node_pod_logs_size_percent 0.9945814661872955
+# HELP node_pod_volumes_size_bytes The size of pod volumes (includes containerd snapshots & the size of the container working directories. Excludes CSI volumes, hostPath, tmpfs emptyDir)
+# TYPE node_pod_volumes_size_bytes gauge
+node_pod_volumes_size_bytes 2.785007272e+09
+# HELP node_pod_volumes_size_percent The size of pod volumes (includes containerd snapshots & the size of the container working directories. Excludes CSI volumes, hostPath, tmpfs emptyDir) as (size / root_disk_capacity)
+# TYPE node_pod_volumes_size_percent gauge
+node_pod_volumes_size_percent 5.30699294951093
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 0.04
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1024
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 9
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 1.3017088e+07
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.65149968875e+09
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 7.29382912e+08
+# HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
+# TYPE process_virtual_memory_max_bytes gauge
+process_virtual_memory_max_bytes -1
+# HELP promhttp_metric_handler_requests_in_flight Current number of scrapes being served.
+# TYPE promhttp_metric_handler_requests_in_flight gauge
+promhttp_metric_handler_requests_in_flight 1
+# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+# TYPE promhttp_metric_handler_requests_total counter
+promhttp_metric_handler_requests_total{code="200"} 0
+promhttp_metric_handler_requests_total{code="500"} 0
+promhttp_metric_handler_requests_total{code="503"} 0

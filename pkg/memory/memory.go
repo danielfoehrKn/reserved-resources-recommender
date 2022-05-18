@@ -19,17 +19,12 @@ import (
 const (
 	// PoC: assumes kubepods memory controller mounted at /sys/fs/cgroups/memory/kubepods
 	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
-	cgroupRoot = "/sys/fs/cgroup"
 	kubepodsMemoryCgroupName = "kubepods"
 	systemSliceMemoryCgroupName = "system.slice"
 )
 
 
 var (
-	// defaultMinThresholdPercent is the default minimum percentage of OS memory available, that triggeres an update & restart of the kubelet
-	// 0.9 means that it should reconcile if less than 90% of OS memory is available
-	defaultMinThresholdPercent     = "0.9"
-
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_reserved_memory_bytes",
 		Help: "The kubelet reserved memory in bytes as configured in the kubelet configuration file",
@@ -70,6 +65,26 @@ var (
 		Help: "The working set memory of the system slice cgroup in percent of the total memory",
 	})
 
+	metricContainerdServiceWorkingSetMemory = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_containerd_service_memory_working_set_bytes",
+		Help: "The working set memory of the containerd cgroup in bytes",
+	})
+
+	metricContainerdServiceWorkingSetMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_containerd_service_memory_working_set_percent",
+		Help: "The working set memory of the containerd cgroup in percent of the total memory",
+	})
+
+	metricKubeletServiceWorkingSetMemory = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_kubelet_service_memory_working_set_bytes",
+		Help: "The working set memory of the kubelet cgroup in bytes",
+	})
+
+	metricKubeletServiceWorkingSetMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_kubelet_service_memory_working_set_percent",
+		Help: "The working set memory of the kubelet cgroup in percent of the total memory",
+	})
+
 	metricMemTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_memory_MemTotal",
 		Help: "The MemTotal from /proc/meminfo",
@@ -98,26 +113,34 @@ var (
 
 // RecommendReservedMemory recommends a memory reservation for non-pod processes.
 // The recommendation can be split across kube- and system-reserved and hard-eviction.
-func RecommendReservedMemory(
-	log *logrus.Logger,
-	memorySafetyMarginAbsolute resource.Quantity) error {
+func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute resource.Quantity, cgroupRoot string, containerdMemoryCgroupName string, kubeletMemoryCgroupName string) error {
 
 	memTotal, memAvailable, err := ParseProcMemInfo()
 	if err != nil {
 		log.Fatalf("fatal error during reconciliation: %v", err)
 	}
 
-	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(kubepodsMemoryCgroupName)
+	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, kubepodsMemoryCgroupName)
 	if err != nil {
 		return err
 	}
 
-	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(systemSliceMemoryCgroupName)
+	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, systemSliceMemoryCgroupName)
 	if err != nil {
 		return err
 	}
 
-	kubepodsLimitInBytes, err := getMemoryLimitInBytes(kubepodsMemoryCgroupName)
+	containerdSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, containerdMemoryCgroupName)
+	if err != nil {
+		return err
+	}
+
+	kubeletSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, kubeletMemoryCgroupName)
+	if err != nil {
+		return err
+	}
+
+	kubepodsLimitInBytes, err := getMemoryLimitInBytes(cgroupRoot, kubepodsMemoryCgroupName)
 	if err != nil {
 		return err
 	}
@@ -154,6 +177,10 @@ func RecommendReservedMemory(
 	metricKubepodsWorkingSetMemoryPercent.Set(math.Round(float64(kubepodsWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricSystemSliceWorkingSetMemory.Set(float64(systemSliceWorkingSetBytes.Value()))
 	metricSystemSliceWorkingSetMemoryPercent.Set(math.Round(float64(systemSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricContainerdServiceWorkingSetMemory.Set(float64(containerdSliceWorkingSetBytes.Value()))
+	metricContainerdServiceWorkingSetMemoryPercent.Set(math.Round(float64(containerdSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricKubeletServiceWorkingSetMemory.Set(float64(kubeletSliceWorkingSetBytes.Value()))
+	metricKubeletServiceWorkingSetMemoryPercent.Set(math.Round(float64(kubeletSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
 	metricCurrentReservedMemoryPercent.Set(math.Round(float64(currentReservedMemory.Value()) / float64(memTotal.Value()) * 100))
 
@@ -190,6 +217,10 @@ func RecommendReservedMemory(
 		int64(math.Round(float64(kubepodsWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(systemSliceWorkingSetBytes.Value())),
 		int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(containerdSliceWorkingSetBytes.Value())),
+		int64(math.Round(float64(containerdSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(kubeletSliceWorkingSetBytes.Value())),
+		int64(math.Round(float64(kubeletSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(currentReservedMemory.Value())),
 		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(targetReservedMemory.Value())),
@@ -209,6 +240,10 @@ func logRecommendation(
 	kubepodsWorkingSetPercentTotal int64,
 	systemSliceWorkingSet string,
 	systemSliceWorkingSetPercentTotal int64,
+	containerdServiceWorkingSet string,
+	containerdServiceWorkingSetPercentTotal int64,
+	kubeletServiceWorkingSet string,
+	kubeletServiceWorkingSetPercentTotal int64,
 	currentReservedMemory string,
 	currentReservedMemoryPercentTotal int64,
 	targetReservedMemory string,
@@ -223,6 +258,8 @@ func logRecommendation(
 		{"Used (Capacity - Available)", fmt.Sprintf("%s (%d%%)", usedMemoryProcMem, usedMemoryProcMemPercentTotal)},
 		{"Kubepods working set", fmt.Sprintf("%s (%d%%)", kubepodsWorkingSet, kubepodsWorkingSetPercentTotal)},
 		{"System.slice working set", fmt.Sprintf("%s (%d%%)", systemSliceWorkingSet, systemSliceWorkingSetPercentTotal)},
+		{" - Containerd.slice working set", fmt.Sprintf("%s (%d%%)", containerdServiceWorkingSet, containerdServiceWorkingSetPercentTotal)},
+		{" - Kubelet.slice working set", fmt.Sprintf("%s (%d%%)", kubeletServiceWorkingSet, kubeletServiceWorkingSetPercentTotal)},
 		{"Current reservation (kube+system reserved)", fmt.Sprintf("%s (%d%%)", currentReservedMemory, currentReservedMemoryPercentTotal)},
 	})
 
@@ -233,7 +270,7 @@ func logRecommendation(
 
 // getMemoryWorkingSet reads the given unit's memory cgroup and calculates
 // the working set bytes
-func getMemoryWorkingSet(unit string) (resource.Quantity, error) {
+func getMemoryWorkingSet(cgroupRoot, unit string) (resource.Quantity, error) {
 	memoryController := cgroups.NewMemory(cgroupRoot)
 
 	stats := &cgroupstatsv1.Metrics{}
@@ -246,7 +283,7 @@ func getMemoryWorkingSet(unit string) (resource.Quantity, error) {
 }
 
 // getMemoryWorkingSet reads the given unit's memory cgroup to return the memory limit in bytes
-func getMemoryLimitInBytes(unit string) (resource.Quantity, error) {
+func getMemoryLimitInBytes(cgroupRoot, unit string) (resource.Quantity, error) {
 	memoryController := cgroups.NewMemory(cgroupRoot)
 
 	stats := &cgroupstatsv1.Metrics{}
@@ -286,4 +323,3 @@ func ParseProcMemInfo() (resource.Quantity, resource.Quantity, error) {
 
 	return memTotal, memAvailable, nil
 }
-

@@ -15,17 +15,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: grafana
-  name: grafana
+    app: grafana-reserved-resources-recommender
+  name: grafana-reserved-resources-recommender
 #  namespace: monitoring
 spec:
   selector:
     matchLabels:
-      app: grafana
+      app: grafana-reserved-resources-recommender
   template:
     metadata:
       labels:
-        app: grafana
+        app: grafana-reserved-resources-recommender
     spec:
       securityContext:
         fsGroup: 472
@@ -77,28 +77,13 @@ spec:
           emptyDir: {}
         - configMap:
             defaultMode: 420
-            name: grafana-dashboards-better-resource-reservations
+            name: grafana-dashboards-reserved-resources-recommender
           name: grafana-dashboards
         - configMap:
             defaultMode: 420
-            name: grafana-datasources-better-resource-reservations
+            name: grafana-datasources-reserved-resources-recommender
           name: grafana-datasources
         - configMap:
             defaultMode: 420
-            name: grafana-dashboard-providers
+            name: grafana-dashboard-providers-reserved-resources-recommender
           name: grafana-dashboard-providers
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: grafana
-#  namespace: monitoring
-spec:
-  ports:
-    - port: 3000
-      protocol: TCP
-      targetPort: http-grafana
-  selector:
-    app: grafana
-  sessionAffinity: None
-  type: ClusterIP

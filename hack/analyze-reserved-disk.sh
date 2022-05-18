@@ -4,17 +4,16 @@
 
 
 #Size of all containers on root disk =
-#sizeOf(`/run/containerd` without each `rootfs` dir) #containerd root dir, contains pod working dirs. + other state (pod sandbox state, OCI bundles, containerd state)
+#  sizeOf(`/run/containerd` without each `rootfs` dir) #containerd root dir, contains pod working dirs. + other state (pod sandbox state, OCI bundles, containerd state)
 #+ sizeOf(`/var/lib/containerd/`) # containerd state dir, contains content-store and snapshotter!
 #+ size of logs (`/var/log/pods`)
-#+ size of /var/lib/kubelet/pods (excluding CSI attached disk) # contains size of all relevant volumes
-#  - includes size of emptyDir volume (on disk, the tmpfs version has  size 0)
-#  - does not include hostPath
-#  - need to exclude CSI volumes manually
+#+ size of kubelet plugins (`/var/lib/kubelet/plugins`)
+#+ size of /var/lib/kubelet/pods # contains size of all relevant volumes
+#  - includes size of emptyDir volume (on disk, the tmpfs version has size 0)
 #
 #Excluded:
 # - size of hostPath volume (not included in kubelet Summary API + cannot be reasonably determined manually)
-# - size of network-attached disks (CSI - not on root disk)
+# - size of network-attached disks (CSI - not on root disk). Excluded from /var/lib/kubelet/pods
 # - size of emptyDir with tmpfs (bytes in virtual-memory, not on disk)
 
 # TODO: determine if /var/lib/kubelet is mounted on the root disk or not (first, for Gardener only)
@@ -29,7 +28,7 @@ bytesToHumanReadable() {
     echo "$i$d ${S[$s]}"
 }
 
-root_disk_partition_name=$(mount|grep ' / ' |cut -d' ' -f 1)
+root_disk_partition_name=$(mount | grep ' / ' | cut -d ' ' -f 1)
 root_disk_partition_size_bytes=$(blockdev --getsize64 $root_disk_partition_name)
 root_disk_available_kbytes=$(df $root_disk_partition_name --output=avail | tail -1)
 root_disk_used_kbytes=$(df $root_disk_partition_name --output=used | tail -1)
@@ -67,7 +66,7 @@ echo "Size of container logs: $container_logs_size_human"
 # Alternative: use kubelet Summary API to get the log size (downside: for effort, upside: no disk usage)
 # totalContainerLogSizeBytesMetrics=$(curl http://localhost:8001/api/v1/nodes/shoot--d060239--dev-seed-gcp-cpu-worker-z1-66bf7-xjzzn/proxy/stats/summary | jq '.pods[].containers[].logs.usedBytes' | awk '{s+=$1} END {printf "%.0f", s}')
 
-# includes all pod volumes (secret, configMpa, projected, ...)
+# includes all pod volumes (secret, configMap, projected, ...)
 # excludes CSI attached network-disks + tmps-based emptyDir (always 0 size reported) + hostPath mounts are not included in the directory at all
 container_volume_size_bytes=$(du -sb --exclude="kubernetes.io~csi" /var/lib/kubelet/pods | awk '{ print $1 }')
 container_volume_size_bytes_human=$(bytesToHumanReadable $container_volume_size_bytes)
