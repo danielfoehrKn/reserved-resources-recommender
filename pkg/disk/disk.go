@@ -13,9 +13,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const cmdGetRootDiskPartitionName = "cat /proc/1/mounts | grep ' / ' | cut -d ' ' -f 1"
+const cmdGetAllBlockDeviceNames = "ls -l /dev  | grep '^b' | awk '{ print $10 }'"
 const cmdGetRootDiskPartitionSizeBytes = "blockdev --getsize64"
 
 var (
@@ -164,6 +166,11 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 	rootDiskPartitionName := sanitize(string(rootDiskPartitionNameBytes))
 	log.Debugf("Root disk partition name: %s", rootDiskPartitionName)
 
+	directoriesToIgnore, err := getMountpointsForNonRootBlockDevices(log, rootDiskPartitionName)
+	if err != nil {
+		return err
+	}
+
 	// requires mounting the host devices from the /dev directory
 	// to access the device (owned by root user), we need to run the container as privileged
 	// - k8s: securityContext.privileged: true
@@ -257,7 +264,20 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 
 	log.Debugf("Size of container logs: %s", humanize.IBytes(uint64(podLogsBytes)))
 
-	volumeSize, err := exec.Command("sh", "-c", "du -sb --exclude=\"kubernetes.io~csi\" /var/lib/kubelet/pods | awk '{ print $1 }'").Output()
+	// use directoriesToIgnore  to build "du" string which ignore all contained directories
+	// this avoids including directories that are mounted to network-attached block devices (from pod volumes)
+	// du -sh  --exclude="/var/lib/kubelet/pods/c8cc5954-1000-4233-9786-ea815a45531d/volume-subpaths/pv-shoot-garden-aws-17108f64-1104-41ef-9338-bcacb81e0f27/prometheus/4" \
+	//         --exclude="/var/lib/kubelet/pods/4ce020a9-b474-458b-bad4-c673001fcc0c/volume-subpaths/pv-shoot-garden-aws-3b5000d9-e79d-42a8-87c0-108533cd6689/prometheus/1" \
+	//         --exclude="kubernetes.io~csi" /var/lib/kubelet/pods
+	var excludes = strings.Builder{}
+	for _, dir := range directoriesToIgnore.List() {
+		excludes.WriteString(fmt.Sprintf("--exclude=\"%s\" ", dir))
+	}
+
+	podVolumeSizeCommand := fmt.Sprintf("du -sb --exclude=\"kubernetes.io~csi\" %s /var/lib/kubelet/pods | awk '{ print $1 }'", excludes.String())
+	log.Debugf("podVolumeSizeCommand: %s", podVolumeSizeCommand)
+
+	volumeSize, err := exec.Command("sh", "-c", podVolumeSizeCommand).Output()
 	if err != nil {
 		return err
 	}
@@ -333,6 +353,78 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 	metricKubeletTargetReservedDiskBytes.Set(float64(diskReservationRecommendation))
 	metricKubeletTargetReservedDiskPercent.Set(float64(diskReservationRecommendation)/float64(rootDiskPartitionCapacityBytes)*100)
 	return nil
+}
+
+// getMountpointsForNonRootBlockDevices gets mountpoints that are not mounted on the root disk
+// These mounts must be excluded when calculating the size of the pod volumes on root disk in /var/lib/kubelet/pods
+// For example: /dev/nvme0n1p3 is the root disk.
+//  - We can see directories for volumes  mounted under /var/lib/kubelet/pods which are not mounted on the root disk
+//  - But we cannot just exclude all directories that contain the subpath "volume-subpaths", as this subpath can also be mounted on the root disk
+//  - But we know that CSI disks will not be mounted on the root disk, hence we can ignore those directories already with "du -sb --exclude="kubernetes.io~csi" /var/lib/kubelet/pods"
+// root@ip-10-242-23-194:/# lsblk
+// NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+// nvme0n1     259:0    0   50G  0 disk
+// |-nvme0n1p1 259:4    0  128M  0 part /boot/efi
+// |-nvme0n1p2 259:5    0    1G  0 part /usr
+// `-nvme0n1p3 259:6    0 48.9G  0 part /var/lib/kubelet/pods/e90312dc-bd62-4419-813f-701e7eb911e3/volume-subpaths/telegraf-config-volume/telegraf/1
+//                                     /var/lib/kubelet/pods/e90312dc-bd62-4419-813f-701e7eb911e3/volume-subpaths/telegraf-config-volume/telegraf/0
+//                                     /
+// nvme1n1     259:1    0   10G  0 disk /var/lib/kubelet/pods/15126f8a-1a3a-45a1-9388-0eb63e5fabd3/volumes/kubernetes.io~csi/pv-shoot-garden-aws-13e21e9b-4268-4671-8a52-75e91d15a784/mount
+//                                     /var/lib/kubelet/plugins/kubernetes.io/csi/pv/pv-shoot-garden-aws-13e21e9b-4268-4671-8a52-75e91d15a784/globalmount
+// nvme2n1     259:2    0   10G  0 disk /var/lib/kubelet/pods/d211caad-bb76-4df6-8e8d-a938dfbdf4f9/volumes/kubernetes.io~csi/pv-shoot-garden-aws-218ce622-08eb-4eac-b504-288ce0fbddc4/mount
+//                                     /var/lib/kubelet/plugins/kubernetes.io/csi/pv/pv-shoot-garden-aws-218ce622-08eb-4eac-b504-288ce0fbddc4/globalmount
+func getMountpointsForNonRootBlockDevices(log *logrus.Logger, rootDiskPartitionName string) (sets.String, error) {
+	// List all devices of type "block device"
+	// $ ls -l /dev  | grep '^b' | awk '{ print $10 }'
+	// nvme0n1
+	// nvme0n1p1
+	// nvme0n1p2
+	// nvme0n1p3
+	// nvme10n1
+	// ...
+	allBlockDeviceNames, err := exec.Command("sh", "-c", cmdGetAllBlockDeviceNames).Output()
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("allBlockDeviceNames: %s", string(allBlockDeviceNames))
+
+	var sb strings.Builder
+	for _, blockDeviceName := range strings.Split(string(allBlockDeviceNames), "\n") {
+		if blockDeviceName == "" {
+			continue
+		}
+
+		sb.WriteString(fmt.Sprintf("-e '%s' ", blockDeviceName))
+	}
+
+	// get mount points for all block devices
+	// this will naturally include the mountpoints for the root partition (if there are partitions) as its parent disk is the union of the mountpoints of it's partitions
+	// Example: cat /proc/1/mountinfo | grep -e 'nvme0n1p1' -e 'nvme0n1p2' | awk '{ print $5 }'
+	getMountpointsForDisks := fmt.Sprintf("cat /proc/1/mountinfo | grep %s | awk '{ print $5 }'", sb.String())
+	log.Debugf("getMountpointsForDisks: %s \n", string(getMountpointsForDisks))
+
+	mountPointsForAllBlockDevices, err := exec.Command("sh", "-c", getMountpointsForDisks).Output()
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("mountPointsForAllBlockDevices: %s \n", string(mountPointsForAllBlockDevices))
+
+	setMountPointsForAllBlockDevices := sets.NewString(strings.Split(string(mountPointsForAllBlockDevices), "\n")...)
+	log.Debugf("setMountPointsForAllBlockDevices-size: %d \n", setMountPointsForAllBlockDevices.Len())
+
+	mountpointsRootPartition, err := exec.Command("sh", "-c", fmt.Sprintf("cat /proc/1/mountinfo | grep %s | awk '{ print $5 }'", rootDiskPartitionName)).Output()
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("mountpointsRootPartition: %s \n", string(mountpointsRootPartition))
+
+	setMountPointsRootBlockDevices := sets.NewString(strings.Split(string(mountpointsRootPartition),"\n")...)
+	log.Debugf("setMountPointsRootBlockDevices-size: %d \n", setMountPointsRootBlockDevices.Len())
+
+	// remove the mountpoints mounted on the root disk from the set
+	setMountPointsForAllBlockDevices = setMountPointsForAllBlockDevices.Delete(setMountPointsRootBlockDevices.List()...)
+
+	return setMountPointsForAllBlockDevices, nil
 }
 
 func sanitize(s string) string {

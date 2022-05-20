@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultMemorySafetyMarginAbsolute = "100Mi"
+	defaultMemorySafetyMarginAbsolute     = "100Mi"
 	defaultCgroupsHierarchyRoot           = "/sys/fs/cgroup"
 	defaultContainerdCgroupsHierarchyRoot = "system.slice/containerd.service"
 	defaultKubeletCgroupsHierarchyRoot    = "system.slice/kubelet.service"
@@ -112,12 +112,11 @@ func main() {
 	ctx, controllerCancel := context.WithCancel(context.Background())
 	defer controllerCancel()
 
-
 	go wait.Until(func() {
 		if err := recommendReservedResources(period, numCPU); err != nil {
 			log.Warnf("error during reconciliation: %v", err)
 		}
-	}, period * 2, ctx.Done())
+	}, period*2, ctx.Done())
 
 	http.Handle("/metrics", promhttp.Handler())
 	if err := http.ListenAndServe(":16911", nil); err != nil {

@@ -28,9 +28,450 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "id": 1,
       "links": [],
       "panels": [
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "displayMode": "auto"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Target reserved Memory"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bits"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Target Reserved CPU"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Current Reserved CPU"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Target reserved Disk"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bits"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Current reserved memory"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bits"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "System.slice free CPU time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 10
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 20
+                        },
+                        {
+                          "color": "dark-green",
+                          "value": 30
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Kubepods free CPU time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 50
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 80
+                        },
+                        {
+                          "color": "dark-green",
+                          "value": 90
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Memory Available"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 10
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 30
+                        },
+                        {
+                          "color": "dark-green",
+                          "value": 40
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Disk available"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 10
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 30
+                        },
+                        {
+                          "color": "dark-green",
+                          "value": 40
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "System.slice Working Set"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bits"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Kubepods Working Set"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bits"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 17,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 41,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Value #B"
+              }
+            ]
+          },
+          "pluginVersion": "8.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(kubelet_target_reserved_memory_bytes{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(kubelet_reserved_memory_bytes{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "E"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(kubelet_target_reserved_cpu{}) by (instance)",
+              "format": "table",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            },
+            {
+              "exemplar": false,
+              "expr": "sum(kubelet_current_reserved_cpu{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "D"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(kubelet_target_reserved_disk_bytes{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_memory_MemAvailable_percent{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "H"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_cgroup_system_slice_min_guaranteed_cpu - node_cgroup_system_slice_cpu_percent) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "F"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_cgroup_kubepods_min_guaranteed_cpu - node_cgroup_kubepods_cpu_percent) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "G"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_disk_available_percent{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "I"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_cgroup_system_slice_memory_working_set_bytes{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "J"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(node_cgroup_kubepods_memory_working_set_bytes{}) by (instance)",
+              "format": "table",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "K"
+            }
+          ],
+          "title": "Overview",
+          "transformations": [
+            {
+              "id": "seriesToColumns",
+              "options": {
+                "byField": "instance"
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time 1": true,
+                  "Time 10": true,
+                  "Time 11": true,
+                  "Time 2": true,
+                  "Time 3": true,
+                  "Time 4": true,
+                  "Time 5": true,
+                  "Time 6": true,
+                  "Time 7": true,
+                  "Time 8": true,
+                  "Time 9": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "Time 4": "",
+                  "Time 7": "",
+                  "Value #A": "Target Reserved CPU",
+                  "Value #B": "Target reserved Memory",
+                  "Value #C": "Target reserved Disk",
+                  "Value #D": "Current Reserved CPU",
+                  "Value #E": "Current reserved memory",
+                  "Value #F": "System.slice free CPU time",
+                  "Value #G": "Kubepods free CPU time",
+                  "Value #H": "Memory Available",
+                  "Value #I": "Disk available",
+                  "Value #J": "System.slice Working Set",
+                  "Value #K": "Kubepods Working Set"
+                }
+              }
+            },
+            {
+              "id": "configFromData",
+              "options": {
+                "applyTo": {
+                  "id": "byName"
+                },
+                "configRefId": "config",
+                "mappings": []
+              }
+            }
+          ],
+          "type": "table"
+        },
         {
           "collapsed": true,
           "datasource": null,
@@ -38,7 +479,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 0
+            "y": 17
           },
           "id": 24,
           "panels": [
@@ -100,7 +541,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 1
+                "y": 18
               },
               "id": 5,
               "options": {
@@ -183,7 +624,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 1
+                "y": 18
               },
               "id": 22,
               "options": {
@@ -219,7 +660,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 1
+            "y": 18
           },
           "id": 8,
           "panels": [
@@ -281,7 +722,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 3
+                "y": 19
               },
               "id": 11,
               "options": {
@@ -363,7 +804,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 3
+                "y": 19
               },
               "id": 6,
               "options": {
@@ -446,7 +887,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 11
+                "y": 27
               },
               "id": 10,
               "options": {
@@ -528,7 +969,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 11
+                "y": 27
               },
               "id": 4,
               "options": {
@@ -564,7 +1005,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 2
+            "y": 19
           },
           "id": 13,
           "panels": [
@@ -625,7 +1066,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 3
+                "y": 20
               },
               "id": 17,
               "options": {
@@ -707,7 +1148,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 3
+                "y": 20
               },
               "id": 15,
               "options": {
@@ -730,6 +1171,172 @@ data:
                 }
               ],
               "title": "Minimum Node Memory Available",
+              "type": "timeseries"
+            },
+            {
+              "datasource": null,
+              "description": "NOTE: having 0 or negative number here only means that the cgroup used all of its \"fair\" share of CPU time. This can be exceeded if another cgroup (such as kubepods) does not use its fair share. ",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 28
+              },
+              "id": 19,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "min(node_cgroup_system_slice_min_guaranteed_cpu - node_cgroup_system_slice_cpu_percent)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Minimum system.slice cgroup free CPU time (min. guaranteed by CPU Shares minus CPU usage for cgroup)",
+              "type": "timeseries"
+            },
+            {
+              "datasource": null,
+              "description": "NOTE: having a 0 or negative number here only means that the cgroup used all of its \"fair\" share of CPU time. This can be exceeded if another cgroup (such as system.slice) does not use its fair share. ",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 28
+              },
+              "id": 21,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "min(node_cgroup_kubepods_min_guaranteed_cpu - node_cgroup_kubepods_cpu_percent)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Minimum kubepods cgroup free CPU time (min. guaranteed by CPU Shares minus CPU usage for cgroup)",
               "type": "timeseries"
             },
             {
@@ -781,7 +1388,7 @@ data:
                       }
                     ]
                   },
-                  "unit": "bits"
+                  "unit": "percent"
                 },
                 "overrides": []
               },
@@ -789,9 +1396,9 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 11
+                "y": 36
               },
-              "id": 16,
+              "id": 18,
               "options": {
                 "legend": {
                   "calcs": [],
@@ -802,16 +1409,17 @@ data:
                   "mode": "single"
                 }
               },
+              "pluginVersion": "8.1.0",
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "min(node_disk_available_bytes)",
+                  "expr": "max(node_cpu_usage_percent/node_num_cpu_cores)",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
                 }
               ],
-              "title": "Minimum Node Disk Available",
+              "title": "Maximum CPU Usage over all cores (100% = all cores used 100%)",
               "type": "timeseries"
             },
             {
@@ -871,7 +1479,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 11
+                "y": 36
               },
               "id": 20,
               "options": {
@@ -945,7 +1553,7 @@ data:
                       }
                     ]
                   },
-                  "unit": "percent"
+                  "unit": "bits"
                 },
                 "overrides": []
               },
@@ -953,93 +1561,9 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 19
+                "y": 44
               },
-              "id": 18,
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom"
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
-              "pluginVersion": "8.1.0",
-              "targets": [
-                {
-                  "exemplar": true,
-                  "expr": "max(node_cpu_usage_percent/node_num_cpu_cores)",
-                  "interval": "",
-                  "legendFormat": "",
-                  "refId": "A"
-                }
-              ],
-              "title": "Maximum CPU Usage (100% = all cores used 100%)",
-              "type": "timeseries"
-            },
-            {
-              "datasource": null,
-              "description": "NOTE: having 0 here only means that the cgroup used all of its \"fair\" share of CPU time. This can be exceeded if another cgroup (such as system.slice) does not use its fair share. ",
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "mappings": [],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
-                "overrides": []
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 19
-              },
-              "id": 21,
+              "id": 16,
               "options": {
                 "legend": {
                   "calcs": [],
@@ -1053,441 +1577,18 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "min(node_cgroup_kubepods_free_cpu_time)",
+                  "expr": "min(node_disk_available_bytes)",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
                 }
               ],
-              "title": "Minimum kubepods free CPU time",
-              "type": "timeseries"
-            },
-            {
-              "datasource": null,
-              "description": "NOTE: having 0 here only means that the cgroup used all of its \"fair\" share of CPU time. This can be exceeded if another cgroup (such as kubepods) does not use its fair share. ",
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "mappings": [],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
-                "overrides": []
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 27
-              },
-              "id": 19,
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom"
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
-              "targets": [
-                {
-                  "exemplar": true,
-                  "expr": "min(node_cgroup_system_slice_free_cpu_time)",
-                  "interval": "",
-                  "legendFormat": "",
-                  "refId": "A"
-                }
-              ],
-              "title": "Minimum system.slice free CPU time",
+              "title": "Minimum Node Disk Available",
               "type": "timeseries"
             }
           ],
           "title": "Node Stats",
           "type": "row"
-        },
-        {
-          "datasource": null,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 3
-          },
-          "id": 37,
-          "title": "Other memory stats",
-          "type": "row"
-        },
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "bits"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 4
-          },
-          "id": 39,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max(node_cgroup_system_slice_memory_working_set_bytes)",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Maximum system.slice cgroup working set size",
-          "type": "timeseries"
-        },
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "bits"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 4
-          },
-          "id": 30,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max(node_cgroup_kubepods_memory_working_set_bytes)",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Maximum kubepods cgroup working set size",
-          "type": "timeseries"
-        },
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "bits"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 12
-          },
-          "id": 28,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max(node_cgroup_containerd_service_memory_working_set_bytes)",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Maximum containerd cgroup working set size",
-          "type": "timeseries"
-        },
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "bits"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 12
-          },
-          "id": 38,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max(node_cgroup_kubelet_service_memory_working_set_bytes)",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Maximum kubelet cgroup working set size",
-          "type": "timeseries"
         },
         {
           "collapsed": true,
@@ -1497,6 +1598,349 @@ data:
             "w": 24,
             "x": 0,
             "y": 20
+          },
+          "id": 37,
+          "panels": [
+            {
+              "datasource": null,
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "bits"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 21
+              },
+              "id": 39,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "max(node_cgroup_system_slice_memory_working_set_bytes)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Maximum system.slice cgroup working set size",
+              "type": "timeseries"
+            },
+            {
+              "datasource": null,
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "bits"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 21
+              },
+              "id": 30,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "max(node_cgroup_kubepods_memory_working_set_bytes)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Maximum kubepods cgroup working set size",
+              "type": "timeseries"
+            },
+            {
+              "datasource": null,
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "bits"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 29
+              },
+              "id": 28,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "max(node_cgroup_containerd_service_memory_working_set_bytes)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Maximum containerd cgroup working set size",
+              "type": "timeseries"
+            },
+            {
+              "datasource": null,
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "bits"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 29
+              },
+              "id": 38,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom"
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
+              },
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "max(node_cgroup_kubelet_service_memory_working_set_bytes)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Maximum kubelet cgroup working set size",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Other memory stats",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 21
           },
           "id": 26,
           "panels": [
@@ -1557,7 +2001,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 21
+                "y": 22
               },
               "id": 29,
               "options": {
@@ -1639,7 +2083,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 21
+                "y": 22
               },
               "id": 31,
               "options": {
@@ -1721,7 +2165,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 29
+                "y": 30
               },
               "id": 32,
               "options": {
@@ -1803,7 +2247,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 29
+                "y": 30
               },
               "id": 33,
               "options": {
@@ -1885,7 +2329,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 37
+                "y": 38
               },
               "id": 34,
               "options": {
@@ -1967,7 +2411,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 37
+                "y": 38
               },
               "id": 35,
               "options": {
@@ -2038,8 +2482,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "id": 2,
-      "iteration": 1652868379121,
+      "iteration": 1653038603127,
       "links": [],
       "panels": [
         {
@@ -2285,7 +2728,7 @@ data:
                   }
                 ]
               },
-              "unit": "bits"
+              "unit": "percent"
             },
             "overrides": []
           },
@@ -2309,13 +2752,13 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "node_disk_available_bytes{instance=~\"$Node\"}",
+              "expr": "node_disk_available_percent{instance=~\"$Node\"}",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
             }
           ],
-          "title": "Available Bytes (root disk)",
+          "title": "Available disk space (root disk)",
           "type": "timeseries"
         },
         {
@@ -2397,7 +2840,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Available Bytes (root disk)",
+          "title": "Available disk space  (root disk)",
           "type": "timeseries"
         },
         {
@@ -2555,7 +2998,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Containerd Snapshotter Size",
+          "title": "Containerd Snapshotter Size (/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs)",
           "type": "timeseries"
         },
         {
@@ -2638,7 +3081,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Containerd State Size",
+          "title": "Containerd State Size (/run/containerd)",
           "type": "timeseries"
         },
         {
@@ -2721,7 +3164,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Pod Logs bytes",
+          "title": "Pod Logs bytes (/var/log/pods)",
           "type": "timeseries"
         },
         {
@@ -2804,7 +3247,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Containerd Content Store Size",
+          "title": "Containerd Content Store Size (/var/lib/containerd/io.containerd.content.v1.content/)",
           "type": "timeseries"
         },
         {
@@ -2887,7 +3330,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Pod Volume Size (on root-disk only)",
+          "title": "Pod Volume Size (on root-disk only) (/var/lib/kubelet/pods )",
           "type": "timeseries"
         },
         {
@@ -2964,13 +3407,13 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "node_pod_volumes_size_bytes{instance=~\"$Node\"}",
+              "expr": "kubelet_plugin_size_bytes{instance=~\"$Node\"}",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
             }
           ],
-          "title": "Kubelet plugins size",
+          "title": "Kubelet plugins size (/var/lib/kubelet/plugins)",
           "type": "timeseries"
         }
       ],
@@ -2982,9 +3425,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": false,
-              "text": "ip-10-242-28-239.eu-west-1.compute.internal",
-              "value": "ip-10-242-28-239.eu-west-1.compute.internal"
+              "selected": true,
+              "text": "ip-10-242-23-194.eu-west-1.compute.internal",
+              "value": "ip-10-242-23-194.eu-west-1.compute.internal"
             },
             "datasource": null,
             "definition": "label_values(kubelet_target_reserved_disk_bytes{job=\"reserved-resources-recommender\"}, instance)",
@@ -3042,8 +3485,23 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
+      "iteration": 1652972452878,
       "links": [],
       "panels": [
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 18,
+          "panels": [],
+          "title": "Recommendation",
+          "type": "row"
+        },
         {
           "datasource": null,
           "description": "in m (e.g 80m == 8% of one core)",
@@ -3101,7 +3559,7 @@ data:
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 1
           },
           "id": 2,
           "options": {
@@ -3131,7 +3589,111 @@ data:
               "refId": "B"
             }
           ],
-          "title": "Current reserved CPU vs Target reserved CPU",
+          "title": "Kubelet current reserved CPU vs Target reserved CPU",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 10
+          },
+          "id": 20,
+          "panels": [],
+          "title": "Stats",
+          "type": "row"
+        },
+        {
+          "datasource": null,
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 11
+          },
+          "id": 14,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "node_cgroup_system_slice_min_guaranteed_cpu{instance=~\"$Node\"}",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "node_cgroup_system_slice_cpu_percent{instance=~\"$Node\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
+            }
+          ],
+          "title": "System.slice usage vs. min. guaranteed by CPU shares",
           "type": "timeseries"
         },
         {
@@ -3191,89 +3753,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 0
-          },
-          "id": 6,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max(kubelet_target_reserved_cpu{instance=~\"$Node\"})",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Maximum Target Reserved CPU over all nodes",
-          "type": "timeseries"
-        },
-        {
-          "datasource": null,
-          "description": "A negative value of 100 means that the pod processes in kubepods need 1 more CPU core that minimally guaranteed in resource. contention scenarios.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 8
+            "y": 11
           },
           "id": 16,
           "options": {
@@ -3289,18 +3769,26 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "node_cgroup_kubepods_free_cpu_time{instance=~\"$Node\"}",
+              "expr": "node_cgroup_kubepods_cpu_percent{instance=~\"$Node\"}",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "node_cgroup_kubepods_min_guaranteed_cpu{instance=~\"$Node\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
             }
           ],
-          "title": "Kubepods free CPU time (min. guaranteed - actual usage) (negative value means more usage than reserved)",
+          "title": "Kubepods usage vs. min. guaranteed by CPU shares",
           "type": "timeseries"
         },
         {
           "datasource": null,
-          "description": "A negative value of 100 means that the processes in system.slice need 1 more CPU core that minimally guaranteed in resource. contention scenarios.",
+          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3355,9 +3843,9 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 9
+            "y": 19
           },
-          "id": 14,
+          "id": 8,
           "options": {
             "legend": {
               "calcs": [],
@@ -3371,13 +3859,14 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "node_cgroup_system_slice_free_cpu_time{instance=~\"$Node\"}",
+              "expr": "node_cgroup_system_slice_cpu_percent{instance=~\"$Node\"}",
+              "hide": false,
               "interval": "",
               "legendFormat": "",
-              "refId": "A"
+              "refId": "B"
             }
           ],
-          "title": "System.slice free CPU time (min. guaranteed - actual usage) (negative value means more usage than reserved)",
+          "title": "System.slice current CPU usage (100 = one core)",
           "type": "timeseries"
         },
         {
@@ -3438,7 +3927,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 16
+            "y": 19
           },
           "id": 10,
           "options": {
@@ -3465,7 +3954,6 @@ data:
         },
         {
           "datasource": null,
-          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3520,89 +4008,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 17
-          },
-          "id": 8,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "node_cgroup_system_slice_cpu_percent{instance=~\"$Node\"}",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "B"
-            }
-          ],
-          "title": "System.slice current CPU usage (100 = one core)",
-          "type": "timeseries"
-        },
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 25
+            "y": 27
           },
           "id": 12,
           "options": {
@@ -3625,7 +4031,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "node_num_cpu_cores",
+              "expr": "node_num_cpu_cores{instance=~\"$Node\"}",
               "hide": false,
               "interval": "",
               "legendFormat": "",
@@ -3672,7 +4078,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-1h",
+        "from": "now-5m",
         "to": "now"
       },
       "timepicker": {},

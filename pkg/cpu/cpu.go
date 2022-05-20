@@ -29,6 +29,11 @@ var (
 		Help: "The minimum guaranteed CPU time of the system.slice cgroup based on the cpu.shares (1024)",
 	})
 
+	metricKubepodsMinGuaranteedCPU = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_kubepods_min_guaranteed_cpu",
+		Help: "The minimum guaranteed CPU time of the kubepods cgroup based on the cgroup's cpu.shares",
+	})
+
 	metricCores = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_num_cpu_cores",
 		Help: "The number of CPU cores of this node",
@@ -47,16 +52,6 @@ var (
 	metricSystemSliceCurrentCPUConsumptionPercent = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_cgroup_system_slice_cpu_percent",
 		Help: "The CPU consumption of the system.slice cgroup in percent",
-	})
-
-	metricSystemSliceFreeCPUTime = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "node_cgroup_system_slice_free_cpu_time",
-		Help: "The freely absolute available CPU time for the system.slice cgroup in percent (100 = 1 core)",
-	})
-
-	metricKubepodsFreeCPUTime = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "node_cgroup_kubepods_free_cpu_time",
-		Help: "The freely absolute available CPU time for the kubepods cgroup in percent (100 = 1 core)",
 	})
 
 	metricTargetReservedCPU = promauto.NewGauge(prometheus.GaugeOpts{
@@ -109,7 +104,7 @@ func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Dura
 
 	// Calculation:
 	// - CPU usage without kubepods = total CPU Usage  - cpu usage kubepods (can be inaccurate)
-	// - After, use below formula to calculate kubepodsTargetCPUShares (now I know systemSliceCPUTime which is more precise now)
+	// - After, use below formula to calculate kubepodsTargetCPUShares (now I know systemSliceCPUTime which is more precise)
 	// e.g overallCPUNonIdleTime(2.02 = 2 cores) - kubepodsCPUTime(1.7 core)
 	cpuUsageNonPodProcesses := overallCPUNonIdleTime - kubepodsCPUTime
 
@@ -220,20 +215,12 @@ func recordMetrics(numCPU int64,
 	kubepodsGuaranteedCPUTimePercent float64) {
 	metricCores.Set(float64(numCPU))
 	metricSystemSliceMinGuaranteedCPU.Set(math.Round(systemSliceGuaranteedCPUTimePercent))
+	metricKubepodsMinGuaranteedCPU.Set(math.Round(kubepodsGuaranteedCPUTimePercent))
 	metricKubepodsCurrentCPUConsumptionPercent.Set(math.Round(kubepodsCPUTimePercent))
 	metricSystemSliceCurrentCPUConsumptionPercent.Set(math.Round(systemSliceCPUTimePercent))
 	metricOverallCPUUsagePercent.Set(math.Round(overallCPUNonIdleTimePercent))
 	metricCurrentReservedCPU.Set(float64(currentKubeReservedCPU))
 	metricTargetReservedCPU.Set(float64(targetKubeReservedCPU))
-
-	// calculated metrics
-	// only because all allotted CPU shares have been used for a cgroup, does not mean there is resource contention
-	// as a cgroup can use more than their "fair share" if another cgroup does not need all of theirs
-	kubepodsFreeCPUTime := kubepodsGuaranteedCPUTimePercent - kubepodsCPUTimePercent
-	metricKubepodsFreeCPUTime.Set(kubepodsFreeCPUTime)
-
-	systemSliceFreeCPUTime := systemSliceGuaranteedCPUTimePercent - systemSliceCPUTimePercent
-	metricSystemSliceFreeCPUTime.Set(systemSliceFreeCPUTime)
 }
 
 func logRecommendation(

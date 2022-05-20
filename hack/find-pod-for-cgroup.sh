@@ -1,10 +1,16 @@
-# find pod for cgroup path using nerdctl
-interesting_cgroup_path=pod7e44ee88-1e65-4a16-8cdf-9a90c819180e
-#interesting_cgroup_path=pod115d8276-f508-4006-afc2-ebf2e6b7f072/ee8247ebce1c2d2a855e27e5de33b61c385f92ecbfb32387aabc9eb56c47b7e7
+# Usage
+# 1) find pod for cgroup path using nerdctl (when inspecting the cgroup filesystem)
+#   - interesting_cgroup_path=<cgroup under kubepods>
+# 2) find pod for mountpoint (when checking mounts)
+#    - mount | grep volume-subpaths
+       #/dev/nvme6n1 on /var/lib/kubelet/pods/39f81d56-39d4-46d3-af80-826d97966a5a/volume-subpaths/pv-shoot-garden-aws-1479e4b1-e4ec-43b2-b751-46bbc036d7c2/prometheus/4 type ext4 (rw,relatime)
+       # interesting_cgroup_path=pod39f81d56-39d4-46d3-af80-826d97966a5a
+
+interesting_cgroup_path=pode90312dc-bd62-4419-813f-701e7eb911e3
 for i in $(nerdctl ps -q)
 do
   occurence=$(nerdctl inspect $i --mode=native | grep $interesting_cgroup_path -c)
   if [ $occurence -gt 0 ]; then
-      echo "Found in container with id $i. Use 'nerdctl inspect $i --mode=native'"
+      echo "Found in container with id $i. Use 'nerdctl -n k8s.io inspect $i --mode=native'"
   fi
 done
