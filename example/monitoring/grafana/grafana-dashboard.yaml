@@ -46,7 +46,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
                   }
                 ]
@@ -74,7 +74,7 @@ data:
                 "properties": [
                   {
                     "id": "unit",
-                    "value": "percent"
+                    "value": "none"
                   }
                 ]
               },
@@ -86,7 +86,7 @@ data:
                 "properties": [
                   {
                     "id": "unit",
-                    "value": "percent"
+                    "value": "none"
                   }
                 ]
               },
@@ -301,7 +301,7 @@ data:
             ]
           },
           "gridPos": {
-            "h": 17,
+            "h": 11,
             "w": 24,
             "x": 0,
             "y": 0
@@ -445,10 +445,10 @@ data:
                 "renameByName": {
                   "Time 4": "",
                   "Time 7": "",
-                  "Value #A": "Target Reserved CPU",
+                  "Value #A": "Target Reserved CPU (1000m=1core)",
                   "Value #B": "Target reserved Memory",
                   "Value #C": "Target reserved Disk",
-                  "Value #D": "Current Reserved CPU",
+                  "Value #D": "Current Reserved CPU (1000m=1core)",
                   "Value #E": "Current reserved memory",
                   "Value #F": "System.slice free CPU time",
                   "Value #G": "Kubepods free CPU time",
@@ -473,185 +473,192 @@ data:
           "type": "table"
         },
         {
-          "collapsed": true,
+          "collapsed": false,
           "datasource": null,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 17
+            "y": 11
           },
           "id": 24,
-          "panels": [
-            {
-              "datasource": null,
-              "description": "Please note that a negative value means that we are currently over-reserving.",
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "mappings": [],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "bits"
-                },
-                "overrides": []
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 18
-              },
-              "id": 5,
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom"
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
-              "targets": [
-                {
-                  "exemplar": true,
-                  "expr": "max(kubelet_target_reserved_memory_bytes - kubelet_reserved_memory_bytes)",
-                  "interval": "",
-                  "legendFormat": "",
-                  "refId": "A"
-                }
-              ],
-              "title": "Maximum (recommended memory reservation minus actual reservation)",
-              "type": "timeseries"
-            },
-            {
-              "datasource": null,
-              "description": "Note: A Negative value means overreservation",
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "mappings": [],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
-                "overrides": []
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 18
-              },
-              "id": 22,
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom"
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
-              "targets": [
-                {
-                  "exemplar": true,
-                  "expr": "max(kubelet_target_reserved_cpu-kubelet_current_reserved_cpu)",
-                  "interval": "",
-                  "legendFormat": "",
-                  "refId": "A"
-                }
-              ],
-              "title": "Maximum (recommended CPU reservation minus actual CPU reservation)",
-              "type": "timeseries"
-            }
-          ],
+          "panels": [],
           "title": "Recommendation vs. Actual reservation",
           "type": "row"
+        },
+        {
+          "datasource": null,
+          "description": "Please note that a negative value means that we are currently over-reserving.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "bits"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 5,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "max(kubelet_target_reserved_memory_bytes - kubelet_reserved_memory_bytes)",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Maximum (recommended memory reservation minus actual reservation)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "Note: A Negative value means overreservation",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 800
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 900
+                  },
+                  {
+                    "color": "dark-green",
+                    "value": 1000
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "max(kubelet_target_reserved_cpu-kubelet_current_reserved_cpu)",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Maximum (recommended CPU reservation minus actual CPU reservation) (1000m=1core)",
+          "type": "timeseries"
         },
         {
           "collapsed": true,
@@ -660,7 +667,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 18
+            "y": 20
           },
           "id": 8,
           "panels": [
@@ -722,7 +729,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 19
+                "y": 21
               },
               "id": 11,
               "options": {
@@ -804,7 +811,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 19
+                "y": 21
               },
               "id": 6,
               "options": {
@@ -887,7 +894,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 27
+                "y": 29
               },
               "id": 10,
               "options": {
@@ -969,7 +976,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 27
+                "y": 29
               },
               "id": 4,
               "options": {
@@ -1005,7 +1012,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 19
+            "y": 21
           },
           "id": 13,
           "panels": [
@@ -1066,7 +1073,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 20
+                "y": 22
               },
               "id": 17,
               "options": {
@@ -1148,7 +1155,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 20
+                "y": 22
               },
               "id": 15,
               "options": {
@@ -1231,7 +1238,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 28
+                "y": 30
               },
               "id": 19,
               "options": {
@@ -1314,7 +1321,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 28
+                "y": 30
               },
               "id": 21,
               "options": {
@@ -1396,7 +1403,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 36
+                "y": 38
               },
               "id": 18,
               "options": {
@@ -1479,7 +1486,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 36
+                "y": 38
               },
               "id": 20,
               "options": {
@@ -1561,7 +1568,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 44
+                "y": 46
               },
               "id": 16,
               "options": {
@@ -1597,7 +1604,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 20
+            "y": 22
           },
           "id": 37,
           "panels": [
@@ -1658,7 +1665,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 21
+                "y": 23
               },
               "id": 39,
               "options": {
@@ -1740,7 +1747,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 21
+                "y": 23
               },
               "id": 30,
               "options": {
@@ -1822,7 +1829,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 29
+                "y": 31
               },
               "id": 28,
               "options": {
@@ -1904,7 +1911,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 29
+                "y": 31
               },
               "id": 38,
               "options": {
@@ -1940,7 +1947,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 21
+            "y": 23
           },
           "id": 26,
           "panels": [
@@ -2001,7 +2008,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 22
+                "y": 24
               },
               "id": 29,
               "options": {
@@ -2083,7 +2090,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 22
+                "y": 24
               },
               "id": 31,
               "options": {
@@ -2165,7 +2172,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 30
+                "y": 32
               },
               "id": 32,
               "options": {
@@ -2247,7 +2254,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 30
+                "y": 32
               },
               "id": 33,
               "options": {
@@ -2329,7 +2336,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 38
+                "y": 40
               },
               "id": 34,
               "options": {
@@ -2411,7 +2418,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 38
+                "y": 40
               },
               "id": 35,
               "options": {

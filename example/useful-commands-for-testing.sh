@@ -23,6 +23,7 @@ watch "kubectl exec -ti debugpod-d060239 -- bash -c \"chroot /hostroot /bin/bash
 # For cgrou-level oom: Memory cgroup out of memory: Killed process 1796292 (ruby) total-vm:452120kB, anon-rss:157260kB
 # For global OOM: "Out of memory: Killed process"
 kubectl exec -ti debugpod-d060239 -- bash -c "chroot /hostroot /bin/bash -c 'dmesg -T'"
+watch "kubectl exec -ti debugpod-d060239 -- bash -c \"chroot /hostroot /bin/bash -c 'dmesg -T | grep -i killed -c '\""
 
 # last kubelet restart time
 watch "kubectl exec -ti debugpod-d060239 -- bash -c \"chroot /hostroot /bin/bash -c 'systemctl status kubelet | grep -i Active'\""
@@ -32,6 +33,8 @@ watch "kubectl get pod debugpod-d060239 -o json | jq -r .spec.nodeName |  read n
 
 # kubelet eviction happened
 journalctl -u kubelet -f | grep -i "pods ranked"
+kubectl exec -ti debugpod-d060239 -- bash -c "chroot /hostroot /bin/bash -c 'journalctl -u kubelet | grep -i \"pods ranked\"'"
+
 
 # metrics from single pod
 k port-forward pod/better-resource-reservations-<pod-id-from-daemonset>  16911:16911

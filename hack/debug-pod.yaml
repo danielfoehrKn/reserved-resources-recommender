@@ -40,7 +40,7 @@ spec:
   hostNetwork: true
   hostPID: true
 #  nodeName: gardener-local-control-plane
-  nodeName: ip-10-242-23-194.eu-west-1.compute.internal
+  nodeName: ip-10-180-24-103.eu-west-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
