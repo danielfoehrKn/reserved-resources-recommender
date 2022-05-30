@@ -2,18 +2,18 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    component: reserved-resources-recommender
+    component: reserved-resources-recommender-docker
     gardener.cloud/role: monitoring
-  name: reserved-resources-recommender
+  name: reserved-resources-recommender-docker
 spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      component: reserved-resources-recommender
+      component: reserved-resources-recommender-docker
   template:
     metadata:
       labels:
-        component: reserved-resources-recommender
+        component: reserved-resources-recommender-docker
         gardener.cloud/role: monitoring
         networking.gardener.cloud/from-seed: allowed
         networking.gardener.cloud/to-public-networks: allowed
@@ -22,8 +22,8 @@ spec:
 #      priorityClassName: reserved-resources-recommender
       nodeSelector:
         # change to any worker pool
-        worker.gardener.cloud/pool: cpu-worker
-        worker.gardener.cloud/cri-name: containerd
+        worker.gardener.cloud/pool: worker-docker
+        worker.gardener.cloud/cri-name: docker
       containers:
         - image: eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
           imagePullPolicy: Always
@@ -35,8 +35,6 @@ spec:
               value: 200Mi
             - name: CGROUPS_HIERARCHY_ROOT
               value: "/sys/fs/cgroup"
-            - name: CGROUPS_CONTAINERD_ROOT
-              value: "system.slice/containerd.service"
             - name: CGROUPS_KUBELET_ROOT
               value: "system.slice/kubelet.service"
               # also adjust Volume if this is changed
@@ -89,12 +87,6 @@ spec:
             - name: dev
               mountPath: /dev
               readOnly: true
-            - name: containerd-root
-              mountPath: /var/lib/containerd
-              readOnly: true
-            - name: containerd-state
-              mountPath: /run/containerd
-              readOnly: true
             - name: pod-logs
               mountPath: /var/log/pods
               readOnly: true
@@ -132,14 +124,6 @@ spec:
         - name: dev
           hostPath:
             path: /dev
-            type: "Directory"
-        - name: containerd-root
-          hostPath:
-            path: /var/lib/containerd
-            type: "Directory"
-        - name: containerd-state
-          hostPath:
-            path: /run/containerd
             type: "Directory"
         - name: pod-logs
           hostPath:

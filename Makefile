@@ -24,7 +24,8 @@ revendor:
 .PHONY: images
 images:
 	@echo "Building OCI image with version and tag $(EFFECTIVE_VERSION)"
-	@nerdctl build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION)  -t $(IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile .
+	@echo "nerdctl build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile . && nerdctl tag eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:$(EFFECTIVE_VERSION) eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest"
+	@nerdctl build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile .
 	@nerdctl tag eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:$(EFFECTIVE_VERSION) eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
 
 .PHONY: push-images

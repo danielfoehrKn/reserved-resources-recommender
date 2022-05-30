@@ -21,8 +21,8 @@ const (
 	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
 	kubepodsMemoryCgroupName = "kubepods"
 	systemSliceMemoryCgroupName = "system.slice"
+	defaultDockerMemoryCgroupName = "docker.service"
 )
-
 
 var (
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
@@ -73,6 +73,16 @@ var (
 	metricContainerdServiceWorkingSetMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_cgroup_containerd_service_memory_working_set_percent",
 		Help: "The working set memory of the containerd cgroup in percent of the total memory",
+	})
+
+	metricDockerServiceWorkingSetMemory = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_docker_service_memory_working_set_bytes",
+		Help: "The working set memory of the docker cgroup in bytes",
+	})
+
+	metricDockerServiceWorkingSetMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "node_cgroup_docker_service_memory_working_set_percent",
+		Help: "The working set memory of the docker cgroup in percent of the total memory",
 	})
 
 	metricKubeletServiceWorkingSetMemory = promauto.NewGauge(prometheus.GaugeOpts{
@@ -130,7 +140,7 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 		return err
 	}
 
-	containerdSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, containerdMemoryCgroupName)
+	containerdSliceWorkingSetBytes, dockerSliceWorkingSetBytes, err := getContainerRuntimeWorkingSetBytes(cgroupRoot, containerdMemoryCgroupName)
 	if err != nil {
 		return err
 	}
@@ -179,6 +189,8 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 	metricSystemSliceWorkingSetMemoryPercent.Set(math.Round(float64(systemSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricContainerdServiceWorkingSetMemory.Set(float64(containerdSliceWorkingSetBytes.Value()))
 	metricContainerdServiceWorkingSetMemoryPercent.Set(math.Round(float64(containerdSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
+	metricDockerServiceWorkingSetMemory.Set(float64(dockerSliceWorkingSetBytes.Value()))
+	metricDockerServiceWorkingSetMemoryPercent.Set(math.Round(float64(dockerSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricKubeletServiceWorkingSetMemory.Set(float64(kubeletSliceWorkingSetBytes.Value()))
 	metricKubeletServiceWorkingSetMemoryPercent.Set(math.Round(float64(kubeletSliceWorkingSetBytes.Value()) / float64(memTotal.Value()) * 100))
 	metricCurrentReservedMemoryBytes.Set(float64(currentReservedMemory.Value()))
@@ -202,7 +214,7 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 		int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)),
 		currentReservedMemory.String(),
 		int64(math.Round(float64(currentReservedMemory.Value())/float64(memTotal.Value())*100)),
-		)
+	)
 
 	// record prometheus metrics
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
@@ -219,6 +231,8 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 		int64(math.Round(float64(systemSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(containerdSliceWorkingSetBytes.Value())),
 		int64(math.Round(float64(containerdSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
+		humanize.IBytes(uint64(dockerSliceWorkingSetBytes.Value())),
+		int64(math.Round(float64(dockerSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(kubeletSliceWorkingSetBytes.Value())),
 		int64(math.Round(float64(kubeletSliceWorkingSetBytes.Value())/float64(memTotal.Value())*100)),
 		humanize.IBytes(uint64(currentReservedMemory.Value())),
@@ -226,9 +240,30 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 		humanize.IBytes(uint64(targetReservedMemory.Value())),
 		targetReservedMemory.String(),
 		int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)),
-		)
+	)
 
 	return nil
+}
+
+func getContainerRuntimeWorkingSetBytes(cgroupRoot string, containerdMemoryCgroupName string) (resource.Quantity, resource.Quantity, error) {
+	var (
+		containerdSliceWorkingSetBytes resource.Quantity
+		dockerSliceWorkingSetBytes resource.Quantity
+		err error
+	)
+
+	containerdSliceWorkingSetBytes, err = getMemoryWorkingSet(cgroupRoot, containerdMemoryCgroupName)
+	if err != nil {
+		// this can be the cae if the node uses only docker as the container runtime
+		containerdSliceWorkingSetBytes = resource.Quantity{}
+	}
+
+	dockerSliceWorkingSetBytes, err = getMemoryWorkingSet(cgroupRoot, fmt.Sprintf("%s/%s", systemSliceMemoryCgroupName, defaultDockerMemoryCgroupName))
+	if err != nil {
+		dockerSliceWorkingSetBytes = resource.Quantity{}
+	}
+
+	return containerdSliceWorkingSetBytes, dockerSliceWorkingSetBytes, nil
 }
 
 func logRecommendation(
@@ -242,6 +277,8 @@ func logRecommendation(
 	systemSliceWorkingSetPercentTotal int64,
 	containerdServiceWorkingSet string,
 	containerdServiceWorkingSetPercentTotal int64,
+	dockerServiceWorkingSet string,
+	dockerServiceWorkingSetPercentTotal int64,
 	kubeletServiceWorkingSet string,
 	kubeletServiceWorkingSetPercentTotal int64,
 	currentReservedMemory string,
@@ -259,6 +296,7 @@ func logRecommendation(
 		{"Kubepods working set", fmt.Sprintf("%s (%d%%)", kubepodsWorkingSet, kubepodsWorkingSetPercentTotal)},
 		{"System.slice working set", fmt.Sprintf("%s (%d%%)", systemSliceWorkingSet, systemSliceWorkingSetPercentTotal)},
 		{" - Containerd.slice working set", fmt.Sprintf("%s (%d%%)", containerdServiceWorkingSet, containerdServiceWorkingSetPercentTotal)},
+		{" - Docker.slice working set", fmt.Sprintf("%s (%d%%)", dockerServiceWorkingSet, dockerServiceWorkingSetPercentTotal)},
 		{" - Kubelet.slice working set", fmt.Sprintf("%s (%d%%)", kubeletServiceWorkingSet, kubeletServiceWorkingSetPercentTotal)},
 		{"Current reservation (kube+system reserved)", fmt.Sprintf("%s (%d%%)", currentReservedMemory, currentReservedMemoryPercentTotal)},
 	})

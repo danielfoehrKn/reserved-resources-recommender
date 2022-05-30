@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: reserved-resources-recommender-containerd
+    gardener.cloud/role: monitoring
+  name: reserved-resources-recommender-containerd
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      component: reserved-resources-recommender-containerd
+  template:
+    metadata:
+      labels:
+        component: reserved-resources-recommender-containerd
+        gardener.cloud/role: monitoring
+        networking.gardener.cloud/from-seed: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+    spec:
+      automountServiceAccountToken: false
+#      priorityClassName: reserved-resources-recommender
+      nodeSelector:
+        # change to any worker pool
+        worker.gardener.cloud/pool: cpu-worker
+        worker.gardener.cloud/cri-name: containerd
+      containers:
+        - image: eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
+          imagePullPolicy: Always
+          name: reconciler
+          env:
+            - name: PERIOD
+              value: "30s"
+            - name: MEMORY_SAFETY_MARGIN_ABSOLUTE
+              value: 200Mi
+            - name: CGROUPS_HIERARCHY_ROOT
+              value: "/sys/fs/cgroup"
+            - name: CGROUPS_CONTAINERD_ROOT
+              value: "system.slice/containerd.service"
+            - name: CGROUPS_KUBELET_ROOT
+              value: "system.slice/kubelet.service"
+              # also adjust Volume if this is changed
+            - name: KUBELET_DIRECTORY
+              value: "/var/lib/kubelet/"
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: 16911
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          ports:
+            - containerPort: 16911
+              hostPort: 16911
+              name: scrape
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: 16911
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "30Mi"
+              cpu: "40m"
+#            limits:
+#              memory: "60Mi"
+#              cpu: "40m"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          volumeMounts:
+            - name: kubelet
+              mountPath: /var/lib/kubelet
+              readOnly: true
+            - name: cgroup-hierarchy
+              mountPath: /sys/fs/cgroup
+              readOnly: true
+            - name: dev
+              mountPath: /dev
+              readOnly: true
+            - name: containerd-root
+              mountPath: /var/lib/containerd
+              readOnly: true
+            - name: containerd-state
+              mountPath: /run/containerd
+              readOnly: true
+            - name: pod-logs
+              mountPath: /var/log/pods
+              readOnly: true
+
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      hostPID: true
+#      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+#      serviceAccountName: better-resource-reservations
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: pool.worker.gardener.cloud/dedicated-for
+          operator: Equal
+          value: etcd
+      volumes:
+        - name: kubelet
+          hostPath:
+            path: /var/lib/kubelet
+            type: "Directory"
+        - name: cgroup-hierarchy
+          hostPath:
+            path: /sys/fs/cgroup
+            type: "Directory"
+        - name: dev
+          hostPath:
+            path: /dev
+            type: "Directory"
+        - name: containerd-root
+          hostPath:
+            path: /var/lib/containerd
+            type: "Directory"
+        - name: containerd-state
+          hostPath:
+            path: /run/containerd
+            type: "Directory"
+        - name: pod-logs
+          hostPath:
+            path: /var/log/pods
+            type: "Directory"
+
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate

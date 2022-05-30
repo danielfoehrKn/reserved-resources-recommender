@@ -7,7 +7,7 @@ No more guessing.
 
 ## Installation
 
-Either via a [single pod](example/installation/pod-reserved-resources-recommender.yaml) or preferably via a daemonset which can be found [here](example/installation/daemonset-reserved-resources-recommender.yaml).
+Either via a [single pod](example/installation/pod-reserved-resources-recommender-containerd.yaml) or preferably via a daemonset which can be found [here](example/installation/daemonset-reserved-resources-recommender-containerd.yaml).
 The container process will log recommendations to the command line and expose metrics which can be consumed by prometheus (see below for [monitoring example](#exposed-metrics)).
 
 ```

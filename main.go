@@ -113,7 +113,7 @@ func main() {
 	defer controllerCancel()
 
 	go wait.Until(func() {
-		if err := recommendReservedResources(period, numCPU); err != nil {
+		if err := recommendReservedResources(log, period, numCPU); err != nil {
 			log.Warnf("error during reconciliation: %v", err)
 		}
 	}, period*2, ctx.Done())
@@ -130,9 +130,9 @@ func main() {
 // - Memory -> Goal: cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
 // - CPU -> Goal: Give fair amount of CPU shares to kubepods cgroup still leaving enough CPU time for non-pod processes (container runtime, kubelet, ...) to operate.
 // - Disk -> Goal: Accurate disk reservations allows good scheduling decisions for pods with ephemeral size requests
-func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64) error {
+func recommendReservedResources(logger *logrus.Logger, reconciliationPeriod time.Duration, numCPU int64) error {
 	if err := disk.RecommendDiskReservation(log, "", "", ""); err != nil {
-		return fmt.Errorf("failed to make disk recommendation: %w", err)
+		log.Warnf("failed to make disk recommendation: %v", err)
 	}
 
 	fmt.Println("")
@@ -140,13 +140,13 @@ func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64
 	// does not return a recommendation when CPU resource reservations should be updated
 	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
 	if err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU); err != nil {
-		return fmt.Errorf("failed to make CPU recommendation: %w", err)
+		log.Warnf("failed to make CPU recommendation: %v", err)
 	}
 
 	fmt.Println("")
 
 	if err := memory.RecommendReservedMemory(log, memorySafetyMarginAbsolute, cgroupsHierarchyRoot, containerdCgroupsRoot, kubeletCgroupsRoot); err != nil {
-		return fmt.Errorf("failed to make memory recommendation: %w", err)
+		log.Warnf("failed to make memory recommendation: %v", err)
 	}
 
 	return nil
