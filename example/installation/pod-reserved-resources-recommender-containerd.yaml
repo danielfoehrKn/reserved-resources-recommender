@@ -28,7 +28,9 @@ spec:
           value: "system.slice/kubelet.service"
           # also adjust Volume if this is changed
         - name: KUBELET_DIRECTORY
-          value: "/var/lib/kubelet/"
+          value: "/var/lib/kubelet"
+        - name: ENFORCE_RECOMMENDATION
+          value: "true"
       resources:
         requests:
           memory: "16Mi"
@@ -65,7 +67,7 @@ spec:
   enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-242-28-239.eu-west-1.compute.internal
+  nodeName: ip-10-180-23-23.eu-west-1.compute.internal
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}

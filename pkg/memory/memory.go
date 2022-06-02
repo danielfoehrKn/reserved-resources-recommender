@@ -8,6 +8,7 @@ import (
 	linuxproc "github.com/c9s/goprocinfo/linux"
 	"github.com/containerd/cgroups"
 	cgroupstatsv1 "github.com/containerd/cgroups/stats/v1"
+	"github.com/danielfoehrkn/better-kube-reserved/pkg/types"
 	"github.com/dustin/go-humanize"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,13 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-const (
-	// PoC: assumes kubepods memory controller mounted at /sys/fs/cgroups/memory/kubepods
-	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
-	kubepodsMemoryCgroupName = "kubepods"
-	systemSliceMemoryCgroupName = "system.slice"
-	defaultDockerMemoryCgroupName = "docker.service"
-)
 
 var (
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
@@ -123,36 +117,35 @@ var (
 
 // RecommendReservedMemory recommends a memory reservation for non-pod processes.
 // The recommendation can be split across kube- and system-reserved and hard-eviction.
-func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute resource.Quantity, cgroupRoot string, containerdMemoryCgroupName string, kubeletMemoryCgroupName string) error {
-
+func RecommendReservedMemory(log *logrus.Logger, minimumReservedMemory, memorySafetyMarginAbsolute resource.Quantity, cgroupRoot string, containerdMemoryCgroupName string, kubeletMemoryCgroupName string) (resource.Quantity, error) {
 	memTotal, memAvailable, err := ParseProcMemInfo()
 	if err != nil {
 		log.Fatalf("fatal error during reconciliation: %v", err)
 	}
 
-	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, kubepodsMemoryCgroupName)
+	kubepodsWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, types.DefaultkubepodsCgroupName)
 	if err != nil {
-		return err
+		return resource.Quantity{}, err
 	}
 
-	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, systemSliceMemoryCgroupName)
+	systemSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, types.SystemSliceCgroupName)
 	if err != nil {
-		return err
+		return resource.Quantity{}, err
 	}
 
 	containerdSliceWorkingSetBytes, dockerSliceWorkingSetBytes, err := getContainerRuntimeWorkingSetBytes(cgroupRoot, containerdMemoryCgroupName)
 	if err != nil {
-		return err
+		return resource.Quantity{}, err
 	}
 
 	kubeletSliceWorkingSetBytes, err := getMemoryWorkingSet(cgroupRoot, kubeletMemoryCgroupName)
 	if err != nil {
-		return err
+		return resource.Quantity{}, err
 	}
 
-	kubepodsLimitInBytes, err := getMemoryLimitInBytes(cgroupRoot, kubepodsMemoryCgroupName)
+	kubepodsLimitInBytes, err := getMemoryLimitInBytes(cgroupRoot, types.DefaultkubepodsCgroupName)
 	if err != nil {
-		return err
+		return resource.Quantity{}, err
 	}
 
 	// Calculate the reserved memory based on the memory limit on the kubepods cgroup
@@ -202,10 +195,9 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 	// If desired, the systemSliceWorkingSetBytes can be used knowing that this will most
 	// likely over-reserve memory
 	if targetReservedMemory.Value() < 0 {
-		log.Infof("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
 		metricTargetReservedMemoryBytes.Set(-1)
 		metricTargetReservedMemoryPercent.Set(0)
-		return nil
+		return resource.Quantity{}, fmt.Errorf("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
 	}
 
 	log.Debugf("Recommended memory reservation: %q (%s, %d percent). Currenlty reserved (kube-reserved + system-reserved): %q (%d percent)",
@@ -242,7 +234,15 @@ func RecommendReservedMemory(log *logrus.Logger, memorySafetyMarginAbsolute reso
 		int64(math.Round(float64(targetReservedMemory.Value())/float64(memTotal.Value())*100)),
 	)
 
-	return nil
+	if targetReservedMemory.Value() < minimumReservedMemory.Value() {
+		targetReservedMemory = minimumReservedMemory
+	}
+
+	// calculate the desired kubepods memory limit for direct enforcement on the kubepods cgroup
+	targetKubepodsLimitInBytes := memTotal
+	targetKubepodsLimitInBytes.Sub(targetReservedMemory)
+
+	return targetKubepodsLimitInBytes, nil
 }
 
 func getContainerRuntimeWorkingSetBytes(cgroupRoot string, containerdMemoryCgroupName string) (resource.Quantity, resource.Quantity, error) {
@@ -258,7 +258,7 @@ func getContainerRuntimeWorkingSetBytes(cgroupRoot string, containerdMemoryCgrou
 		containerdSliceWorkingSetBytes = resource.Quantity{}
 	}
 
-	dockerSliceWorkingSetBytes, err = getMemoryWorkingSet(cgroupRoot, fmt.Sprintf("%s/%s", systemSliceMemoryCgroupName, defaultDockerMemoryCgroupName))
+	dockerSliceWorkingSetBytes, err = getMemoryWorkingSet(cgroupRoot, fmt.Sprintf("%s/%s", types.SystemSliceCgroupName, types.DefaultDockerCgroupName))
 	if err != nil {
 		dockerSliceWorkingSetBytes = resource.Quantity{}
 	}

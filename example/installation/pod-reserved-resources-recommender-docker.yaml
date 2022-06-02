@@ -26,7 +26,7 @@ spec:
           value: "system.slice/kubelet.service"
           # also adjust Volume if this is changed
         - name: KUBELET_DIRECTORY
-          value: "/var/lib/kubelet/"
+          value: "/var/lib/kubelet"
       resources:
         requests:
           memory: "16Mi"

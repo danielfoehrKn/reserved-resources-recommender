@@ -9,11 +9,11 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      component: reserved-resources-recommender-containerd
+      component: reserved-resources-recommender
   template:
     metadata:
       labels:
-        component: reserved-resources-recommender-containerd
+        component: reserved-resources-recommender
         gardener.cloud/role: monitoring
         networking.gardener.cloud/from-seed: allowed
         networking.gardener.cloud/to-public-networks: allowed
@@ -41,7 +41,11 @@ spec:
               value: "system.slice/kubelet.service"
               # also adjust Volume if this is changed
             - name: KUBELET_DIRECTORY
-              value: "/var/lib/kubelet/"
+              value: "/var/lib/kubelet"
+            - name: ENFORCE_RECOMMENDATION
+              value: "true"
+            - name: MINIMUM_RESERVED_MEMORY
+              value: "1Gi"
           livenessProbe:
             failureThreshold: 3
             httpGet:

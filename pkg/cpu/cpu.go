@@ -8,6 +8,7 @@ import (
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
+	"github.com/danielfoehrkn/better-kube-reserved/pkg/types"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -15,11 +16,9 @@ import (
 )
 
 const (
-	// TODO: possibly use --kube-reserved-cgroup  read from kubelet configuration instead
-	// Should be based on cgroup driver (systemdDbus: kubepods.slice, cgroups: kubepods) and from kubelet config
-	cgroupKubepods      = "kubepods"
-	cgroupSystemSlice   = "system.slice"
+	// cgroupStatCPUShares is the name of the file setting the amount of cpu shares for a particular cgroup
 	cgroupStatCPUShares = "cpu.shares"
+	// cgroupStatCPUUsage is the name of the cpu usage file in the cgroup filesystem
 	cgroupStatCPUUsage  = "cpuacct.usage"
 )
 
@@ -67,17 +66,17 @@ var (
 
 // RecommendCPUReservations recommends kubelet CPU reservations by
 // measuring overall, kubepods and system.slice CPU consumption and comparing those measurements against current CPU reservations (based on CPU shares of the cgroups)
-func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string, numCPU int64) error {
+func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Duration, cgroupsHierarchyRoot string, numCPU int64) (int64, error) {
 	cgroupsHierarchyCPU := fmt.Sprintf("%s/cpu", cgroupsHierarchyRoot)
 
-	systemSliceCPUShares, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUShares)
+	systemSliceCPUShares, err := getCPUStat(cgroupsHierarchyCPU, types.SystemSliceCgroupName, cgroupStatCPUShares)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	kubepodsCPUShares, err := getCPUStat(cgroupsHierarchyCPU, cgroupKubepods, cgroupStatCPUShares)
+	kubepodsCPUShares, err := getCPUStat(cgroupsHierarchyCPU, types.DefaultkubepodsCgroupName, cgroupStatCPUShares)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// System.slice's relative CPU time for ALL cores = (Active cgroup CPU shares) / (sum of all possible CPU shares of the cgroup SIBLINGS)
@@ -99,7 +98,7 @@ func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Dura
 	// Please refer to the following URL for more information: https://www.idnt.net/en-US/kb/941772
 	overallCPUNonIdleTime, systemSliceCPUTime, kubepodsCPUTime, err := measureAverageCPUUsage(log, cgroupsHierarchyCPU, reconciliationPeriod, numCPU)
 	if err != nil {
-		return fmt.Errorf("failed to measure relative CPU time: %w", err)
+		return 0, fmt.Errorf("failed to measure relative CPU time: %w", err)
 	}
 
 	// Calculation:
@@ -146,14 +145,14 @@ func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Dura
 	kubepodsTargetCPUShares := int64(((float64(systemSliceCPUShares) * float64(numCPU)) / cpuTimeNonPodProcesses) - float64(systemSliceCPUShares))
 	log.Debugf("CPU shares: kubepods current: %d | kubepods target: %d | system.slice current: %d", kubepodsCPUShares, kubepodsTargetCPUShares, systemSliceCPUShares)
 
-	// totalCPUShares set by the kubelet based on the amount of cores (not a Linux requirement)
-	totalCPUShares := numCPU * 1024
+	// kubernetesTotalCPUSharesForNCores set by the kubelet based on the amount of cores (not a Linux requirement)
+	kubernetesTotalCPUSharesForNCores := numCPU * 1024
 
 	var targetKubeReservedCPU int64
-	if kubepodsTargetCPUShares < totalCPUShares {
-		targetKubeReservedCPU = totalCPUShares - kubepodsTargetCPUShares
+	if kubepodsTargetCPUShares < kubernetesTotalCPUSharesForNCores {
+		targetKubeReservedCPU = kubernetesTotalCPUSharesForNCores - kubepodsTargetCPUShares
 	} else {
-		// kubepodsTargetCPUShares can be > totalCPUShares
+		// kubepodsTargetCPUShares can be > kubernetesTotalCPUSharesForNCores
 		// However, Kubernetes decided that the maximum CPU shares it  sets for the
 		// kubepods cgroup = amount of cpus * 1024
 		// Hence, if we want to give more than the K8s possible total amount of shares to the kubepods cgroup
@@ -174,7 +173,7 @@ func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Dura
 
 	// no need to read the kubelet configuration to get the current reserved CPU
 	// it can be deduced by looking at the kubepods cpu.shares
-	currentKubeReservedCPU := totalCPUShares - kubepodsCPUShares
+	currentKubeReservedCPU := kubernetesTotalCPUSharesForNCores - kubepodsCPUShares
 
 	log.Debugf("Recommended reserved CPU: %dm (current: %dm). Reason: reserving %.2f percent CPU for non-pod processes requires %d CPU shares for kubepods with system.slice having %d CPU shares.", targetKubeReservedCPU, currentKubeReservedCPU, cpuUsageNonPodProcesses * 100, kubepodsTargetCPUShares, systemSliceCPUShares)
 
@@ -202,7 +201,19 @@ func RecommendCPUReservations(log *logrus.Logger, reconciliationPeriod time.Dura
 		targetKubeReservedCPU,
 		kubepodsGuaranteedCPUTimePercent)
 
-	return nil
+
+	// Do not enforce kubepods CPU shares that would exceed the maximum CPU shares set by the kubelet
+	// this effectively makes sure that system.slice has the same minimum guaranteed CPU time as if the kubelet does not reserve any CPU for system processes
+	// For example:
+	//  - Total cores=16.
+	//  - Maximum shares set on kubepods by kubelet (for 0 CPU reservation) = 16 * 1024 shares.
+	//  - System.slice always has 1024 shares.
+	//    This guarantees a minimum CPU time of 95% of one core for system.slice processes no matter how little CPU the system processes actually consume.
+	if kubepodsTargetCPUShares > kubernetesTotalCPUSharesForNCores {
+		kubepodsTargetCPUShares = kubernetesTotalCPUSharesForNCores
+	}
+
+	return kubepodsTargetCPUShares, nil
 }
 
 func recordMetrics(numCPU int64,
@@ -270,13 +281,13 @@ func getCPUStat(cgroupsHierarchyCPU, cgroup, cpuStat string) (int64, error) {
 // A return value of 1.1 means that the cgroup has used 110% of the CPU time of one core
 func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, period time.Duration, numCPU int64) (float64, float64, float64, error) {
 	startSystemSlice := time.Now().UnixNano()
-	startSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUUsage)
+	startSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, types.SystemSliceCgroupName, cgroupStatCPUUsage)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
 	startKubepods := time.Now().UnixNano()
-	startKubepodsCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupKubepods, cgroupStatCPUUsage)
+	startKubepodsCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, types.DefaultkubepodsCgroupName, cgroupStatCPUUsage)
 	if err != nil {
 		return 0, 0, 0, err
 	}
@@ -289,13 +300,13 @@ func measureAverageCPUUsage(log *logrus.Logger, cgroupsHierarchyCPU string, peri
 
 	time.Sleep(period)
 
-	stopSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupSystemSlice, cgroupStatCPUUsage)
+	stopSystemSliceCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, types.SystemSliceCgroupName, cgroupStatCPUUsage)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 	stopSystemSlice := time.Now().UnixNano()
 
-	stopKubepodsCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, cgroupKubepods, cgroupStatCPUUsage)
+	stopKubepodsCPUUsage, err := getCPUStat(cgroupsHierarchyCPU, types.DefaultkubepodsCgroupName, cgroupStatCPUUsage)
 	if err != nil {
 		return 0, 0, 0, err
 	}

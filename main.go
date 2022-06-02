@@ -1,21 +1,25 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 
+	"github.com/containerd/cgroups"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/cpu"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/disk"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/memory"
+	"github.com/danielfoehrkn/better-kube-reserved/pkg/types"
 	"github.com/dustin/go-humanize"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -23,14 +27,22 @@ const (
 	defaultCgroupsHierarchyRoot           = "/sys/fs/cgroup"
 	defaultContainerdCgroupsHierarchyRoot = "system.slice/containerd.service"
 	defaultKubeletCgroupsHierarchyRoot    = "system.slice/kubelet.service"
-	defaultKubeletDirectory               = "/var/lib/kubelet/"
+	defaultKubeletDirectory               = "/var/lib/kubelet"
+	defaultContainerdStateDirectory       = "/run/containerd"
+	defaultContainerdRootDirectory        = "/var/lib/containerd"
 )
 
 var (
 	log = logrus.New()
 	// kubeletStateDirectory  is the directory that contains the kubelet's state
-	// defaults to: /var/lib/kubelet/
+	// defaults to: /var/lib/kubelet
 	kubeletDirectory string
+	// containerdStateDirectory is the directory that contains the containerd state directory
+	// defaults to: /run/containerd
+	containerdStateDirectory string
+	// containerdRootDirectory is the directory that contains the containerd root directory
+	// defaults to: /var/lib/containerd
+	containerdRootDirectory string
 	// kubeletConfigPath is the path to the kubelet's configuration file
 	// defaults to: /var/lib/kubelet/config/kubelet
 	kubeletConfigPath string
@@ -51,18 +63,36 @@ var (
 	// period is the measurement period (e.g every 30 seconds).
 	// The recommender also uses this time to check the cpu reservation
 	period time.Duration
+	// enforceRecommendation determines if the recommendations for memory and disk are applied directly to the kubepods/system.slice cgroups
+	// the kubelet's configuration is NOT adjusted and might contain conflicting reservations
+	enforceRecommendation bool
+	// minimumReservedMemory is the minimum amount of memory that will be reserved when enforcing a recommendation
+	// Please note, recommended memory reservations can still be lower than that
+	minimumReservedMemory resource.Quantity
 )
 
 func init() {
 	kubeletDirectory = os.Getenv("KUBELET_DIRECTORY")
+	containerdStateDirectory = os.Getenv("CONTAINERD_STATE_DIRECTORY")
+	containerdRootDirectory = os.Getenv("CONTAINERD_ROOT_DIRECTORY")
 	memorySafetyMarginString := os.Getenv("MEMORY_SAFETY_MARGIN_ABSOLUTE")
 	cgroupsHierarchyRoot = os.Getenv("CGROUPS_HIERARCHY_ROOT")
 	containerdCgroupsRoot = os.Getenv("CGROUPS_CONTAINERD_ROOT")
 	kubeletCgroupsRoot = os.Getenv("CGROUPS_KUBELET_ROOT")
 	periodString := os.Getenv("PERIOD")
+	enforce := os.Getenv("ENFORCE_RECOMMENDATION")
+	minReservedMemory := os.Getenv("MINIMUM_RESERVED_MEMORY")
 
 	if len(kubeletDirectory) == 0 {
 		kubeletDirectory = defaultKubeletDirectory
+	}
+
+	if len(containerdStateDirectory) == 0 {
+		containerdStateDirectory = defaultContainerdStateDirectory
+	}
+
+	if len(containerdRootDirectory) == 0 {
+		containerdRootDirectory = defaultContainerdRootDirectory
 	}
 
 	if len(memorySafetyMarginString) == 0 {
@@ -83,6 +113,21 @@ func init() {
 		kubeletCgroupsRoot = defaultKubeletCgroupsHierarchyRoot
 	}
 
+	var err error
+	if len(enforce) > 0 {
+		enforceRecommendation, err = strconv.ParseBool(enforce)
+		if err != nil {
+			log.Fatalf("The ENFORCE_RECOMMENDATION env variable is invalid: must be boolean: %v", err)
+		}
+	}
+
+	if len(minReservedMemory) != 0 {
+		minimumReservedMemory, err = resource.ParseQuantity(minReservedMemory)
+		if err != nil {
+			log.Fatalf("The MINIMUM_RESERVED_MEMORY env variable is invalid: %v", err)
+		}
+	}
+
 	if len(periodString) == 0 {
 		period = 20 * time.Second
 	} else {
@@ -98,7 +143,9 @@ func main() {
 	log.Infof("Kubelet directory: %s", kubeletDirectory)
 	log.Infof("CgroupsV1 hierarchy root: %s", cgroupsHierarchyRoot)
 	log.Infof("Recommended memory safety margin: %s", memorySafetyMarginAbsolute.String())
+	log.Infof("Minimum reserved memory: %s", minimumReservedMemory.String())
 	log.Infof("Period: %s", period.String())
+	log.Infof("Enforce recommendation: %v", enforceRecommendation)
 
 	memTotal, _, err := memory.ParseProcMemInfo()
 	if err != nil {
@@ -109,14 +156,18 @@ func main() {
 	numCPU := int64(runtime.NumCPU())
 	log.Infof("CPU cores: %d", numCPU)
 
-	ctx, controllerCancel := context.WithCancel(context.Background())
-	defer controllerCancel()
+	go func() {
+		for {
+			// we measure the CPU consumption as the average CPU consumption over period/2 amount of time
+			if err := recommendReservedResources(period/2, numCPU, containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
+				log.Warnf("error during reconciliation: %v", err)
+			}
 
-	go wait.Until(func() {
-		if err := recommendReservedResources(log, period, numCPU); err != nil {
-			log.Warnf("error during reconciliation: %v", err)
+			// after the business logic is done, sleep for another period/2
+			// the overall time between executions of business logic will be slightly larger than period
+			time.Sleep(period / 2)
 		}
-	}, period*2, ctx.Done())
+	}()
 
 	http.Handle("/metrics", promhttp.Handler())
 	if err := http.ListenAndServe(":16911", nil); err != nil {
@@ -130,8 +181,8 @@ func main() {
 // - Memory -> Goal: cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
 // - CPU -> Goal: Give fair amount of CPU shares to kubepods cgroup still leaving enough CPU time for non-pod processes (container runtime, kubelet, ...) to operate.
 // - Disk -> Goal: Accurate disk reservations allows good scheduling decisions for pods with ephemeral size requests
-func recommendReservedResources(logger *logrus.Logger, reconciliationPeriod time.Duration, numCPU int64) error {
-	if err := disk.RecommendDiskReservation(log, "", "", ""); err != nil {
+func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64, containerdRootDirectory, containerdStateDirectory, kubeletDirectory string) error {
+	if err := disk.RecommendDiskReservation(log, containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
 		log.Warnf("failed to make disk recommendation: %v", err)
 	}
 
@@ -139,14 +190,37 @@ func recommendReservedResources(logger *logrus.Logger, reconciliationPeriod time
 
 	// does not return a recommendation when CPU resource reservations should be updated
 	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
-	if err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU); err != nil {
+	targetKubepodsCPUShares, err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU)
+	if err != nil {
 		log.Warnf("failed to make CPU recommendation: %v", err)
 	}
 
 	fmt.Println("")
 
-	if err := memory.RecommendReservedMemory(log, memorySafetyMarginAbsolute, cgroupsHierarchyRoot, containerdCgroupsRoot, kubeletCgroupsRoot); err != nil {
+	targetKubepodsMemoryLimitInBytes, err := memory.RecommendReservedMemory(log, minimumReservedMemory, memorySafetyMarginAbsolute, cgroupsHierarchyRoot, containerdCgroupsRoot, kubeletCgroupsRoot)
+	if err != nil {
 		log.Warnf("failed to make memory recommendation: %v", err)
+	}
+
+	if enforceRecommendation {
+		memoryController := cgroups.NewMemory(cgroupsHierarchyRoot)
+
+		if err := memoryController.Update(types.DefaultkubepodsCgroupName, &specs.LinuxResources{
+			Memory: &specs.LinuxMemory{
+				Limit: pointer.Int64Ptr(targetKubepodsMemoryLimitInBytes.Value()),
+			},
+		}); err != nil {
+			log.Warnf("failed to enforce memory recommendation on the kubepods cgroup: %v", err)
+		}
+
+		cpuController := cgroups.NewCpu(cgroupsHierarchyRoot)
+
+		shares := uint64(targetKubepodsCPUShares)
+		cpuController.Update(types.DefaultkubepodsCgroupName, &specs.LinuxResources{
+			CPU: &specs.LinuxCPU{
+				Shares: &shares,
+			},
+		})
 	}
 
 	return nil

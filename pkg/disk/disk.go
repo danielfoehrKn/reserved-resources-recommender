@@ -143,7 +143,6 @@ var (
 // - size of network-attached disks (CSI - not on root disk). Excluded from /var/lib/kubelet/pods
 // - size of emptyDir with tmpfs (bytes in virtual-memory, not on disk)
 // Caveat:
-//  - Containerd must be used as the container runtime
 //  - assumes directories mounted under `/` are mounted on the root disk (this is not necessarely the case - e.g the kubelet directory /var/lib/kubelet could be mounted on a non-root disk in which case the recommendation is incorrect)
 //  - hostPath volumes are not considered. You have to manually check the disk usage for pods mounting host path volumes and adjust the recommendation accordingly.
 func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string, containerdStateDirectory string, kubeletDirectory string) error {
@@ -216,7 +215,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 	rootDiskPartitionReservedBytes :=  rootDiskPartitionCapacityBytes - rootDiskPartitionAvailableBytes - rootDiskPartitionUsedBytes
 	log.Debugf("Root disk partition reserved bytes: %s", humanize.IBytes(uint64(rootDiskPartitionReservedBytes)))
 
-	contentStore, err := exec.Command("sh", "-c", "du -sb /var/lib/containerd/io.containerd.content.v1.content/ | awk '{ print $1 }'").Output()
+	contentStore, err := exec.Command("sh", "-c", fmt.Sprintf("du -sb %s/io.containerd.content.v1.content/ | awk '{ print $1 }'", containerdRootDirectory)).Output()
 	if err != nil {
 		return err
 	}
@@ -228,7 +227,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 
 	log.Debugf("Containerd content store bytes: %s", humanize.IBytes(uint64(containerdContentStoreBytes)))
 
-	snapshotStore, err := exec.Command("sh", "-c", "du -sb /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs | awk '{ print $1 }'").Output()
+	snapshotStore, err := exec.Command("sh", "-c", fmt.Sprintf("du -sb %s/io.containerd.snapshotter.v1.overlayfs | awk '{ print $1 }'", containerdRootDirectory)).Output()
 	if err != nil {
 		return err
 	}
@@ -240,7 +239,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 
 	log.Debugf("Containerd snapshot store size (snapshots including working directories of containers): %s", humanize.IBytes(uint64(containerdSnapshotStoreBytes)))
 
-	containerdState, err := exec.Command("sh", "-c", "du -sb --exclude=\"rootfs\" /run/containerd | awk '{ print $1 }'").Output()
+	containerdState, err := exec.Command("sh", "-c", fmt.Sprintf("du -sb --exclude=\"rootfs\" %s | awk '{ print $1 }'", containerdStateDirectory)).Output()
 	if err != nil {
 		return err
 	}
@@ -250,7 +249,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 		return err
 	}
 
-	log.Debugf("Containerd state size (/run/containerd) without rootfs: %s", humanize.IBytes(uint64(containerdStateBytes)))
+	log.Debugf("Containerd state size (%s) without rootfs: %s", containerdStateDirectory, humanize.IBytes(uint64(containerdStateBytes)))
 
 	logs, err := exec.Command("sh", "-c", "du -sb /var/log/pods | awk '{ print $1 }'").Output()
 	if err != nil {
@@ -274,7 +273,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 		excludes.WriteString(fmt.Sprintf("--exclude=\"%s\" ", dir))
 	}
 
-	podVolumeSizeCommand := fmt.Sprintf("du -sb --exclude=\"kubernetes.io~csi\" %s /var/lib/kubelet/pods | awk '{ print $1 }'", excludes.String())
+	podVolumeSizeCommand := fmt.Sprintf("du -sb --exclude=\"kubernetes.io~csi\" %s %s/pods | awk '{ print $1 }'", excludes.String(), kubeletDirectory)
 	log.Debugf("podVolumeSizeCommand: %s", podVolumeSizeCommand)
 
 	volumeSize, err := exec.Command("sh", "-c", podVolumeSizeCommand).Output()
@@ -289,7 +288,7 @@ func RecommendDiskReservation(log *logrus.Logger, containerdRootDirectory string
 
 	log.Debugf("Size of pod volumes (only on root disk): %s", humanize.IBytes(uint64(podVolumeSizeBytes)))
 
-	pluginsSize, err := exec.Command("sh", "-c", "du -sb --exclude=\"csi\" /var/lib/kubelet/plugins | awk '{ print $1 }'").Output()
+	pluginsSize, err := exec.Command("sh", "-c", fmt.Sprintf("du -sb --exclude=\"csi\" %s/plugins | awk '{ print $1 }'", kubeletDirectory)).Output()
 	if err != nil {
 		return err
 	}
