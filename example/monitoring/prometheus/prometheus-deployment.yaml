@@ -49,5 +49,6 @@ spec:
             name: prometheus-server-conf-reserved-resources-recommender
 
         - name: prometheus-storage-volume
-          persistentVolumeClaim:
-            claimName: prometheus-reserved-resources-recommender
+          emptyDir: {}
+#          persistentVolumeClaim:
+#            claimName: prometheus-reserved-resources-recommender

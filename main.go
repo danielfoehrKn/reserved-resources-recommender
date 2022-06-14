@@ -159,13 +159,33 @@ func main() {
 	go func() {
 		for {
 			// we measure the CPU consumption as the average CPU consumption over period/2 amount of time
-			if err := recommendReservedResources(period/2, numCPU, containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
+			if err := recommendCPUReservation(period/2, numCPU); err != nil {
+				log.Warnf("error during reconciliation: %v", err)
+			}
+
+			fmt.Println("")
+
+			// we measure the CPU consumption as the average CPU consumption over period/2 amount of time
+			if err := recommendDiskReservation(containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
 				log.Warnf("error during reconciliation: %v", err)
 			}
 
 			// after the business logic is done, sleep for another period/2
 			// the overall time between executions of business logic will be slightly larger than period
 			time.Sleep(period / 2)
+		}
+	}()
+
+	// start a dedicated goroutine for memory reservation + enforcement
+	// this should run with a high frequency to be able to effectively protect the system in case of
+	// system.slice memory usage spikes
+	go func() {
+		for {
+			if err := recommendMemoryReservation(); err != nil {
+				log.Warnf("error during reconciliation: %v", err)
+			}
+
+			time.Sleep(5 * time.Second)
 		}
 	}()
 
@@ -176,30 +196,12 @@ func main() {
 	log.Warnf("terminating server....")
 }
 
-// recommendReservedResources recommends kubelet reserved resources. To enforce the limits, the kubelet configuration
-// has to be updated and the kubelet process must be re-started.
+// recommendReservedMemory recommends and optionally enforces kubelet reserved resources.
 // - Memory -> Goal: cgroup limit on the kubepods memory cgroup is set properly preventing a "global" OOM
-// - CPU -> Goal: Give fair amount of CPU shares to kubepods cgroup still leaving enough CPU time for non-pod processes (container runtime, kubelet, ...) to operate.
-// - Disk -> Goal: Accurate disk reservations allows good scheduling decisions for pods with ephemeral size requests
-func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64, containerdRootDirectory, containerdStateDirectory, kubeletDirectory string) error {
-	if err := disk.RecommendDiskReservation(log, containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
-		log.Warnf("failed to make disk recommendation: %v", err)
-	}
-
-	fmt.Println("")
-
-	// does not return a recommendation when CPU resource reservations should be updated
-	// this is because CPU reservations are not as critical as memory reservations (100 % CPU usage does not cause necessarily any harm)
-	targetKubepodsCPUShares, err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU)
-	if err != nil {
-		log.Warnf("failed to make CPU recommendation: %v", err)
-	}
-
-	fmt.Println("")
-
+func recommendMemoryReservation() error {
 	targetKubepodsMemoryLimitInBytes, err := memory.RecommendReservedMemory(log, minimumReservedMemory, memorySafetyMarginAbsolute, cgroupsHierarchyRoot, containerdCgroupsRoot, kubeletCgroupsRoot)
 	if err != nil {
-		log.Warnf("failed to make memory recommendation: %v", err)
+		return fmt.Errorf("failed to make memory recommendation: %w", err)
 	}
 
 	if enforceRecommendation {
@@ -210,9 +212,21 @@ func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64
 				Limit: pointer.Int64Ptr(targetKubepodsMemoryLimitInBytes.Value()),
 			},
 		}); err != nil {
-			log.Warnf("failed to enforce memory recommendation on the kubepods cgroup: %v", err)
+			return fmt.Errorf("failed to enforce memory recommendation on the kubepods cgroup: %v", err)
 		}
+	}
+	return nil
+}
 
+// recommendCPUReservation recommends and optionally enforces kubelet reserved resources.
+// - CPU -> Goal: Give fair amount of CPU shares to kubepods cgroup still leaving enough CPU time for non-pod processes (container runtime, kubelet, ...) to operate.
+func recommendCPUReservation(reconciliationPeriod time.Duration, numCPU int64) error {
+	targetKubepodsCPUShares, err := cpu.RecommendCPUReservations(log, reconciliationPeriod, cgroupsHierarchyRoot, numCPU)
+	if err != nil {
+		return fmt.Errorf("failed to make CPU recommendation: %w", err)
+	}
+
+	if enforceRecommendation {
 		cpuController := cgroups.NewCpu(cgroupsHierarchyRoot)
 
 		shares := uint64(targetKubepodsCPUShares)
@@ -222,6 +236,14 @@ func recommendReservedResources(reconciliationPeriod time.Duration, numCPU int64
 			},
 		})
 	}
+	return nil
+}
 
+// recommendDiskReservation recommends kubelet reserved resources.
+// - Disk -> Goal: Accurate disk reservations allows good scheduling decisions for pods with ephemeral size requests
+func recommendDiskReservation(containerdRootDirectory, containerdStateDirectory, kubeletDirectory string) error {
+	if err := disk.RecommendDiskReservation(log, containerdRootDirectory, containerdStateDirectory, kubeletDirectory); err != nil {
+		return fmt.Errorf("failed to make disk recommendation: %w", err)
+	}
 	return nil
 }

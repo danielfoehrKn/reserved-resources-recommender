@@ -30,7 +30,7 @@ spec:
       securityContext:
         fsGroup: 472
         supplementalGroups:
-          - 0
+          - 1
       containers:
         - name: grafana
           image: grafana/grafana:8.1.0

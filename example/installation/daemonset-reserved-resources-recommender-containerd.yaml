@@ -22,7 +22,7 @@ spec:
 #      priorityClassName: reserved-resources-recommender
       nodeSelector:
         # change to any worker pool
-        worker.gardener.cloud/pool: cpu-worker
+#        worker.gardener.cloud/pool: cpu-worker
         worker.gardener.cloud/cri-name: containerd
       containers:
         - image: eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
@@ -32,7 +32,7 @@ spec:
             - name: PERIOD
               value: "30s"
             - name: MEMORY_SAFETY_MARGIN_ABSOLUTE
-              value: 200Mi
+              value: 400Mi
             - name: CGROUPS_HIERARCHY_ROOT
               value: "/sys/fs/cgroup"
             - name: CGROUPS_CONTAINERD_ROOT
@@ -46,16 +46,17 @@ spec:
               value: "true"
             - name: MINIMUM_RESERVED_MEMORY
               value: "1Gi"
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /metrics
-              port: 16911
-              scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
+              # no liveness probe to make sure that pod is not killed under CPU pressure situations --> should still be able to make adjustments on cgroups
+#          livenessProbe:
+#            failureThreshold: 3
+#            httpGet:
+#              path: /metrics
+#              port: 16911
+#              scheme: HTTP
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#            successThreshold: 1
+#            timeoutSeconds: 5
           ports:
             - containerPort: 16911
               hostPort: 16911

@@ -1,18 +1,18 @@
-# Can be used to create memory consumption for system.slice via container runtime + kubelet
+# will be injected by chaos mesh
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: loadtest
-  namespace: load
+  name: stresstest
+  namespace: stress
 spec:
   replicas: 1
   selector:
     matchLabels:
-      loadtest: docker
+      stress: me
   template:
     metadata:
       labels:
-        loadtest: docker
+        stress: me
     spec:
       containers:
         - command:

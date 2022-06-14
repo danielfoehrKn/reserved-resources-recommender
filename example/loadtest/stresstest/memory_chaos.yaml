@@ -1,0 +1,18 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: mem-stress
+  namespace: stress
+spec:
+  mode: all
+  selector:
+    labelSelectors:
+      stress: me
+  containerNames:
+    - dummy
+  stressors:
+    memory:
+      workers: 6
+      size: 800MiB
+      options: [""]
+  duration: "5h"

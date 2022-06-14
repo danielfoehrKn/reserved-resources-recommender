@@ -3,9 +3,9 @@ kind: Pod
 metadata:
   annotations:
     kubernetes.io/psp: gardener.privileged
-#  labels:
+  labels:
 #    app: root
-#    component: reserved-resources-recommender
+    component: reserved-resources-recommender
 #    networking.gardener.cloud/to-dns: allowed
 #    networking.gardener.cloud/to-shoot-apiserver: allowed
   name: reserved-resources-recommender-docker
@@ -19,7 +19,7 @@ spec:
         - name: PERIOD
           value: "30s"
         - name: MEMORY_SAFETY_MARGIN_ABSOLUTE
-          value: 200Mi
+          value: 400Mi
         - name: CGROUPS_HIERARCHY_ROOT
           value: "/sys/fs/cgroup"
         - name: CGROUPS_KUBELET_ROOT
@@ -27,6 +27,10 @@ spec:
           # also adjust Volume if this is changed
         - name: KUBELET_DIRECTORY
           value: "/var/lib/kubelet"
+        - name: ENFORCE_RECOMMENDATION
+          value: "false"
+        - name: MINIMUM_RESERVED_MEMORY
+          value: "1Gi"
       resources:
         requests:
           memory: "16Mi"
@@ -57,7 +61,7 @@ spec:
   enableServiceLinks: false
   hostNetwork: true
   hostPID: true
-  nodeName: ip-10-180-15-251.eu-west-1.compute.internal
+  nodeName: shoot--oaas-live--azuwe-p6-worker-opt-z3-85f6f-gtnkt
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
