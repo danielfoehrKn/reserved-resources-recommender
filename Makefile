@@ -16,6 +16,10 @@ build:
 .PHONY: all
 all: format build
 
+.PHONY: test
+test:
+	@./hack/test.sh ./pkg/...
+
 .PHONY: revendor
 revendor:
 	@GO111MODULE=on go mod vendor

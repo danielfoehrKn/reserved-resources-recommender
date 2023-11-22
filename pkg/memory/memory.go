@@ -8,6 +8,7 @@ import (
 	linuxproc "github.com/c9s/goprocinfo/linux"
 	"github.com/containerd/cgroups"
 	cgroupstatsv1 "github.com/containerd/cgroups/stats/v1"
+	"github.com/danielfoehrkn/better-kube-reserved/pkg/memory/util"
 	"github.com/danielfoehrkn/better-kube-reserved/pkg/types"
 	"github.com/dustin/go-humanize"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -18,6 +19,8 @@ import (
 )
 
 
+// TODO: make work with cgroupsv2 where the location of the memory.stat file changed from  (unified controller hierarchy)
+// cat /sys/fs/cgroup/memory/kubepods/memory.stat  -> cat /sys/fs/cgroup/kubepods/memory.stat
 var (
 	metricCurrentReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_reserved_memory_bytes",
@@ -32,6 +35,11 @@ var (
 	metricTargetReservedMemoryBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "kubelet_target_reserved_memory_bytes",
 		Help: "The target kubelet reserved memory calculated as MemTotal - MemAvailable - memory working set kubepods cgroup",
+	})
+
+	metricTargetReservedMemoryBytesMachineType = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "kubelet_target_reserved_memory_bytes_machine_type",
+		Help: "The target kubelet reserved memory calculated based on the machine type",
 	})
 
 	metricTargetReservedMemoryPercent = promauto.NewGauge(prometheus.GaugeOpts{
@@ -192,12 +200,12 @@ func RecommendReservedMemory(log *logrus.Logger, minimumReservedMemory, memorySa
 	// in case the target reserved memory is negative, that means that the kubepods cgroup memory working set
 	// was larger than the OS thinks is even used overall --> cgroupv1 accounting is most likely off
 	// in this case, we rather choose to not report a target reserved memory via metrics.
-	// If desired, the systemSliceWorkingSetBytes can be used knowing that this will most
+	// If desired, the systemSliceWorkingSetBytes can be used as recommended reservation knowing that this will most
 	// likely over-reserve memory
 	if targetReservedMemory.Value() < 0 {
 		metricTargetReservedMemoryBytes.Set(-1)
 		metricTargetReservedMemoryPercent.Set(0)
-		return resource.Quantity{}, fmt.Errorf("No memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
+		return resource.Quantity{}, fmt.Errorf("no memory recommendation can be provided. Memory accounting seems to be off. You can use the working set of system.slice instead, though this will most likely over-reserve memory.")
 	}
 
 	log.Debugf("Recommended memory reservation: %q (%s, %d percent). Currenlty reserved (kube-reserved + system-reserved): %q (%d percent)",
@@ -211,6 +219,12 @@ func RecommendReservedMemory(log *logrus.Logger, minimumReservedMemory, memorySa
 	// record prometheus metrics
 	metricTargetReservedMemoryBytes.Set(float64(targetReservedMemory.Value()))
 	metricTargetReservedMemoryPercent.Set(math.Round(float64(targetReservedMemory.Value()) / float64(memTotal.Value()) * 100))
+
+	targetReservedMachineType, err := util.CalculateReservationBasedOnCapacity(memTotal)
+	if err != nil {
+		return resource.Quantity{}, err
+	}
+	metricTargetReservedMemoryBytesMachineType.Set(float64(targetReservedMachineType.Value()))
 
 	logRecommendation(
 		humanize.IBytes(uint64(memAvailable.Value())),
@@ -315,6 +329,14 @@ func getMemoryWorkingSet(cgroupRoot, unit string) (resource.Quantity, error) {
 	if err := memoryController.Stat(unit, stats); err != nil {
 		return resource.Quantity{}, fmt.Errorf("failed to read memory stats for kubepods cgroup: %v", err)
 	}
+
+	// https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt
+	// TODO: For efficiency, as other kernel components, memory cgroup uses some optimization
+	// to avoid unnecessary cacheline false sharing. usage_in_bytes is affected by the
+	// method and doesn't show 'exact' value of memory (and swap) usage, it's a fuzz
+	// value for efficient access. (Of course, when necessary, it's synchronized.)
+	// If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP)
+	// value in memory.stat(see 5.2).
 
 	memoryWorkingSetBytes := stats.Memory.Usage.Usage - stats.Memory.TotalInactiveFile
 	return resource.ParseQuantity(fmt.Sprintf("%d", memoryWorkingSetBytes))
