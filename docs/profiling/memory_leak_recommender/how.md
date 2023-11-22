@@ -12,10 +12,16 @@ curl  http://localhost:16912/debug/pprof/goroutine > seed-goroutine.out
 go tool pprof -png  goroutine.out > seed-goroutine.png
 ```
 
-Check for increasing memory usage:
+Check for increasing memory usage
 ```
 watch "kubectl top pods | grep -i j7"
 reserved-resources-recommender-h8lj7                              20m          14Mi
 ```
 
-Re-check later 
+
+Further tipps
+
+See here: https://stackoverflow.com/questions/56150617/golang-alloc-and-heapalloc-vs-pprof-large-discrepancies
+```
+export GODEBUG=memprofilerate=1
+```

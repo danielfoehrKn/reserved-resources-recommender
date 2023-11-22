@@ -1,0 +1,47 @@
+# interact with lima k3s
+# sudo ctr --address /run/k3s/containerd/containerd.sock version
+
+# How to check if CRI config has been applied:
+# 1) change config content (including debug option to see dumped config!)
+# 2) Restart containerd (can also run binary in shell via sudo /usr/bin/containerd)
+# 3) Check the dumped CRI config from the CRI logs
+# Example: INFO[2022-07-18T10:46:45.146091278Z] Start cri plugin with config {PluginConfig:{ContainerdConfig:{Snapshotter:overlayfs DefaultRuntimeName:runc DefaultRuntime:{Type: Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[] PrivilegedWithoutHostDevices:false BaseRuntimeSpec:} UntrustedWorkloadRuntime:{Type: Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[] PrivilegedWithoutHostDevices:false BaseRuntimeSpec:} Runtimes:map[runc:{Type:io.containerd.runc.v2 Engine: PodAnnotations:[] ContainerAnnotations:[] Root: Options:map[ShimCgroup:/sys/fs/cgroup/unified/containerd-shims] PrivilegedWithoutHostDevices:false BaseRuntimeSpec:}] NoPivot:false DisableSnapshotAnnotations:true DiscardUnpackedLayers:false} CniConfig:{NetworkPluginBinDir:/usr/libexec/cni NetworkPluginConfDir:/etc/cni/net.d NetworkPluginMaxConfNum:1 NetworkPluginConfTemplate:} Registry:{ConfigPath: Mirrors:map[] Configs:map[] Auths:map[] Headers:map[]} ImageDecryption:{KeyModel:node} DisableTCPService:true StreamServerAddress:127.0.0.1 StreamServerPort:10010 StreamIdleTimeout:4h0m0s EnableSelinux:false SelinuxCategoryRange:1024 SandboxImage:rancher/mirrored-pause:3.6 StatsCollectPeriod:10 SystemdCgroup:false EnableTLSStreaming:false X509KeyPairStreaming:{TLSCertFile: TLSKeyFile:} MaxContainerLogLineSize:16384 DisableCgroup:false DisableApparmor:false RestrictOOMScoreAdj:false MaxConcurrentDownloads:3 DisableProcMount:false UnsetSeccompProfile: TolerateMissingHugetlbController:true DisableHugetlbController:true IgnoreImageDefinedVolumes:false NetNSMountsUnderStateDir:false} ContainerdRootDir:/var/lib/rancher/k3s/agent/containerd ContainerdEndpoint:/run/k3s/containerd/containerd.sock RootDir:/var/lib/rancher/k3s/agent/containerd/io.containerd.grpc.v1.cri StateDir:/run/k3s/containerd/io.containerd.grpc.v1.cri}
+
+
+root = "/var/lib/rancher/k3s/agent/containerd"
+state = "/run/k3s/containerd"
+
+[plugins.opt]
+path = "/var/lib/rancher/k3s/agent/containerd"
+
+[grpc]
+address = "/run/k3s/containerd/containerd.sock"
+
+[plugins.cri]
+stream_server_address = "127.0.0.1"
+stream_server_port = "10010"
+enable_selinux = false
+sandbox_image = "rancher/mirrored-pause:3.6"
+
+[plugins.cri.containerd]
+snapshotter = "overlayfs"
+disable_snapshot_annotations = true
+
+[plugins.cri.cni]
+bin_dir = "/usr/libexec/cni"
+conf_dir = "/etc/cni/net.d"
+
+[plugins.cri.containerd.runtimes.runc]
+runtime_type = "io.containerd.runc.v2"
+
+[plugins.cri.containerd.runtimes.runc.options]
+# group all shims in a dedicated cgroup to measure their memory consumption using cgroupsv2
+# this path is specific to cgroupsv2.
+#   - https://github.com/containerd/containerd/blob/d7b9cb00198600574ea8ac6db62ea8bdd076e466/runtime/v2/runc/v2/service.go#L233)
+#   - https://github.com/containerd/containerd/blob/cc493eba3fdf1f1756a8bc6a5f486a8e384da0ac/vendor/github.com/containerd/cgroups/v2/paths.go#L49
+# Actual path: /sys/fs/cgroup/containerd-shims  (needs to already exist)
+ShimCgroup = "/containerd-shims"
+
+[debug]
+address = "/run/containerd/debug.sock"
+level = "debug"

@@ -1,5 +1,5 @@
-# How to get pprof with ctr
-# ctr pprof heap > heap.out
+# How to get pprof for the containerd daemon with ctr
+ctr pprof heap > heap.out
 # ctr pprof profile > profile.out
 # ctr pprof goroutines > goroutines.out
 # ctr pprof block > block.out
