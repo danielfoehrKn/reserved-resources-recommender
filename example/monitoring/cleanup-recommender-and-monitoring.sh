@@ -1,4 +1,6 @@
 kubectl delete daemonset.apps/reserved-resources-recommender
+kubectl delete daemonset.apps/reserved-resources-recommender-containerd
+kubectl delete daemonset.apps/reserved-resources-recommender-docker
 kubectl delete priorityclass reserved-resources-recommender
 
 kubectl delete clusterrole.rbac.authorization.k8s.io/prometheus-reserved-resources-recommender

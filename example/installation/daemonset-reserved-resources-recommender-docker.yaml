@@ -22,8 +22,8 @@ spec:
 #      priorityClassName: reserved-resources-recommender
       nodeSelector:
         # change to any worker pool
-        worker.gardener.cloud/pool: worker-opt
-        worker.gardener.cloud/cri-name: docker
+        worker.gardener.cloud/pool: cpu-worker
+#        worker.gardener.cloud/cri-name: docker
       containers:
         - image: eu.gcr.io/gardener-project/gardener/reserved-resources-recommender:latest
           imagePullPolicy: Always

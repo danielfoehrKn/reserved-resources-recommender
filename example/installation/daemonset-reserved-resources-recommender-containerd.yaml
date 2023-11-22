@@ -43,7 +43,7 @@ spec:
             - name: KUBELET_DIRECTORY
               value: "/var/lib/kubelet"
             - name: ENFORCE_RECOMMENDATION
-              value: "true"
+              value: "false"
             - name: MINIMUM_RESERVED_MEMORY
               value: "1Gi"
               # no liveness probe to make sure that pod is not killed under CPU pressure situations --> should still be able to make adjustments on cgroups

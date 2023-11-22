@@ -1,0 +1,172 @@
+  root@gardener-local-control-plane:/# kubectl -n shoot--local--e2e-default  get pod machine-shoot--local--e2e-default-local-69865-9hwgg -o yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      cni.projectcalico.org/containerID: bcc226a8d4b87fc44e1b0038d12e26c753470bf457c2a91f9c4871467d72b4e3
+      cni.projectcalico.org/podIP: 10.1.131.53/32
+      cni.projectcalico.org/podIPs: 10.1.131.53/32
+      seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    creationTimestamp: "2023-04-05T08:35:01Z"
+    labels:
+      app: machine
+      machine-provider: local
+      networking.gardener.cloud/from-prometheus: allowed
+      networking.gardener.cloud/from-shoot-apiserver: allowed
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-istio-ingressgateway: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-seed-apiserver: allowed
+      networking.gardener.cloud/to-shoot-apiserver: allowed
+      networking.gardener.cloud/to-shoot-networks: allowed
+    name: machine-shoot--local--e2e-default-local-69865-9hwgg
+    namespace: shoot--local--e2e-default
+    ownerReferences:
+      - apiVersion: machine.sapcloud.io/v1alpha1
+        blockOwnerDeletion: true
+        controller: true
+        kind: Machine
+        name: shoot--local--e2e-default-local-69865-9hwgg
+        uid: 439430de-49a1-41d5-b378-4d2694109e85
+    resourceVersion: "17818"
+    uid: 85c15b92-cdc0-4235-819d-ffc1f8f680d8
+  spec:
+    containers:
+      - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+        image: danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0
+        imagePullPolicy: IfNotPresent
+        name: node
+        ports:
+          - containerPort: 30123
+            name: vpn-shoot
+            protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - /opt/bin/kubectl --kubeconfig /var/lib/kubelet/kubeconfig-real get no $NODE_NAME
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /etc/machine
+            name: userdata
+          - mountPath: /var/lib/containerd
+            name: containerd
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access-tbrvx
+            readOnly: true
+    dnsConfig:
+      nameservers:
+        - 10.2.27.187
+      options:
+        - name: ndots
+          value: "5"
+      searches:
+        - shoot--local--e2e-default.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+    dnsPolicy: None
+    enableServiceLinks: true
+    nodeName: gardener-local-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+    volumes:
+      - name: userdata
+        secret:
+          defaultMode: 511
+          secretName: machine-shoot--local--e2e-default-local-69865-9hwgg-userdata
+      - emptyDir: {}
+        name: containerd
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: modules
+      - name: kube-api-access-tbrvx
+        projected:
+          defaultMode: 420
+          sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                  - key: ca.crt
+                    path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                  - fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+                    path: namespace
+  status:
+    conditions:
+      - lastProbeTime: null
+        lastTransitionTime: "2023-04-05T08:35:01Z"
+        status: "True"
+        type: Initialized
+      - lastProbeTime: null
+        lastTransitionTime: "2023-04-05T08:35:33Z"
+        status: "True"
+        type: Ready
+      - lastProbeTime: null
+        lastTransitionTime: "2023-04-05T08:35:33Z"
+        status: "True"
+        type: ContainersReady
+      - lastProbeTime: null
+        lastTransitionTime: "2023-04-05T08:35:01Z"
+        status: "True"
+        type: PodScheduled
+    containerStatuses:
+      - containerID: containerd://9e66ef47413f9af41f0872b37fc68cc3ea36a88d7e6ee51abfcb2f685f562ded
+        image: docker.io/danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0
+        imageID: docker.io/danielfoehrkn/machine-controller-manager-provider-local-node@sha256:cbf7d78062c76f519a668f7ff33d842d26453adabe96db68855173dda7c77b64
+        lastState: {}
+        name: node
+        ready: true
+        restartCount: 0
+        started: true
+        state:
+          running:
+            startedAt: "2023-04-05T08:35:03Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.1.131.53
+    podIPs:
+      - ip: 10.1.131.53
+    qosClass: BestEffort
+    startTime: "2023-04-05T08:35:01Z"

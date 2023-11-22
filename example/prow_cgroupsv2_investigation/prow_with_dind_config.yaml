@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    description: Runs end-to-end tests for gardener developments periodically
+  name: prow-custom-config
+spec:
+  automountServiceAccountToken: false
+#  nodeName: ip-10-180-31-165.eu-west-1.compute.internal
+#  nodeName: ip-10-180-0-225.eu-west-1.compute.internal
+  containers:
+    - command:
+        - /tools/entrypoint
+#      command: [ "/bin/sleep" ]
+#      args: [ "3600" ]
+      env:
+        - name: SKAFFOLD_UPDATE_CHECK
+          value: "false"
+        - name: SKAFFOLD_INTERACTIVE
+          value: "false"
+        - name: DOCKER_IN_DOCKER_ENABLED
+          value: "true"
+        - name: GOPROXY
+          value: https://proxy.golang.org
+        - name: ARTIFACTS
+          value: /logs/artifacts
+        - name: BUILD_ID
+          value: "1628459363947515904"
+        - name: BUILD_NUMBER
+          value: "1628459363947515904"
+        - name: CI
+          value: "true"
+        - name: GOPATH
+          value: /home/prow/go
+        - name: JOB_NAME
+          value: ci-gardener-e2e-kind
+        - name: JOB_SPEC
+          #value: '{"type":"periodic","job":"ci-gardener-e2e-kind","buildid":"1628459363947515904","prowjobid":"6230d0c6-b2dd-11ed-9fa4-2e0f7621abf1","extra_refs":[{"org":"danielfoehrKn","repo":"gardener","base_ref":"provider-local-systemd"}],"decoration_config":{"timeout":"1h0m0s","grace_period":"15m0s","utility_images":{"clonerefs":"gcr.io/k8s-prow/clonerefs:v20230215-1f9eebbd96","initupload":"gcr.io/k8s-prow/initupload:v20230215-1f9eebbd96","entrypoint":"gcr.io/k8s-prow/entrypoint:v20230215-1f9eebbd96","sidecar":"gcr.io/k8s-prow/sidecar:v20230215-1f9eebbd96"},"resources":{"clonerefs":{"requests":{"cpu":"100m"}},"initupload":{"requests":{"cpu":"100m"}},"place_entrypoint":{"requests":{"cpu":"100m"}},"sidecar":{"requests":{"cpu":"100m"}}},"gcs_configuration":{"bucket":"gardener-prow","path_strategy":"explicit"},"gcs_credentials_secret":"gardener-prow-storage"}}'
+          value: '{"type":"periodic","job":"ci-gardener-e2e-kind","buildid":"1628459363947515904","prowjobid":"6230d0c6-b2dd-11ed-9fa4-2e0f7621abf1","extra_refs":[{"org":"danielfoehrKn","repo":"gardener","base_ref":"swap-cgroupsv2"}],"decoration_config":{"timeout":"1h0m0s","grace_period":"15m0s","utility_images":{"clonerefs":"gcr.io/k8s-prow/clonerefs:v20230215-1f9eebbd96","initupload":"gcr.io/k8s-prow/initupload:v20230215-1f9eebbd96","entrypoint":"gcr.io/k8s-prow/entrypoint:v20230215-1f9eebbd96","sidecar":"gcr.io/k8s-prow/sidecar:v20230215-1f9eebbd96"},"resources":{"clonerefs":{"requests":{"cpu":"100m"}},"initupload":{"requests":{"cpu":"100m"}},"place_entrypoint":{"requests":{"cpu":"100m"}},"sidecar":{"requests":{"cpu":"100m"}}},"gcs_configuration":{"bucket":"gardener-prow","path_strategy":"explicit"},"gcs_credentials_secret":"gardener-prow-storage"}}'
+        - name: JOB_TYPE
+          value: periodic
+        - name: PROW_JOB_ID
+          value: 6230d0c6-b2dd-11ed-9fa4-2e0f7621abf1
+        - name: ENTRYPOINT_OPTIONS
+          value: '{"timeout":3600000000000,"grace_period":900000000000,"artifact_dir":"/logs/artifacts","args":["wrapper.sh","bash","-c","make
+        ci-e2e-kind"],"container_name":"test","process_log":"/logs/process-log.txt","marker_file":"/logs/marker-file.txt","metadata_file":"/logs/artifacts/metadata.json"}'
+      #    - name: KUBERNETES_SERVICE_HOST
+      #      value: api.prow-gl.d046263.internal.dev.k8s.ondemand.com
+      image: gcr.io/k8s-staging-test-infra/krte:v20230222-b5208facd4-master
+      imagePullPolicy: IfNotPresent
+      # the docker-in-docker container
+      name: test
+      resources:
+        requests:
+          cpu: "12"
+          memory: 48Gi
+      securityContext:
+        privileged: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+        - mountPath: /docker-graph
+          name: docker-graph
+        - mountPath: /var/lib/docker
+          name: docker-root
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+        - mountPath: /sys/fs/cgroup
+          name: cgroup
+        - mountPath: /logs
+          name: logs
+        - mountPath: /tools
+          name: tools
+        - mountPath: /home/prow/go
+          name: code
+        # mounted the custom docker config
+        - name: config
+          mountPath: /etc/docker/
+      workingDir: /home/prow/go/src/github.com/danielfoehrKn/gardener
+#      workingDir: /home/prow/go/src/github.com/gardener/gardener
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  initContainers:
+    - env:
+        - name: CLONEREFS_OPTIONS
+          # clone my gardener fork with 1) kubelet uses systemd 2) local provider cloudprofile base using machine-pod node image with systemd
+          #value: '{"src_root":"/home/prow/go","log":"/logs/clone.json","git_user_name":"ci-robot","git_user_email":"ci-robot@k8s.io","refs":[{"org":"danielfoehrKn","repo":"gardener","base_ref":"provider-local-systemd"}],"github_api_endpoints":["https://api.github.com"]}'
+          value: '{"src_root":"/home/prow/go","log":"/logs/clone.json","git_user_name":"ci-robot","git_user_email":"ci-robot@k8s.io","refs":[{"org":"danielfoehrKn","repo":"gardener","base_ref":"swap-cgroupsv2"}],"github_api_endpoints":["https://api.github.com"]}'
+#          value: '{"src_root":"/home/prow/go","log":"/logs/clone.json","git_user_name":"ci-robot","git_user_email":"ci-robot@k8s.io","refs":[{"org":"gardener","repo":"gardener","base_ref":"master"}],"github_api_endpoints":["https://api.github.com"]}'
+        - name: KUBERNETES_SERVICE_HOST
+          value: api.prow-gl.d046263.internal.dev.k8s.ondemand.com
+      image: gcr.io/k8s-prow/clonerefs:v20230215-1f9eebbd96
+      imagePullPolicy: IfNotPresent
+      # init container to clone the g/g repository
+      name: clonerefs
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1Gi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+        - mountPath: /logs
+          name: logs
+        - mountPath: /home/prow/go
+          name: code
+        - mountPath: /tmp
+          name: clonerefs-tmp
+    - args:
+        - --copy-mode-only
+      #    env:
+      #    - name: KUBERNETES_SERVICE_HOST
+      #      value: api.prow-gl.d046263.internal.dev.k8s.ondemand.com
+      image: gcr.io/k8s-prow/entrypoint:v20230215-1f9eebbd96
+      imagePullPolicy: IfNotPresent
+      # second init container
+      name: place-entrypoint
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1Gi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+        - mountPath: /tools
+          name: tools
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 1125
+  tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+  volumes:
+    - emptyDir: {}
+      name: docker-graph
+    - emptyDir: {}
+      name: docker-root
+    - hostPath:
+        path: /lib/modules
+        type: Directory
+      name: modules
+    - hostPath:
+        path: /sys/fs/cgroup
+        type: Directory
+      name: cgroup
+    - emptyDir: {}
+      name: logs
+    - emptyDir: {}
+      name: tools
+    - emptyDir: {}
+      name: clonerefs-tmp
+    - emptyDir: {}
+      name: code
+    # volume with daemon json
+    - name: config
+      configMap:
+        name: dockerdaemonjson
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerdaemonjson
+data:
+  daemon.json: |-
+    {
+      "cgroup-parent": "prowparent.slice"
+    }
+
+#  "default-cgroupns-mode" : "host"

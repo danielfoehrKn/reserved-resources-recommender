@@ -1,0 +1,925 @@
+root@machine-shoot--local--e2e-wake-up-local-7bd95-csvd7:/# tree /sys/fs/cgroup/ -d
+/sys/fs/cgroup/
+├── dev-hugepages.mount
+├── init.scope
+├── kubelet
+├── kubelet.slice
+│   ├── kubelet-kubepods.slice
+│   │   ├── kubelet-kubepods-besteffort.slice
+│   │   │   ├── kubelet-kubepods-besteffort-pod1bbfbbd2_30e9_40ad_b8b9_8b0100e00366.slice
+│   │   │   │   ├── cri-containerd-134b84ec5847b7ac0b9dde06166152f1587a29e099f4abf446ecdaa535a0ab13.scope
+│   │   │   │   └── cri-containerd-db03602ed371d4c51a2545075fa673d33cfeb6e2e5753c872402642c41637826.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod1cda8396_affa_40a5_89ef_f13a3ac80af8.slice
+│   │   │   │   ├── cri-containerd-557b905ec9c50c6a62cb3666375cc77d2d69bf1306e8a237222e28619aef0aef.scope
+│   │   │   │   └── cri-containerd-57698d936c83c6ace00ce0f18c5677ccb16287c892f1356585cbfac588c5aafa.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod1f392d80_e66f_40cc_a34e_448622b6e473.slice
+│   │   │   │   ├── cri-containerd-2029eb6a687226b39ec49c62d19a51a96caf16c78a1d5c8028ce02d69d62f051.scope
+│   │   │   │   └── cri-containerd-93674aa4020d03681166db074134c4bc804241a023a8d713b345b972b3fb979e.scope
+│   │   │   │       ├── -.mount
+│   │   │   │       ├── dev-hugepages.mount
+│   │   │   │       ├── dev-mqueue.mount
+│   │   │   │       ├── dev-termination\x2dlog.mount
+│   │   │   │       ├── init.scope
+│   │   │   │       ├── kubepods.slice
+│   │   │   │       │   ├── kubepods-besteffort.slice
+│   │   │   │       │   └── kubepods-burstable.slice
+│   │   │   │       │       ├── kubepods-burstable-pod08422a5b_2c24_413f_93bb_e6f65ba0631c.slice
+│   │   │   │       │       │   └── cri-containerd-497526adb3f10b7c32231810eea156a1a2870f79bf802e6f23117a86259a6c57.scope
+│   │   │   │       │       ├── kubepods-burstable-pod47159acf_fbce_4112_a5cc_5bd83de7ef52.slice
+│   │   │   │       │       │   └── cri-containerd-ff4a0e8be7534f1d0868b95fb56cab17e734fe85bf4542ba7069b05ab1fc597a.scope
+│   │   │   │       │       ├── kubepods-burstable-pod5f019f44_cd71_496f_b2f9_b2ecc2dd3c13.slice
+│   │   │   │       │       │   └── cri-containerd-d27f2d2f56ea50a8c9d1b8ef406d8b71673ee884e1b77872c59d96f87ba26733.scope
+│   │   │   │       │       ├── kubepods-burstable-pod6da85587_01ce_4d52_8de2_b9acfc4e7862.slice
+│   │   │   │       │       │   └── cri-containerd-1f8b397795d14b919367a5b13949271a4f245b14f2820ea0fb62ab2095da85c1.scope
+│   │   │   │       │       └── kubepods-burstable-podb96d91ce_6015_45c6_a65f_d7a41e70abf4.slice
+│   │   │   │       │           └── cri-containerd-a450342f92c670faff87e4be14c21505db90199ba3cf49570dc1cb2afe6f425a.scope
+│   │   │   │       ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │       ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │       ├── sys-fs-fuse-connections.mount
+│   │   │   │       ├── sys-kernel-debug.mount
+│   │   │   │       ├── sys-kernel-tracing.mount
+│   │   │   │       └── system.slice
+│   │   │   │           ├── apparmor.service
+│   │   │   │           ├── containerd-monitor.service
+│   │   │   │           ├── containerd.service
+│   │   │   │           ├── etc-hostname.mount
+│   │   │   │           ├── etc-hosts.mount
+│   │   │   │           ├── etc-machine.mount
+│   │   │   │           ├── etc-resolv.conf.mount
+│   │   │   │           ├── kind-product_uuid.mount
+│   │   │   │           ├── kmod-static-nodes.service
+│   │   │   │           ├── kubelet-monitor.service
+│   │   │   │           ├── kubelet.service
+│   │   │   │           ├── promtail-fetch-token.service
+│   │   │   │           ├── promtail.service
+│   │   │   │           ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │           ├── system-modprobe.slice
+│   │   │   │           ├── systemd-journal-flush.service
+│   │   │   │           ├── systemd-journald-audit.socket
+│   │   │   │           ├── systemd-journald-dev-log.socket
+│   │   │   │           ├── systemd-journald.service
+│   │   │   │           ├── systemd-journald.socket
+│   │   │   │           ├── systemd-remount-fs.service
+│   │   │   │           ├── systemd-sysctl.service
+│   │   │   │           ├── systemd-sysusers.service
+│   │   │   │           ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │           ├── systemd-tmpfiles-setup.service
+│   │   │   │           ├── systemd-update-utmp.service
+│   │   │   │           ├── usr-lib-modules.mount
+│   │   │   │           └── var-lib-containerd.mount
+│   │   │   ├── kubelet-kubepods-besteffort-pod21af77b3_5975_4ad9_9d9a_748cbb5a1144.slice
+│   │   │   │   ├── cri-containerd-02e46ca9831226ad8304e40adbccf8599cd9ee98d402da6050489e877c99785b.scope
+│   │   │   │   └── cri-containerd-93bff5d419cc3cd5b24d63cd5f9fd10fc14382a2bf6a59a025644a79a0f9a018.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod3003e9c6_9f20_4755_a6cd_0dd25184699a.slice
+│   │   │   │   ├── cri-containerd-05abb5d25b8913291d84ebda795e9ff67cdd9b0c6f0bf8555e71d02ed2d202d3.scope
+│   │   │   │   │   ├── -.mount
+│   │   │   │   │   ├── dev-hugepages.mount
+│   │   │   │   │   ├── dev-mqueue.mount
+│   │   │   │   │   ├── dev-termination\x2dlog.mount
+│   │   │   │   │   ├── init.scope
+│   │   │   │   │   ├── kubepods.slice
+│   │   │   │   │   │   ├── kubepods-besteffort.slice
+│   │   │   │   │   │   └── kubepods-burstable.slice
+│   │   │   │   │   │       ├── kubepods-burstable-pod1a581989_e712_4bc0_afbe_37d714af71b0.slice
+│   │   │   │   │   │       │   └── cri-containerd-32e6cb9efd64c2f17667f8ca06c99755de888f01968032b5496c5f4f02c1a2d2.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod59ceb952_1766_4623_b553_6e920e2263a4.slice
+│   │   │   │   │   │       │   └── cri-containerd-b38194762973738d51ba5f854d74af3a562134b355874cbd75c51963503c3344.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod63eea681_ce78_4e93_bde5_cb4a591f3bbb.slice
+│   │   │   │   │   │       │   └── cri-containerd-f3353aaeeb15858fd74409192bf24ac24b6eebf31d138505bfa495855da63da4.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod78c7d1e3_bb57_4030_8ca8_c5fdfb1b374b.slice
+│   │   │   │   │   │       │   └── cri-containerd-53b0a6e22e4f59622cf493a867007046c706dec8a6912d8010a512879ad61c77.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod8ded3f4b_6f6b_4647_85d7_b06ca0e71153.slice
+│   │   │   │   │   │       │   └── cri-containerd-4ef6b2a63b2d6f7fc75cdddf7421c3dfd31dfba0a26fea9528831683d325f245.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podeac66017_aaa8_406d_9d05_abf2af9abc5e.slice
+│   │   │   │   │   │       │   └── cri-containerd-2aba12782d1127a90a37ed9bc1fe84b7ff5fac46a766641740b43d323cfa2fc2.scope
+│   │   │   │   │   │       └── kubepods-burstable-podeacc1c95_577f_4016_b29e_3f035d3ee62e.slice
+│   │   │   │   │   │           ├── cri-containerd-e46ea43a28fb22cbc780b5d4bbe8907d0aed4de1432c56262c2e08f5ad519aca.scope
+│   │   │   │   │   │           └── cri-containerd-ec18550dbda29dbeb7347e6abbaf81ee4f59a9d4a7b5950f83e6798e3c53af6f.scope
+│   │   │   │   │   ├── run-containerd-io.containerd.runtime.v2.task-default-22c834d5dfeedb309eaa3e8bedf38b679469173d0adcd905225052c010691b82-rootfs.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │   │   ├── sys-fs-fuse-connections.mount
+│   │   │   │   │   ├── sys-kernel-debug.mount
+│   │   │   │   │   ├── sys-kernel-tracing.mount
+│   │   │   │   │   └── system.slice
+│   │   │   │   │       ├── apparmor.service
+│   │   │   │   │       ├── containerd-monitor.service
+│   │   │   │   │       ├── containerd.service
+│   │   │   │   │       ├── etc-hostname.mount
+│   │   │   │   │       ├── etc-hosts.mount
+│   │   │   │   │       ├── etc-machine.mount
+│   │   │   │   │       ├── etc-resolv.conf.mount
+│   │   │   │   │       ├── kind-product_uuid.mount
+│   │   │   │   │       ├── kmod-static-nodes.service
+│   │   │   │   │       ├── kubelet-monitor.service
+│   │   │   │   │       ├── kubelet.service
+│   │   │   │   │       ├── promtail-fetch-token.service
+│   │   │   │   │       ├── promtail.service
+│   │   │   │   │       ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │   │       ├── system-modprobe.slice
+│   │   │   │   │       ├── systemd-journal-flush.service
+│   │   │   │   │       ├── systemd-journald-audit.socket
+│   │   │   │   │       ├── systemd-journald-dev-log.socket
+│   │   │   │   │       ├── systemd-journald.service
+│   │   │   │   │       ├── systemd-journald.socket
+│   │   │   │   │       ├── systemd-remount-fs.service
+│   │   │   │   │       ├── systemd-sysctl.service
+│   │   │   │   │       ├── systemd-sysusers.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup.service
+│   │   │   │   │       ├── systemd-update-utmp.service
+│   │   │   │   │       ├── usr-lib-modules.mount
+│   │   │   │   │       └── var-lib-containerd.mount
+│   │   │   │   └── cri-containerd-559d9c72754c644d6693b83657b2d83abaf9a2c779a2cd9199ac17a8dc9a9a60.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod3e577d2f_4353_4153_8669_848cee7b73a6.slice
+│   │   │   │   ├── cri-containerd-b2cf89df10d6ea28d34093d56a2edbf45ffbdcf7db9390f55e71fd54442234a5.scope
+│   │   │   │   └── cri-containerd-c9341abeea0b0e27113a219228bbbcb8c20906ef504270ff458d1852003e8e5c.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod4fe0915d_211d_4538_91e8_e08deab4046a.slice
+│   │   │   │   ├── cri-containerd-1a43e46d1324793b8f8ebbe7c0bcbf00564240629a891c3fdd32d726890fd0e4.scope
+│   │   │   │   │   ├── -.mount
+│   │   │   │   │   ├── dev-hugepages.mount
+│   │   │   │   │   ├── dev-mqueue.mount
+│   │   │   │   │   ├── dev-termination\x2dlog.mount
+│   │   │   │   │   ├── init.scope
+│   │   │   │   │   ├── kubepods.slice
+│   │   │   │   │   │   ├── kubepods-besteffort.slice
+│   │   │   │   │   │   └── kubepods-burstable.slice
+│   │   │   │   │   │       ├── kubepods-burstable-pod037db367_c02e_4b6c_88b2_f0fccd1a7004.slice
+│   │   │   │   │   │       │   └── cri-containerd-6183448ca82e7e893e96c55100e2727d2eaece86a9e8cb1443c2d7411de8da86.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod0b4e267b_5ee2_4056_bcd4_a848853e9d69.slice
+│   │   │   │   │   │       │   └── cri-containerd-0ce65f4344d61b016b424d0f5795bd79d45dbe9e48c88b1afcb917da52a9354a.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod104abaf0_5ddb_486a_aeec_793e47ec20c5.slice
+│   │   │   │   │   │       │   └── cri-containerd-17d9e9a23e5416cc96798585f5805ac1c2066432294bfc109524d0af3e0075b8.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podaa14bc76_989d_4ee0_840a_2e90a03407b1.slice
+│   │   │   │   │   │       │   └── cri-containerd-830db33f37eb2430d1a8675267c2d0f8306e67244c3ab5f956ecfd6e21ae1bcb.scope
+│   │   │   │   │   │       └── kubepods-burstable-podbde1bad6_f593_4aaf_9cc0_924fa562d319.slice
+│   │   │   │   │   │           ├── cri-containerd-6ae08e46d1a05d40c8141eb99fa0569f1d935e6c72abaee41bd6c6e99d4ec770.scope
+│   │   │   │   │   │           └── cri-containerd-aa36fe608de26e1072772d1af3043f3ccadae13ed1fc157bf390cd8b1e04def8.scope
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │   │   ├── sys-fs-fuse-connections.mount
+│   │   │   │   │   ├── sys-kernel-debug.mount
+│   │   │   │   │   ├── sys-kernel-tracing.mount
+│   │   │   │   │   └── system.slice
+│   │   │   │   │       ├── apparmor.service
+│   │   │   │   │       ├── containerd-monitor.service
+│   │   │   │   │       ├── containerd.service
+│   │   │   │   │       ├── etc-hostname.mount
+│   │   │   │   │       ├── etc-hosts.mount
+│   │   │   │   │       ├── etc-machine.mount
+│   │   │   │   │       ├── etc-resolv.conf.mount
+│   │   │   │   │       ├── kind-product_uuid.mount
+│   │   │   │   │       ├── kmod-static-nodes.service
+│   │   │   │   │       ├── kubelet-monitor.service
+│   │   │   │   │       ├── kubelet.service
+│   │   │   │   │       ├── promtail.service
+│   │   │   │   │       ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │   │       ├── system-modprobe.slice
+│   │   │   │   │       ├── systemd-journal-flush.service
+│   │   │   │   │       ├── systemd-journald-audit.socket
+│   │   │   │   │       ├── systemd-journald-dev-log.socket
+│   │   │   │   │       ├── systemd-journald.service
+│   │   │   │   │       ├── systemd-journald.socket
+│   │   │   │   │       ├── systemd-remount-fs.service
+│   │   │   │   │       ├── systemd-sysctl.service
+│   │   │   │   │       ├── systemd-sysusers.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup.service
+│   │   │   │   │       ├── systemd-update-utmp.service
+│   │   │   │   │       ├── usr-lib-modules.mount
+│   │   │   │   │       └── var-lib-containerd.mount
+│   │   │   │   └── cri-containerd-52a42c3035104cc8a736e1412d3c2277d4d909f81dedb2b094c3caf5d964ffff.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod5b3147fc_0926_4f10_b6ef_936ca6bb9d96.slice
+│   │   │   │   ├── cri-containerd-59528d22988c75c151c3092495215dc50990c2007fca5ffc26c38aaa3791d6e0.scope
+│   │   │   │   └── cri-containerd-e6fe7a762db47a174189de3ed10a0cfd57f0d032f2bd7d3dd88de37b0cc0225b.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod85c15b92_cdc0_4235_819d_ffc1f8f680d8.slice
+│   │   │   │   ├── cri-containerd-9e66ef47413f9af41f0872b37fc68cc3ea36a88d7e6ee51abfcb2f685f562ded.scope
+│   │   │   │   │   ├── -.mount
+│   │   │   │   │   ├── dev-hugepages.mount
+│   │   │   │   │   ├── dev-mqueue.mount
+│   │   │   │   │   ├── dev-termination\x2dlog.mount
+│   │   │   │   │   ├── init.scope
+│   │   │   │   │   ├── kubepods.slice
+│   │   │   │   │   │   ├── kubepods-besteffort.slice
+│   │   │   │   │   │   │   └── kubepods-besteffort-pod75598072_7a6f_4916_8539_e6ce2e795e4f.slice
+│   │   │   │   │   │   │       └── cri-containerd-888c36cfcfd70f6ca09be5eb5b261a51878128270f5b8a657bc0e446c034de46.scope
+│   │   │   │   │   │   └── kubepods-burstable.slice
+│   │   │   │   │   │       ├── kubepods-burstable-pod0a11da4e_0bd4_4ed3_98e6_71951876bd0c.slice
+│   │   │   │   │   │       │   └── cri-containerd-fa40942a300d3c063493ee18035589f30a472aa9279057134326a2dcf2174944.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod1677bbd4_b34c_43df_a490_8157dd599ecb.slice
+│   │   │   │   │   │       │   └── cri-containerd-b48f7a67a2f410be10fbfb61e3a12326bf067934100c4b0ae7408ae47207ca5e.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod2538b7e2_ef7a_437f_b6d5_140b8be5dd96.slice
+│   │   │   │   │   │       │   └── cri-containerd-834dc0d4fda0d1980a1a5a0509aca7151c715e66c966e49b39484c276cd0c15d.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod3308c460_5b3a_4507_93cd_371b8d1171f6.slice
+│   │   │   │   │   │       │   └── cri-containerd-3a88e2f844dbca150d88cef323b3e2a888a6498a173f6ea3f38bc06962bbcadd.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod3487c2a9_372a_4d8b_85d2_89fbc1b61b9c.slice
+│   │   │   │   │   │       │   └── cri-containerd-9e187d7cd9af806e02c6b8f03db307868692ab1046db558097e68b52eba7a8e1.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod3742afef_196f_4154_a8e7_ef6e5842fd07.slice
+│   │   │   │   │   │       │   └── cri-containerd-384aed6a4df4045eed34d4db7e5f2c5284380fc52ea0b6ac1e4f356d726dfe95.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod7b6fd25e_2ba9_4dec_8221_f8edfd496d9e.slice
+│   │   │   │   │   │       │   ├── cri-containerd-85c4452cefaf1e8b01e20793681ff35f18a3c73760354bbc6d92fb9528e83aba.scope
+│   │   │   │   │   │       │   └── cri-containerd-d6163123da61b620eb5c936c26c504f779bbbde636fcb4af486c3bc575defac6.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod90b807b8_08c5_43fb_ad54_f16c02c0601c.slice
+│   │   │   │   │   │       │   ├── cri-containerd-021b4e10287abcfce739f99b9372f27012fe0187c8d4a823675bf788839009ac.scope
+│   │   │   │   │   │       │   └── cri-containerd-437b8933af7de916e1fe13cc9c41c07f240c551e72a9c14cceedb0eb7a7b379b.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podb96c56f5_7d42_44cb_98b9_411d240cff99.slice
+│   │   │   │   │   │       │   └── cri-containerd-4897cbdd9b8ab7ceb5c1e297cbad0bc9e192ab401d3a156e73ba6a221cd46640.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podc1a3a9b0_4ded_4b89_a5c1_54d9239ee0c1.slice
+│   │   │   │   │   │       │   └── cri-containerd-86a9bda5c6031990e4d0e55391e5bb9c04ba317fa16164a7bdab815b0d087ac0.scope
+│   │   │   │   │   │       └── kubepods-burstable-podcab790a8_2ab2_4256_85e3_ca6ec2b6d07f.slice
+│   │   │   │   │   │           └── cri-containerd-a62caad3b9101da88c3bba82c2ce5292764b524092986e40ed5723e372e67fc3.scope
+│   │   │   │   │   ├── run-containerd-io.containerd.runtime.v2.task-default-1df117eeb6f240afdbed7b82d85871596da32ab0d1489f71f3cf02653a22bf22-rootfs.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │   │   ├── sys-fs-fuse-connections.mount
+│   │   │   │   │   ├── sys-kernel-debug.mount
+│   │   │   │   │   ├── sys-kernel-tracing.mount
+│   │   │   │   │   └── system.slice
+│   │   │   │   │       ├── apparmor.service
+│   │   │   │   │       ├── containerd-monitor.service
+│   │   │   │   │       ├── containerd.service
+│   │   │   │   │       ├── etc-hostname.mount
+│   │   │   │   │       ├── etc-hosts.mount
+│   │   │   │   │       ├── etc-machine.mount
+│   │   │   │   │       ├── etc-resolv.conf.mount
+│   │   │   │   │       ├── kind-product_uuid.mount
+│   │   │   │   │       ├── kmod-static-nodes.service
+│   │   │   │   │       ├── kubelet-monitor.service
+│   │   │   │   │       ├── kubelet.service
+│   │   │   │   │       ├── promtail-fetch-token.service
+│   │   │   │   │       ├── promtail.service
+│   │   │   │   │       ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │   │       ├── system-modprobe.slice
+│   │   │   │   │       ├── systemd-journal-flush.service
+│   │   │   │   │       ├── systemd-journald-audit.socket
+│   │   │   │   │       ├── systemd-journald-dev-log.socket
+│   │   │   │   │       ├── systemd-journald.service
+│   │   │   │   │       ├── systemd-journald.socket
+│   │   │   │   │       ├── systemd-remount-fs.service
+│   │   │   │   │       ├── systemd-sysctl.service
+│   │   │   │   │       ├── systemd-sysusers.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup.service
+│   │   │   │   │       ├── systemd-update-utmp.service
+│   │   │   │   │       ├── usr-lib-modules.mount
+│   │   │   │   │       └── var-lib-containerd.mount
+│   │   │   │   └── cri-containerd-bcc226a8d4b87fc44e1b0038d12e26c753470bf457c2a91f9c4871467d72b4e3.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pod87738a2c_b7a5_42bf_a153_16ca631576ea.slice
+│   │   │   │   ├── cri-containerd-a293a1c1243585b7f845eefac7639295df698917289be0e886645dc09381e5a0.scope
+│   │   │   │   └── cri-containerd-ed71aebdcc50981d694c7dd0abfc3dc7ac76643d72040330dc6c2d3d5791bc2a.scope
+│   │   │   ├── kubelet-kubepods-besteffort-poda4473c1f_5943_4dc8_8faa_a25a8ea9fe24.slice
+│   │   │   │   ├── cri-containerd-17371b12ef7f35a83edd6c447b6d59e52299aa4b510fa2a34c5ea8eadeb4a1eb.scope
+│   │   │   │   └── cri-containerd-393074c0e10dfc2aedad0a1634824ef27e26188a43bb6ad16d4ed473d9f6c9f8.scope
+│   │   │   ├── kubelet-kubepods-besteffort-poda7820319_dbc7_4807_b0cb_263aa29370b2.slice
+│   │   │   │   ├── cri-containerd-1d26f1dc03c480d33fbec805dd7d79c4f4f1a39ce5a865537bc84c9b3b562710.scope
+│   │   │   │   └── cri-containerd-8fb361322e1ba595258390c7c8e00aefc06749d209f5c6df7fc9c5ff87046f39.scope
+│   │   │   ├── kubelet-kubepods-besteffort-podbec7f8fc_462e_422a_b586_81187550dac0.slice
+│   │   │   │   ├── cri-containerd-3d40c6a28d7030a4deb663b1cc76d53e2875328b2686da3b94d484210e91cc16.scope
+│   │   │   │   └── cri-containerd-53bb340ed16b61de4792665cb21b165f145ee17c69bad9ee2904fa514a9807ff.scope
+│   │   │   ├── kubelet-kubepods-besteffort-podd4423d5c_774b_4b45_b516_10a9ef7e8542.slice
+│   │   │   │   ├── cri-containerd-e6384720b7cd760eabe240425717a96dc07498c7cf0c9b9c3c867c2cfbbbece1.scope
+│   │   │   │   └── cri-containerd-e8f90abccaf2ede9d42320f2da0557bdeddd64e6fd10e80c6a7d605adaea73c4.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pode5f0c48b_30d1_447e_bb38_1af5c1e10701.slice
+│   │   │   │   ├── cri-containerd-b0b02daffa500d310005bc79a6c1ce7149663ff720466309162ff40e3bf6dd7c.scope
+│   │   │   │   │   ├── -.mount
+│   │   │   │   │   ├── dev-hugepages.mount
+│   │   │   │   │   ├── dev-mqueue.mount
+│   │   │   │   │   ├── dev-termination\x2dlog.mount
+│   │   │   │   │   ├── init.scope
+│   │   │   │   │   ├── kubepods.slice
+│   │   │   │   │   │   ├── kubepods-besteffort.slice
+│   │   │   │   │   │   └── kubepods-burstable.slice
+│   │   │   │   │   │       ├── kubepods-burstable-pod3f14a6f5_46d5_4bc7_8c29_a1969f740500.slice
+│   │   │   │   │   │       │   └── cri-containerd-40a0d6b93d8d2c3c84d0258b15c070e384a959c873391b6f8b700450637aede8.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podbf8fc2ef_3e2e_41fc_80e7_e9b95515ab13.slice
+│   │   │   │   │   │       │   └── cri-containerd-342864ee77359ad25be6424ab2667709a95c722f13b4d6f59abe883b2b021de4.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podcf3f0330_c696_43e1_8b40_b4aa544459b7.slice
+│   │   │   │   │   │       │   └── cri-containerd-a955e6a0fd4989a39e2ce38be7a6687a1aaf4f63c0899553295cc7bfb3eaa7ed.scope
+│   │   │   │   │   │       ├── kubepods-burstable-podeb2a1543_92dd_4cc1_9726_8061067cf0f3.slice
+│   │   │   │   │   │       │   └── cri-containerd-96d12b5306ffc2caeb46ab0b79bd5215b81d75b096177927a598626ffe25e568.scope
+│   │   │   │   │   │       └── kubepods-burstable-podf1da8551_1b0e_4bec_a891_aee509bbfb41.slice
+│   │   │   │   │   │           └── cri-containerd-713cc74f6fcadbab9485d8b554af06f83bdc9767811f14016c24032694f7ae70.scope
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │   │   ├── sys-fs-fuse-connections.mount
+│   │   │   │   │   ├── sys-kernel-debug.mount
+│   │   │   │   │   ├── sys-kernel-tracing.mount
+│   │   │   │   │   └── system.slice
+│   │   │   │   │       ├── apparmor.service
+│   │   │   │   │       ├── containerd-monitor.service
+│   │   │   │   │       ├── containerd.service
+│   │   │   │   │       ├── etc-hostname.mount
+│   │   │   │   │       ├── etc-hosts.mount
+│   │   │   │   │       ├── etc-machine.mount
+│   │   │   │   │       ├── etc-resolv.conf.mount
+│   │   │   │   │       ├── kind-product_uuid.mount
+│   │   │   │   │       ├── kmod-static-nodes.service
+│   │   │   │   │       ├── kubelet-monitor.service
+│   │   │   │   │       ├── kubelet.service
+│   │   │   │   │       ├── promtail.service
+│   │   │   │   │       ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │   │       ├── system-modprobe.slice
+│   │   │   │   │       ├── systemd-journal-flush.service
+│   │   │   │   │       ├── systemd-journald-audit.socket
+│   │   │   │   │       ├── systemd-journald-dev-log.socket
+│   │   │   │   │       ├── systemd-journald.service
+│   │   │   │   │       ├── systemd-journald.socket
+│   │   │   │   │       ├── systemd-remount-fs.service
+│   │   │   │   │       ├── systemd-sysctl.service
+│   │   │   │   │       ├── systemd-sysusers.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup.service
+│   │   │   │   │       ├── systemd-update-utmp.service
+│   │   │   │   │       ├── usr-lib-modules.mount
+│   │   │   │   │       └── var-lib-containerd.mount
+│   │   │   │   └── cri-containerd-b0cc536e51e79920ae65635b71f67ae9730c55331c0b6ce08db35ea23d1e2800.scope
+│   │   │   ├── kubelet-kubepods-besteffort-pode89775e7_59b8_4fd6_a0a0_4722d1b52acb.slice
+│   │   │   │   ├── cri-containerd-3512f7f037231ce3803c2ca63fdc06763b8515929c7fba45c9b1b648385af0f4.scope
+│   │   │   │   └── cri-containerd-9d0277c53bbac4cc057d9b5413e9f40e4ca1bee4f507c06d0af8f7e4da0d3f93.scope
+│   │   │   ├── kubelet-kubepods-besteffort-podfd9795e4_105b_45e6_87bb_a66d6b740445.slice
+│   │   │   │   ├── cri-containerd-9ee941242a81bdc7f18dda550004309f14bc4df68664c5dd323b5f18994b7352.scope
+│   │   │   │   │   ├── -.mount
+│   │   │   │   │   ├── dev-hugepages.mount
+│   │   │   │   │   ├── dev-mqueue.mount
+│   │   │   │   │   ├── dev-termination\x2dlog.mount
+│   │   │   │   │   ├── init.scope
+│   │   │   │   │   ├── kubepods.slice
+│   │   │   │   │   │   ├── kubepods-besteffort.slice
+│   │   │   │   │   │   └── kubepods-burstable.slice
+│   │   │   │   │   │       ├── kubepods-burstable-pod52497ee7_0c68_4a72_9e41_c701f3a3a741.slice
+│   │   │   │   │   │       │   └── cri-containerd-d44188c6d5893bd2cf816823e58a45f4eba4ce1fe9bf51c8ac5b2d26a211482a.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod8e4aa0aa_24c9_451f_b101_9db692229ef0.slice
+│   │   │   │   │   │       │   └── cri-containerd-b3e755bbc2834c9d608463ec3309e76bb992b72dbee60a55483ca27ce21d881e.scope
+│   │   │   │   │   │       ├── kubepods-burstable-pod9af30932_74a8_4fd6_8f51_0c145a84e667.slice
+│   │   │   │   │   │       ├── kubepods-burstable-podae0007c9_90f4_4cb6_92a9_3c0082332056.slice
+│   │   │   │   │   │       │   └── cri-containerd-41e740301f9859186a0ec0abddb14fdd1a4ebf5d146e27873ad6afab0dbbd203.scope
+│   │   │   │   │   │       └── kubepods-burstable-podfefce06f_c56b_436c_9108_d0c714224f92.slice
+│   │   │   │   │   │           └── cri-containerd-2e9c939cb538ba6a8b30f1efb5b14b83628f2183f93593c329686c7667595254.scope
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │   │   │   ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │   │   │   ├── sys-fs-fuse-connections.mount
+│   │   │   │   │   ├── sys-kernel-debug.mount
+│   │   │   │   │   ├── sys-kernel-tracing.mount
+│   │   │   │   │   └── system.slice
+│   │   │   │   │       ├── apparmor.service
+│   │   │   │   │       ├── containerd-monitor.service
+│   │   │   │   │       ├── containerd.service
+│   │   │   │   │       ├── etc-hostname.mount
+│   │   │   │   │       ├── etc-hosts.mount
+│   │   │   │   │       ├── etc-machine.mount
+│   │   │   │   │       ├── etc-resolv.conf.mount
+│   │   │   │   │       ├── kind-product_uuid.mount
+│   │   │   │   │       ├── kmod-static-nodes.service
+│   │   │   │   │       ├── kubelet-monitor.service
+│   │   │   │   │       ├── kubelet.service
+│   │   │   │   │       ├── promtail-fetch-token.service
+│   │   │   │   │       ├── promtail.service
+│   │   │   │   │       ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │   │   │       ├── system-modprobe.slice
+│   │   │   │   │       ├── systemd-journal-flush.service
+│   │   │   │   │       ├── systemd-journald-audit.socket
+│   │   │   │   │       ├── systemd-journald-dev-log.socket
+│   │   │   │   │       ├── systemd-journald.service
+│   │   │   │   │       ├── systemd-journald.socket
+│   │   │   │   │       ├── systemd-remount-fs.service
+│   │   │   │   │       ├── systemd-sysctl.service
+│   │   │   │   │       ├── systemd-sysusers.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup-dev.service
+│   │   │   │   │       ├── systemd-tmpfiles-setup.service
+│   │   │   │   │       ├── systemd-update-utmp.service
+│   │   │   │   │       ├── usr-lib-modules.mount
+│   │   │   │   │       └── var-lib-containerd.mount
+│   │   │   │   └── cri-containerd-e2568f258bd9f77907cb1402ba00845abd75855e17cb076a95dd991b995ffa2b.scope
+│   │   │   └── kubelet-kubepods-besteffort-podff81d678_41b5_4b72_bfc0_b8a455f783c9.slice
+│   │   │       ├── cri-containerd-2b5981397b171298cca57c81e6cbdf454d92f3a9189661ab73fb13e585c29039.scope
+│   │   │       └── cri-containerd-49f4f6f1bba9df24e3b601e72f6eb440298ffb2482aa7dc2099335d09009f6b8.scope
+│   │   │           ├── -.mount
+│   │   │           ├── dev-hugepages.mount
+│   │   │           ├── dev-mqueue.mount
+│   │   │           ├── dev-termination\x2dlog.mount
+│   │   │           ├── init.scope
+│   │   │           ├── kubepods.slice
+│   │   │           │   ├── kubepods-besteffort.slice
+│   │   │           │   └── kubepods-burstable.slice
+│   │   │           │       ├── kubepods-burstable-pod123843a8_972a_439b_8ea7_a73b646afdf1.slice
+│   │   │           │       │   └── cri-containerd-83dc809b9c5c5b22c04f4a57577a8e9648ea6365163268cc5c5d552c81fce4a2.scope
+│   │   │           │       ├── kubepods-burstable-pod368df019_5da5_47be_9340_144b69c0814d.slice
+│   │   │           │       │   └── cri-containerd-22ffa9f1bbb8668c5e0b3a314a6c0607028030119a4145fbb3d26354c17a19ca.scope
+│   │   │           │       ├── kubepods-burstable-pod3e26e050_a614_468d_a2a4_d1ee364b8a30.slice
+│   │   │           │       │   └── cri-containerd-71af931641751a9212e23993cd7257a7d6f2250b12bbe18d3c4e98e90e89a6b7.scope
+│   │   │           │       ├── kubepods-burstable-pod5f81b677_6428_4071_b49b_2b1a5c781775.slice
+│   │   │           │       │   └── cri-containerd-d2b84883f5c31d13972aa25edb014f2d5a5a93e03ceb1190d841e1c47c48cbbc.scope
+│   │   │           │       ├── kubepods-burstable-pod923bdd61_31f2_48ec_af3c_09e5194e9f50.slice
+│   │   │           │       │   └── cri-containerd-b4b7bc1ed75df5926ddf2d9cc27dfa3e10666673e6646d813d1010f5d89cf401.scope
+│   │   │           │       ├── kubepods-burstable-podf230fac3_420c_45b1_aa45_e98441965f77.slice
+│   │   │           │       └── kubepods-burstable-podfd5e02c3_166d_485a_8004_2feafa5d86b7.slice
+│   │   │           │           └── cri-containerd-dc6fdb7673fd9ccc916ad7119e6ac4736f1b86beaac18952a5f9defd7709e5fe.scope
+│   │   │           ├── run-containerd-io.containerd.runtime.v2.task-default-170827e9c5cf58c802aca6314d3ece18a90170cae226ed29504cccb1c1a93c2e-rootfs.mount
+│   │   │           ├── sys-devices-virtual-dmi-id-product_name.mount
+│   │   │           ├── sys-devices-virtual-dmi-id-product_uuid.mount
+│   │   │           ├── sys-fs-fuse-connections.mount
+│   │   │           ├── sys-kernel-debug.mount
+│   │   │           ├── sys-kernel-tracing.mount
+│   │   │           └── system.slice
+│   │   │               ├── apparmor.service
+│   │   │               ├── containerd-monitor.service
+│   │   │               ├── containerd.service
+│   │   │               ├── etc-hostname.mount
+│   │   │               ├── etc-hosts.mount
+│   │   │               ├── etc-machine.mount
+│   │   │               ├── etc-resolv.conf.mount
+│   │   │               ├── kind-product_uuid.mount
+│   │   │               ├── kmod-static-nodes.service
+│   │   │               ├── kubelet-monitor.service
+│   │   │               ├── kubelet.service
+│   │   │               ├── promtail-fetch-token.service
+│   │   │               ├── promtail.service
+│   │   │               ├── run-secrets-kubernetes.io-serviceaccount.mount
+│   │   │               ├── system-modprobe.slice
+│   │   │               ├── systemd-journal-flush.service
+│   │   │               ├── systemd-journald-audit.socket
+│   │   │               ├── systemd-journald-dev-log.socket
+│   │   │               ├── systemd-journald.service
+│   │   │               ├── systemd-journald.socket
+│   │   │               ├── systemd-remount-fs.service
+│   │   │               ├── systemd-sysctl.service
+│   │   │               ├── systemd-sysusers.service
+│   │   │               ├── systemd-tmpfiles-setup-dev.service
+│   │   │               ├── systemd-tmpfiles-setup.service
+│   │   │               ├── systemd-update-utmp.service
+│   │   │               ├── usr-lib-modules.mount
+│   │   │               └── var-lib-containerd.mount
+│   │   └── kubelet-kubepods-burstable.slice
+│   │       ├── kubelet-kubepods-burstable-pod00a1d26f_8246_438f_872d_cf0ef2210818.slice
+│   │       │   ├── cri-containerd-29010ec2092893526ab742f68648cf7b073f046efe95fbc8ebffc9b82b072f27.scope
+│   │       │   └── cri-containerd-3b6366f47b961a793a0b1bf4025d8dbc5be8b3033b417c1f9e88febeca09c0de.scope
+│   │       ├── kubelet-kubepods-burstable-pod02f5bcc3_fb69_4fbf_bf30_d3c4eb49a326.slice
+│   │       │   ├── cri-containerd-1d5a5b6783c712e9141b62f59da405fbe2f9e25e75ff6edea5f4174647cf4b05.scope
+│   │       │   └── cri-containerd-621e172f7ec168f933bfd0490b1a84a0df493c1c9377840eb24a094860f84fee.scope
+│   │       ├── kubelet-kubepods-burstable-pod03f11135_4797_48aa_9fd8_59c823e962d4.slice
+│   │       │   ├── cri-containerd-16fa2cbfa8ad97af5840b61077c0412e83e87705ddda19f85bf0ad0d6f9a903e.scope
+│   │       │   └── cri-containerd-38ee93d6895b5e68d9ab1caddf30ddd19277220864f8198a518dc3cb9103a040.scope
+│   │       ├── kubelet-kubepods-burstable-pod05536837_c6ec_4699_a245_aa61e4ef79d5.slice
+│   │       │   ├── cri-containerd-43298962fe13f0a81d73f52817e5b2675d714fe2a147949b39bff794676c8d5d.scope
+│   │       │   ├── cri-containerd-875dfb66eb4f5b745aeb7255d17ef1fe5085b701670945c859699d909afc3d98.scope
+│   │       │   └── cri-containerd-a03878d78b9eb319fb877b81b01b9fcecb8333ec38aa2c0b91a16fa7ee8a0d57.scope
+│   │       ├── kubelet-kubepods-burstable-pod0620537d_8df1_4834_a4df_ed93110ed1bf.slice
+│   │       │   ├── cri-containerd-035c599a87b8471f22e5472fff541b6dc761137b17e97a0c475289a889019c64.scope
+│   │       │   └── cri-containerd-0bd38b536dfb31594001eeed14b00523a64cd5717ce69445758089145cdda935.scope
+│   │       ├── kubelet-kubepods-burstable-pod098a8bcf_aa60_4abb_846c_4b2a98e1a59f.slice
+│   │       │   ├── cri-containerd-7c47cd7278c96225db1d2be3539998e9af780b2e558773bcd01ce4fc9ae04953.scope
+│   │       │   ├── cri-containerd-de773ce1285c631a280e1b846858e6f9da2d35a9bb1eda7a10cd6ab8ac38b320.scope
+│   │       │   └── cri-containerd-fff5e56ff01f264f8e6c3d67a97d597d365d389d888a1ca7dc5e132dd2ba977e.scope
+│   │       ├── kubelet-kubepods-burstable-pod0b056df3_0a68_4e79_95f0_60ddf1dfde22.slice
+│   │       │   ├── cri-containerd-3def8473bbfde45e2b81216cbb4a29ddb84593946df7ff4452ba46614b6e5f35.scope
+│   │       │   └── cri-containerd-7b818518a56f8098d19fdf70213d73c020f60a33bfc5d66e35cc3ba6dfa6f9dc.scope
+│   │       ├── kubelet-kubepods-burstable-pod0b176e6b_e91e_4afa_8783_0ecc624f0ed3.slice
+│   │       │   ├── cri-containerd-51e298f7b2945a78d13acec44920399cb83850c2a83dcdf90d0979cac454ba0f.scope
+│   │       │   ├── cri-containerd-729c68ff57b4011a76750ed22726015cb82573ab55a10318234d20da74dc0ede.scope
+│   │       │   └── cri-containerd-7843c2a829409e24b96c566e7f1d7feb2161cf6d3a44d2a7d22393657914899b.scope
+│   │       ├── kubelet-kubepods-burstable-pod0c54ccb4_11e2_40be_a401_57f3b131e851.slice
+│   │       │   ├── cri-containerd-64246e8f903cd32dd586ffa8f554c984ca2074e14d98257a07cf0211e3d1aa11.scope
+│   │       │   └── cri-containerd-7ed3b30a912adda78d9b0eb6396c23e1fad9a6ad65d8d8c8bee46b2df379e9fb.scope
+│   │       ├── kubelet-kubepods-burstable-pod0e0805f4_0ecd_4478_b725_70b3ec577f9e.slice
+│   │       │   ├── cri-containerd-2225d76e5ffbea1c4e2b245cf5f35f61263dc904eeb3ff1041db28d33df6840a.scope
+│   │       │   └── cri-containerd-b2776cf316f25bbbf9c6e468e2c9464ed79c09339d4fa8cb21ed693032a7f541.scope
+│   │       ├── kubelet-kubepods-burstable-pod0e8ea9b2_b22e_4c11_8827_554160bbdbad.slice
+│   │       │   ├── cri-containerd-7d645323377237a62368cf8ee61fac78d3b3856b85ef0cfcb4efe9341e335090.scope
+│   │       │   └── cri-containerd-f55b544bb812dcba9dd580684f62132f42c47831a8514d80ab461355a7c8a172.scope
+│   │       ├── kubelet-kubepods-burstable-pod11352d4b_1216_45e9_bbe8_5e2283d4c2c2.slice
+│   │       │   ├── cri-containerd-1daf131a5704a239c694c8e0046b96f11ec6161ba62063ae93c744f8440ceea6.scope
+│   │       │   ├── cri-containerd-2221deb1e749633b6bff68b67908e442fe50ac8a23586d9fcc3831ccbd18c5a0.scope
+│   │       │   ├── cri-containerd-49b04736c0a40e4d6662174435088e5241ae7d6ac658320dfff7443ee461108d.scope
+│   │       │   ├── cri-containerd-657684988f625fed73a350d6690c5395469b29c5ed6319b0783a87045650bfb6.scope
+│   │       │   └── cri-containerd-d85f6f12aef6672a584d5cd10668c83b57477663888f39c81aaf2244c5bab4ad.scope
+│   │       ├── kubelet-kubepods-burstable-pod1591360f_933e_4c4f_b3dc_015c7548a085.slice
+│   │       │   ├── cri-containerd-03b82679c3e6e5c3d3040afbbc802abbd47e0e797d1d2538cee825fed5e663df.scope
+│   │       │   └── cri-containerd-77fe5fe9da5a64e5f9008e7c479cc8560daa85a883e5405086ae60d3606dba17.scope
+│   │       ├── kubelet-kubepods-burstable-pod1b192561_09b5_4ee6_8b83_5affd6d14417.slice
+│   │       │   ├── cri-containerd-2ab5cbfed862f834a7d1a1832105c37754b6df7549fe7f69c248a092836e21aa.scope
+│   │       │   └── cri-containerd-edb2212e20b9233d4b034dd8a4edcdc2a7150b9fd156099838f164c38939cfc6.scope
+│   │       ├── kubelet-kubepods-burstable-pod1b7ae213_596e_401e_a89c_37ae6473f864.slice
+│   │       │   ├── cri-containerd-22c7fc309dde4ce06e992018befdb98f62a9d6e3ad4a1b9daf92bb06573c6060.scope
+│   │       │   └── cri-containerd-3c3e7f4bb13d6e6ac09bc835120168c6aa9c324629acf7bb9389d1758f57da4e.scope
+│   │       ├── kubelet-kubepods-burstable-pod1c271c01_b38b_4838_b91d_5e3ec857f677.slice
+│   │       │   ├── cri-containerd-13abba0af0aa2e02f613d8ee4571e658a521e0037d520e82efa6eea97bec491a.scope
+│   │       │   ├── cri-containerd-2e24fdbaf873ebe529ff780215f8e26cc85aee71beccc148837144e55b1f05d3.scope
+│   │       │   ├── cri-containerd-5fee24e437616d586040b95f4e8c47eb5217c1effdd6f85471883c8a4767200b.scope
+│   │       │   ├── cri-containerd-8287751cbf588a8319b1764ae2ba41c963f5bf78517f15bafbe1588d2edb335b.scope
+│   │       │   └── cri-containerd-9cab7b200cf9b578b07a1bd2e86d782525bea496263f3a3c7f7842ac04d09f7c.scope
+│   │       ├── kubelet-kubepods-burstable-pod1e7c1dfc_4ea5_4fc9_a186_3f419c45d17f.slice
+│   │       │   ├── cri-containerd-2307631d8ef03754dc6e4d654e743e468dc5cae8e31ef3cf1fa3104532819f33.scope
+│   │       │   ├── cri-containerd-3c4592747c3d1df4b56931c4a391995fea69c0d4ceab946b34cf69325c44e389.scope
+│   │       │   └── cri-containerd-652abdcc858b9d90850eb17118f35a1a41ece416fc3ece3439e19daf34d05d11.scope
+│   │       ├── kubelet-kubepods-burstable-pod1fe73d2d_bed4_4dad_b8b8_2614bddbfa9b.slice
+│   │       │   ├── cri-containerd-2e01298d7fd23164865b54bc321feda7be26637db1ea51ff1fad9bc1217172ff.scope
+│   │       │   └── cri-containerd-eebed1c113156b2674f697cbf2c2ff86d9aeaa21892d1dc9eac668fad061c429.scope
+│   │       ├── kubelet-kubepods-burstable-pod201eddd9_ab87_4b10_afb8_e878f893cb88.slice
+│   │       │   ├── cri-containerd-a3c3350a83e68b18465d704c311a6af3cc3b38b9da90b854118fcdf302ef46d2.scope
+│   │       │   └── cri-containerd-f00b0e4cf43c1ffde01aa0bad3af14a5d23d938af6ae10fcd7f3a06faa90f05e.scope
+│   │       ├── kubelet-kubepods-burstable-pod24300f38_04ab_4109_9478_724434adb9dc.slice
+│   │       │   ├── cri-containerd-a44295e34198512851920242d99554b94fd0756d78256c57df6345733f07e7f3.scope
+│   │       │   └── cri-containerd-f81c32358b25206e910b156287a7138162d55bd30a27b9fde2681dee38ff6dce.scope
+│   │       ├── kubelet-kubepods-burstable-pod244ad714_3314_4709_b534_827ef93b42f7.slice
+│   │       │   ├── cri-containerd-09ba803d1e1455278ed5e3b5236aac0ecd0f3bdb22a66d29e4c8ee615cdf90da.scope
+│   │       │   └── cri-containerd-3ebbcc34893e718ad2715ecd1f28436b3954f4e306b8e66bcdd902202d232fb4.scope
+│   │       ├── kubelet-kubepods-burstable-pod272fd44a_820c_46bb_bf04_e46252b80184.slice
+│   │       │   ├── cri-containerd-2afc711bfc9da6ea031ec915464731ae80e725c3a956af97b19fd2217f204359.scope
+│   │       │   ├── cri-containerd-4fd9592290f517ea96d296061f8f18596e570b068c083a6bb4f659902d16b6c9.scope
+│   │       │   ├── cri-containerd-82fc25d22ae341758bbf1da671abf2123752a6def0d2ec83bcaa9479fda8f268.scope
+│   │       │   └── cri-containerd-9df9c80f4f9361d5157cc455f1a6596ab7eef2518a53a791d4061e1cf0c83559.scope
+│   │       ├── kubelet-kubepods-burstable-pod2e086f23_73f2_4581_b32e_d67dc7bc6e7d.slice
+│   │       │   ├── cri-containerd-6ef970ceed1f1a70eb590b142e26b4bfd43a68bb939c53e8183fe654fd6f432c.scope
+│   │       │   ├── cri-containerd-76702bb3d4e2cc8392f536b9d2d404ebd3d8b6e8e643dd43b0aedcc4f9f8b9b3.scope
+│   │       │   └── cri-containerd-f827b429ed64d4ca15c2022a39a3969e3f349c62f0c8307878e8783ed804ce00.scope
+│   │       ├── kubelet-kubepods-burstable-pod2f13198d_bb1d_4229_9864_1e3295eaa324.slice
+│   │       │   ├── cri-containerd-2f57ddf77017e7d40f7704b98753d5ddcb483ffac3f00e9d8af5358a2f452913.scope
+│   │       │   └── cri-containerd-3754cd3e60fd6331dc7a5d6ff74319e385ffd43936631c49eaae7ad82ba2ab67.scope
+│   │       ├── kubelet-kubepods-burstable-pod35785bcc_c0e9_4766_8ce3_db6885466334.slice
+│   │       │   ├── cri-containerd-af00430218a436efc5ec68823abd31c21ace2f9ebf6447c88818909cb7d61cf9.scope
+│   │       │   └── cri-containerd-f35e3add755fa2c6be4c5e877ddcdf941a1ed775a6fea3d81b5dd4d4d899c44c.scope
+│   │       ├── kubelet-kubepods-burstable-pod3608cb38_968a_4088_909c_ce82d8ddf236.slice
+│   │       │   ├── cri-containerd-a1a6d25f56507d68475c86b2b4c986a466ff9575a6a1c8a8a9b42c8f8e14420c.scope
+│   │       │   └── cri-containerd-c7391b8921e36ac79d4e1778bd83ef7faafb430d429217d9f63c722f5f41f3ef.scope
+│   │       ├── kubelet-kubepods-burstable-pod369a7ea1_d027_4872_90c6_dcd74cda1978.slice
+│   │       │   ├── cri-containerd-12f072b62dd268cc96d583c1160f4dd90a139a1df7fd838ff507360f6e1b3c72.scope
+│   │       │   ├── cri-containerd-88b048e8dc16dbd7508bacfde1e02681d1b329c6b625823dd82d6415f2f94db4.scope
+│   │       │   └── cri-containerd-9c4c421159940747c1d3d0ea4265aa5619d669b0ccbd8d78cfa35fbdf08912e6.scope
+│   │       ├── kubelet-kubepods-burstable-pod36febff9_575e_48f9_8584_9f3b2020a94f.slice
+│   │       │   ├── cri-containerd-12211b25b9008d742d220f4e71c1f41e5133e968017835aeaa6a74c77047cb50.scope
+│   │       │   └── cri-containerd-a69c73a543ce3b0d243bc53ece793e27311e388a5de40c0e91c5ec9f48f6f13a.scope
+│   │       ├── kubelet-kubepods-burstable-pod38443553_43a4_4d38_bae2_9c5f43da1cef.slice
+│   │       │   ├── cri-containerd-5f3beba7b261f96196422c46399b2cd5e22ed9ada35beb805982f9abf9d802e5.scope
+│   │       │   └── cri-containerd-e7b081ddc7ec70de4f6b9f83e61d826c2cb55a28b175a585a1ddd7454c765e9e.scope
+│   │       ├── kubelet-kubepods-burstable-pod3a89148b_edf3_4d8e_9e79_3fd1f17c8018.slice
+│   │       │   ├── cri-containerd-11f66b639655cbe646e5b4a2ecb22139b4c0506848d220f7704b6212ffa32744.scope
+│   │       │   └── cri-containerd-3d726c5e1a247b7eef9d11bc9583adfbe54e15db46ecf9274fbedcd5bc545501.scope
+│   │       ├── kubelet-kubepods-burstable-pod3becd219_a0d8_4b67_b3d9_1d83c531fa29.slice
+│   │       │   ├── cri-containerd-03eb63e4443a611e7301c9d64a49ee6922939e93ace1c87db39a7cad4b7409bc.scope
+│   │       │   └── cri-containerd-4aa4943c084687316c832d992bae11161ff9c7c1279d99a159faaaa9568e1b0f.scope
+│   │       ├── kubelet-kubepods-burstable-pod3ca600d2_0d8e_444c_ae7e_e9addc5bd800.slice
+│   │       │   ├── cri-containerd-ad33c0fbc69594b535c670d63f21dc957c826d1f7ee3f4ba333fbbefd02f7257.scope
+│   │       │   └── cri-containerd-be100a8ab183f276e2a01852904f3b72ac38bc3d00f07775f7d00f9d68f20767.scope
+│   │       ├── kubelet-kubepods-burstable-pod3d807510_be59_4ed8_916c_6ca5ae27fec2.slice
+│   │       │   ├── cri-containerd-11e30ef1c1ac05862948e149d3849386d9d4e309867a2f92554ef54a2fd2ba9e.scope
+│   │       │   └── cri-containerd-fc46d3bcfcc2c1b72c949c78fae83fdbda23a774473b500778979b4eb894995e.scope
+│   │       ├── kubelet-kubepods-burstable-pod3fd196d7_9963_4ae1_acc0_6a0c0b461616.slice
+│   │       │   ├── cri-containerd-0905fef2812a525f4d55060d11d7e5eb4001fb1d1f4434e2b487c0b5177e429f.scope
+│   │       │   └── cri-containerd-e9b1b0b8784034b92623339151057bb279d6d32c739adc894518652071e24644.scope
+│   │       ├── kubelet-kubepods-burstable-pod3fe12ba6_4452_4e56_b186_d6f74c20f085.slice
+│   │       │   ├── cri-containerd-2ff74d2e209c0d9713f4d78899b9b55006c3a7a5f35306ed94605932eaa751a2.scope
+│   │       │   └── cri-containerd-e2e05206c2a96f4ad47c3a9547da4b3966dd6878bacf9144e5ca5fa0a227d157.scope
+│   │       ├── kubelet-kubepods-burstable-pod40b03f21_256b_49c9_bb7f_26e60dafafc7.slice
+│   │       │   ├── cri-containerd-15dc774f81c7c532ebf6debab2f33da6d4e8612691e4292a481ef9e8d50a688b.scope
+│   │       │   ├── cri-containerd-583059387468143acc12cbc29f5dc879bc604bec274adaef18410dba97c5bb45.scope
+│   │       │   └── cri-containerd-df38acd744a2e1ec66d32f7bd97caf51c91c53b54c43e2e6ef35eba62642bab5.scope
+│   │       ├── kubelet-kubepods-burstable-pod40e0b745_9738_43fa_8fc9_f66bd906b837.slice
+│   │       │   ├── cri-containerd-e254c190838d8f5a73587a555dabeac57caf19a18d115d6107f52a699142aefa.scope
+│   │       │   └── cri-containerd-ee83e51f42d6d8c39b4d9dbd73151ae92a6ba4bfe5e154edb2740fc4b14f3d0c.scope
+│   │       ├── kubelet-kubepods-burstable-pod459fd28f_21bf_40a4_a2b1_e5da86a601ee.slice
+│   │       │   ├── cri-containerd-62a1126fa18658b6793997fb13144cc9e99eab8d0e39c7c8e8d0e4fa4e8dc611.scope
+│   │       │   └── cri-containerd-8b226e5eca7cf813813ea4476ed6e45eb960b082157146b40b949641ef509788.scope
+│   │       ├── kubelet-kubepods-burstable-pod4732f924_237f_40b8_a026_ac9cae78b5cc.slice
+│   │       │   ├── cri-containerd-1ba36c9769a49de8d97b449173598504f259a8aff95da9129784b5481c56361d.scope
+│   │       │   └── cri-containerd-875a619fd916fcdb4ee6bafef4fa3f6eaa67de7adfd828e43092504e5a8967a0.scope
+│   │       ├── kubelet-kubepods-burstable-pod486e5c62_d16b_4c41_bdc2_afd014c385c1.slice
+│   │       │   ├── cri-containerd-ab7095e512f78d8a4f88e7655ccec5d7b1bdba71c7eb65504586640b1db031f4.scope
+│   │       │   ├── cri-containerd-af785bc24e72b5927551498ef137c1c7fde5fe32ac48f78be18ca8e21e9a3262.scope
+│   │       │   └── cri-containerd-ea2fcf3554e29a6c4ae785db0bd1b704e445e2ef89450d7239e9bea5d354e0e8.scope
+│   │       ├── kubelet-kubepods-burstable-pod494c829a_6295_406f_9ceb_f818ba0eef1b.slice
+│   │       │   ├── cri-containerd-7bae205f667cc1319f14869fe56d0de0855f6799c76e0f5622429221ad3b8a4f.scope
+│   │       │   └── cri-containerd-98ef913067c50642e63732c5048583f0fe1d9bca09414c45750088157a5fee7c.scope
+│   │       ├── kubelet-kubepods-burstable-pod4eadfd8c_f5fa_4812_9ced_e822648491d5.slice
+│   │       │   ├── cri-containerd-810fcb94646cadd4f8eb92e901c1f165a93f096a4251d7fc78eae902519f34f9.scope
+│   │       │   ├── cri-containerd-96e2ed94eaa2f12f5291f1f164d2b0b2b6e110e9d6c30bbd2303f1664422842f.scope
+│   │       │   └── cri-containerd-9ad84ed6c339f38198da5b0b23cdd6bab3bf58c7549010733c46c8af13fdcc67.scope
+│   │       ├── kubelet-kubepods-burstable-pod4f818dde_da44_4444_84f7_f1403cc71bf0.slice
+│   │       │   ├── cri-containerd-092709b9c005d88195ffcf9e0a379e99c5149f7959f357d885a1b955fa7fea4f.scope
+│   │       │   └── cri-containerd-71d42752c265ae1b123e965959c218fccba0f6297482d95e4c13d0039029b612.scope
+│   │       ├── kubelet-kubepods-burstable-pod51c79982b870294f404d7fd2d3702669.slice
+│   │       │   ├── cri-containerd-5ff04c4ff997e98a8d495851faa5151d8babdcfe343b88a95a1bd2377aa61361.scope
+│   │       │   └── cri-containerd-ae140f8c7e723ece04d2d89a5e98796b7d9640b290ba9ca56b88341af9c9d390.scope
+│   │       ├── kubelet-kubepods-burstable-pod54a2d709_30d1_4d27_8388_751dec1dbbdd.slice
+│   │       │   ├── cri-containerd-247ce7861c3929abeec82f54c5cb54dcfb8c11539a28c752abc376e2c9ac2ce0.scope
+│   │       │   ├── cri-containerd-45b9937335bf5feab130f5f394b7571ccad6497e4e26cc922b78ed40d9370a50.scope
+│   │       │   ├── cri-containerd-5aab2a0109532dbd4079eaf549144ddc8e3fc875bc6985fc4399c7282cf621a4.scope
+│   │       │   └── cri-containerd-6f29b3dc88a71f0a0d2ad050be9ac543b9b7a62ec06bddea70df678adc8653ce.scope
+│   │       ├── kubelet-kubepods-burstable-pod579c1094_ac6d_4898_80d7_1bedb1747bd2.slice
+│   │       │   ├── cri-containerd-88cbf22fdef07983c1caa735dec46b4a70faddf9d3be3a801187401d1a45c8e6.scope
+│   │       │   └── cri-containerd-f7a442f2783c252befc62dc762f2592a5695d7705d5060ccc9f51869ae689853.scope
+│   │       ├── kubelet-kubepods-burstable-pod5e47f23e_3aab_4fd8_82c9_e7477e4bb6cd.slice
+│   │       │   ├── cri-containerd-8f06709e86d72b8d6f60975eeaf48f69066d22d745f311e435d78445e229dfb6.scope
+│   │       │   └── cri-containerd-b86cb73be0c54280490a7533980b958a82bbae3c3e7705bd50a76052a5ec747e.scope
+│   │       ├── kubelet-kubepods-burstable-pod5f57b4fe_e66b_4764_bf04_7064630baa20.slice
+│   │       │   ├── cri-containerd-9a0b189b15fe744cac412f5499256ebcfdf6ff0543f54a92de36ced9f5e077da.scope
+│   │       │   └── cri-containerd-ab49be71c0c47dde700cbfe4440c202705cb9210d37cc179a6bb2941ab19cb86.scope
+│   │       ├── kubelet-kubepods-burstable-pod6081b234_b242_40e5_b278_ae577869e22a.slice
+│   │       │   ├── cri-containerd-8affd6680ab5301e0615b37c1244915be330009d1dc6e2fa1fb9970d699f6569.scope
+│   │       │   └── cri-containerd-d38671dcab337a5d3d7db67d66ffc7af86617e7f97bc28f51364b5d3d5a73648.scope
+│   │       ├── kubelet-kubepods-burstable-pod60d8a480_5a75_48c3_a600_2512ec0bacd0.slice
+│   │       │   ├── cri-containerd-b40387c2b006095f2d8563bb2e5393675bcad9e44797f1ab42922c62a13fdcf8.scope
+│   │       │   └── cri-containerd-d0f03fa8e5635c2d1da13ca69f28cf81a09d0458827f3266f5b4ea4be8b1e609.scope
+│   │       ├── kubelet-kubepods-burstable-pod60f025da_5c29_449f_8980_c4a9df62e131.slice
+│   │       │   ├── cri-containerd-030c2805a20def913241f230d67edab99e285c3afa8cfc6ca32f01c017872a67.scope
+│   │       │   └── cri-containerd-19c287bb463001dd6512fca7ed7088310ee6db59a843b38988520ed8530fd38a.scope
+│   │       ├── kubelet-kubepods-burstable-pod62b18514_c987_465b_a481_df8ad4899771.slice
+│   │       │   ├── cri-containerd-56853449d873fce02c430b0c92da1bff7db6bd50f9649fa071d09113ef095ab8.scope
+│   │       │   └── cri-containerd-5dfe35a8194ef726a35c0377802abd90520b86d133f6e4abf0dbd6ae74d3e101.scope
+│   │       ├── kubelet-kubepods-burstable-pod65e3fcba_90ce_4bde_8627_5e2af7b31524.slice
+│   │       │   ├── cri-containerd-4c07ee12940aabea6f88fa8748c9da098ab69eb44c65bcd86a911b98e7e5ea76.scope
+│   │       │   ├── cri-containerd-ac1d269a2793a417ead52312259860e7c901ac187a876ebcc44a151fd182a0ed.scope
+│   │       │   └── cri-containerd-f68fe1061afdd87eadf8209e985307cfde1db9085e9a76c58ee6303a29e7cd4d.scope
+│   │       ├── kubelet-kubepods-burstable-pod66d21f86_0c87_48c7_ab6a_9ba608424f71.slice
+│   │       │   ├── cri-containerd-40e76147327d5dc1060758b9b43b08fa491c921921a4254c26bccf21973751f2.scope
+│   │       │   └── cri-containerd-49c30a96b827b6d8fb1e2b26d73a71b92c479f90c6bfe7fa52440f93e2cd2f5f.scope
+│   │       ├── kubelet-kubepods-burstable-pod7107193c_674d_47af_8b83_1931ff92fcc8.slice
+│   │       │   ├── cri-containerd-845c5b67b89009b6b0ab347b6fc814df0942e7ab0e6c7080a8b1ad4d175cf8eb.scope
+│   │       │   └── cri-containerd-9564ab8f50f265df204addcc925933e8eacd29b95cc9d414addcd10aab0b2f71.scope
+│   │       ├── kubelet-kubepods-burstable-pod71f7d331_7db8_4106_ad9f_4ffa4490a6a4.slice
+│   │       │   ├── cri-containerd-1c78161baac76da1163a99b81f4436d6c2cb626d2410f2fe30cc36635b8eb50f.scope
+│   │       │   ├── cri-containerd-5dbe105626e63922601a3e52b017138e1a3cb4ddba11bf20d2ab3965db1da1db.scope
+│   │       │   ├── cri-containerd-6fd387dd8612908763e9c21bf2a7282cc45f82e713e8b0a39720f1e520d2cb16.scope
+│   │       │   ├── cri-containerd-bfc5d5db98bd3477b57a6a0291e9f073ab53cb7ef9761e9901f106de8019329d.scope
+│   │       │   └── cri-containerd-cb597ed68fa14da758981d82e2e15d6923292a647bef47dd561a602bfca91d42.scope
+│   │       ├── kubelet-kubepods-burstable-pod73100404_9eed_4d9c_8f73_5ddfed4ee796.slice
+│   │       │   ├── cri-containerd-0cf64cea208b02375b605d0e9de1ca52d3bb0c7823c87d614c23c63f37289310.scope
+│   │       │   ├── cri-containerd-2b24a765254e0e1046994b2820258fbe53ced93a22721a100bee1265a2bfdf54.scope
+│   │       │   └── cri-containerd-e40e8adcfa47cff162f709e1094b257d85952eb72af570a31953a26b84780ac8.scope
+│   │       ├── kubelet-kubepods-burstable-pod7334b288_f275_4863_849b_9b8b50a438f5.slice
+│   │       │   ├── cri-containerd-663f94cf7fffda488b34cefaa83180d7b12c88ba05815245e869cb5a615e1ce4.scope
+│   │       │   ├── cri-containerd-8f871acf7fa737711be326864fcf270b6ec91273a350909d9b712cf0a31ed52e.scope
+│   │       │   └── cri-containerd-a90739ba89a1aa51305762dddc80ed33aa96474c1c757eb1cbf32d4ea5212855.scope
+│   │       ├── kubelet-kubepods-burstable-pod76142484_177a_44a0_b053_73e1d5833883.slice
+│   │       │   ├── cri-containerd-13685d8e6ea8274d052cc2fd46800124df333f978332d8b4e02cb659b917647c.scope
+│   │       │   └── cri-containerd-ee786fc9a03257dc6fe6bde7e0e2bc6327805ffb37b51cf4ab1b62d7a42120e2.scope
+│   │       ├── kubelet-kubepods-burstable-pod780303d6_2847_45dd_b54f_2219086260d5.slice
+│   │       │   ├── cri-containerd-0bebfcac02b9cdb53d079cae83a9288baa1c2b0631fd5f284cb16182472052ee.scope
+│   │       │   ├── cri-containerd-1e3ae7a5e0d083b33ec55445185b0cba25417192d329e38ae20f6224284b666e.scope
+│   │       │   └── cri-containerd-cb6f9551daaf59471c9f0abd3f8efb0e920ca75c2cb77a7d0afc99e12801e02f.scope
+│   │       ├── kubelet-kubepods-burstable-pod7bfe98cc_ea69_4780_b215_2e82822d3733.slice
+│   │       │   ├── cri-containerd-400fc7053815c198a6a1caef337eb11e6bdeb7aadb5160b38602293a4189d918.scope
+│   │       │   └── cri-containerd-78c39c032ae8abb4cf3e717b638e0baa979b4503746bb5be8b066917930438f9.scope
+│   │       ├── kubelet-kubepods-burstable-pod7d2dcd66_3d50_40ac_be68_9d5a9280d05b.slice
+│   │       │   ├── cri-containerd-64b807e755c50ee3ca43d660e8800257e3e548e19e728f7df125678764b28876.scope
+│   │       │   └── cri-containerd-f0f7d41747e55361a39ffc6c5e33cc8e8f9702030851ec658770f8c0d5abe7be.scope
+│   │       ├── kubelet-kubepods-burstable-pod7f786d39_89f2_4870_938a_b9af6886f898.slice
+│   │       │   ├── cri-containerd-4173f42da0f52b03526017f0af220b5b9f28917faa600acf2b8e5cecd0e74e19.scope
+│   │       │   └── cri-containerd-570ff40fa5d0f8b892dfe0011d029839c172edda87dbb3f827c05532ff160468.scope
+│   │       ├── kubelet-kubepods-burstable-pod8076d15b_7553_41dc_8713_a1541d4c8e0e.slice
+│   │       │   ├── cri-containerd-c4f965c46a0a6f6d6d9cc681a7764259f92163e1c0a4e9ac359aaf4a13a5d1a6.scope
+│   │       │   └── cri-containerd-f906b471783607e91accdb02284b11122adf080eefb261958aca5d47bee91542.scope
+│   │       ├── kubelet-kubepods-burstable-pod81432493_04b8_44bf_a836_bf4aecc534a1.slice
+│   │       │   ├── cri-containerd-18234009cf2c740de19f1f45a411614db98bc40cc9b801b0016bb831b936bc57.scope
+│   │       │   ├── cri-containerd-3fb1ea2aa33f477c088fb6f1b1858419db9528d85783373ff973aa39906900fc.scope
+│   │       │   └── cri-containerd-b5ebcab2f8139e96ba6f1be2b95a950a73118627dfc6db93d0da5876ba4b1e08.scope
+│   │       ├── kubelet-kubepods-burstable-pod8578b8c2_619a_42b8_8ebb_f4db066ec155.slice
+│   │       │   ├── cri-containerd-36ff4094286115650760ac535688fb4dcf6914dd54dfa59a99add426e7ead277.scope
+│   │       │   └── cri-containerd-958e3edab872907513f8cc2b9f7655ebc3d7c1890073f06b09109a4de286f848.scope
+│   │       ├── kubelet-kubepods-burstable-pod86d9f12b_1b0f_464d_bb84_5e9063e5fa28.slice
+│   │       │   ├── cri-containerd-5591be006e4e8f108ec1cf5e9480c1f9b0600043282d924c1ca64f03b63aa7fd.scope
+│   │       │   ├── cri-containerd-b33278779b63de397921d95c11e0879d3ca22966bd7ae80d5686a4614f7164ed.scope
+│   │       │   └── cri-containerd-cff25c14e55710df547e8cbc7258aeb373f6494f97b2bade7c937806398fd08c.scope
+│   │       ├── kubelet-kubepods-burstable-pod898e9719_eabe_4ccb_8c82_a6f5272ba238.slice
+│   │       │   ├── cri-containerd-0a8e58f7037f988c1d5b5d29c1e71ab2803ab35fc1a7c57b41e4fe0c4c386908.scope
+│   │       │   └── cri-containerd-8b5fc6feff0b46385f85cf0330d04737467d2c80ecbb4fc15bc030f77e1fc354.scope
+│   │       ├── kubelet-kubepods-burstable-pod8bf3013b_922f_432e_8fc1_d3859d38c01a.slice
+│   │       │   ├── cri-containerd-3b0495c170c960382ff4a57c0e4f3a4dd2cb0dbf6824c2235aa2ac2281b50cf2.scope
+│   │       │   └── cri-containerd-4adc804bcbb33073fe3c2776448b7e510a8db429530641cf8caa16f0d2ef4c23.scope
+│   │       ├── kubelet-kubepods-burstable-pod8bf4e9ee_e13e_4b1f_be35_865e6f901098.slice
+│   │       │   ├── cri-containerd-1f58e287f63c92b71e4b9d1309c67a8629682df7b4782a8fc65e9cc1bebd13bb.scope
+│   │       │   ├── cri-containerd-85d645743ff5f504c2e17b9c425b2e5aa5953a9d94481014fd6a8421f798c3e3.scope
+│   │       │   └── cri-containerd-99397e193db51cf61d05c0e98af4a751f8645d6bba49047d84ba2822f728eaa5.scope
+│   │       ├── kubelet-kubepods-burstable-pod8f3744d3ab6132817a134e6a3734659c.slice
+│   │       │   ├── cri-containerd-46ea5357322e583939a87c8d30ce07abcaee1edd0e9d9e9d0a236d45a486b811.scope
+│   │       │   └── cri-containerd-ee45cc000ba67f9eb4d31a8dbc396a34d31cf9ef0c095ca6179fcdc70168d421.scope
+│   │       ├── kubelet-kubepods-burstable-pod909afe41_ef5c_4243_b818_1cf5c055342c.slice
+│   │       │   ├── cri-containerd-491151c3167104f8921b8146e8b69bf353a267befc249df729437a78825a355b.scope
+│   │       │   └── cri-containerd-c8d674daf99427c9860014cc66a7e77c7f766012685ca192e38d7466f545e15d.scope
+│   │       ├── kubelet-kubepods-burstable-pod90da0117_ec4b_4a93_9ff3_602c9750724b.slice
+│   │       │   ├── cri-containerd-13e6ed19dee79eabfc86fd40779f7230e9ceeba8ec05d93e61308ca8774116f4.scope
+│   │       │   └── cri-containerd-521b27228faf5fddf5805142909b81f8d9d02bae80958d2435c0343edfa16b85.scope
+│   │       ├── kubelet-kubepods-burstable-pod93ad58dd_6f2d_4526_bde8_8a350374e54d.slice
+│   │       │   ├── cri-containerd-1efbc51e39ece6e00de069b52c1080b27217a85f8734f9a7a288d443fe994704.scope
+│   │       │   └── cri-containerd-c56a559751eb3782a3b06d1e04b4bc56d46fe3327305d293b17745ca985dedb7.scope
+│   │       ├── kubelet-kubepods-burstable-pod97f19aa4_e0ad_4633_9c7d_3ae1a243636a.slice
+│   │       │   ├── cri-containerd-62ccec16bc30ae32dcfceea80f03ab3e345b473e4dbfdd2d28d337cb6c892996.scope
+│   │       │   └── cri-containerd-ca9c94d04e71718ae95d5ee70088c4ec65b4a248d91304c1e60b97040b1fb8fe.scope
+│   │       ├── kubelet-kubepods-burstable-pod9a489729_eb93_494c_bdf9_41e1e927d1d3.slice
+│   │       │   ├── cri-containerd-10b27baef5bbd0e3332f4504971eb8ee3ac9673b1510af524587a0729e811479.scope
+│   │       │   ├── cri-containerd-26c5e1a3e29224ab247661d1399e87db4f5b4b1178b7f335463e6016a19a6001.scope
+│   │       │   ├── cri-containerd-b0a5599f6d902271d4917d420796cf6a4a9db30cca852bd5de053bade476d838.scope
+│   │       │   └── cri-containerd-b8da7ec26819d0ffcf7986528d51adf3183133efbddee0a1ae33036f3533208d.scope
+│   │       ├── kubelet-kubepods-burstable-pod9aaafad5_0318_4213_b11c_b974c2fb5287.slice
+│   │       │   ├── cri-containerd-24cb16480ca2824c04c2c9c5ebb90a40a332cfac2a636e0e9053cc5bd24727a8.scope
+│   │       │   └── cri-containerd-f65dc0da5028de958309cb74c23f9b07422102bfb9cb800140348817f5c4a5c3.scope
+│   │       ├── kubelet-kubepods-burstable-pod9afe8d52_1dfb_438d_8a81_d72596c9c3ea.slice
+│   │       │   ├── cri-containerd-4dd67c2ba3ad74ea2652d9b619884d9df32009a20f09641a108b42b77b6a0750.scope
+│   │       │   └── cri-containerd-dc3eb1089ab65b98717cd2e9ea1a72d3d2912fc3fc678953c75d52232222756d.scope
+│   │       ├── kubelet-kubepods-burstable-pod9b45d5869da5f91a0bdb949e8679726a.slice
+│   │       │   ├── cri-containerd-1c88e9994539ca55bbd59d35e96d0bf30ef7030ed3e9c2225cf52ba00859f31d.scope
+│   │       │   └── cri-containerd-c21179139b6944b2de842c804c5e951a7ef9a94e991835e355415aad76edfc33.scope
+│   │       ├── kubelet-kubepods-burstable-pod9ca3c732_8297_4f10_9dad_00ef76be9bfa.slice
+│   │       │   ├── cri-containerd-0118a63b444f4ba63beef255350002fca61fd8060a33f28713c7d40833def92c.scope
+│   │       │   ├── cri-containerd-ad7673810ae9de08abb27c31ee45089826ac7a2b0ef5097f9eaef2b64f9ad825.scope
+│   │       │   └── cri-containerd-c5c9c84911b8321d3d4de6e087f8b6bd91bbed5e49471d8f6690ab402500318f.scope
+│   │       ├── kubelet-kubepods-burstable-pod9d497e04_4a6c_452f_b992_6ea39bf84ff4.slice
+│   │       │   ├── cri-containerd-15fc1afba43a44cbf9cb19bc26540dcf073fbb6cbbc6617e12635238b46fe148.scope
+│   │       │   ├── cri-containerd-a82e1b7555d588e031e2ccfac9f8365cf2edf1184caa5716c1c40103f12d24c4.scope
+│   │       │   └── cri-containerd-adad4e3ff6804687e9cbb2e22079e6416956ce00acb1e7617645781e47783e4e.scope
+│   │       ├── kubelet-kubepods-burstable-pod9db2bd25_ede3_43a5_80a5_2bda4cabd108.slice
+│   │       │   ├── cri-containerd-827a41349fa5b51ee8f6027502ca763b55c0736cff815cacceb4bfcde84f7262.scope
+│   │       │   └── cri-containerd-d917c4e6f92419246da1769c8d2fc1bf37c835d15cb7080ad110e49f507b02d5.scope
+│   │       ├── kubelet-kubepods-burstable-pod9f3404a7_1e32_410f_8e6c_3e8838207db6.slice
+│   │       │   ├── cri-containerd-29c33080c9b0653e976413ba496f297c43daad4ebd7dad220e32dca3b5f35ca4.scope
+│   │       │   └── cri-containerd-da54c2ec37475878301f18f68d267a4a671966e541642e8fb1492e0dc820a86e.scope
+│   │       ├── kubelet-kubepods-burstable-poda1629268_da54_44a3_84eb_8337a8fe49ae.slice
+│   │       │   ├── cri-containerd-22764892e03cb798412468a69fe4eb409b97b61d20815df971243576b1cf92cf.scope
+│   │       │   └── cri-containerd-b9fc4e6b8cd9b5bca680769933f88c08df3ed6b31448ece61b2a51c12a6d47ff.scope
+│   │       ├── kubelet-kubepods-burstable-poda405eff2_3d88_4be0_a6eb_2b0c18b8ceb7.slice
+│   │       │   ├── cri-containerd-8396a4b9b60cfc99c46a3a58e0e078d6bed06637a733cf427635f8099d6dbe8c.scope
+│   │       │   └── cri-containerd-f77cf96b4e8c91bd6d4fbb3dbbdd341ab5c81531815c02ebf76de3d4129272ff.scope
+│   │       ├── kubelet-kubepods-burstable-poda51b88e8_ab85_41ab_978b_f30249ebed14.slice
+│   │       │   ├── cri-containerd-89c73216fd7af9e95ad3ab81feeab128be4d42caed87a607260c65e13c540853.scope
+│   │       │   └── cri-containerd-d458539ebd1b05eef745067a0fef0c106ced41e30a8e7343400ee286e86f3d93.scope
+│   │       ├── kubelet-kubepods-burstable-poda65b7200_1ac3_4dde_b34e_f02545514ded.slice
+│   │       │   ├── cri-containerd-19a06bca7bf2fdcb1898a39b14ee5219b6bf0ae89872f6296037aec8c35daad5.scope
+│   │       │   └── cri-containerd-f6616816fef37e8d35aa115b06eb8b340d013254c99c8ece34540600a3b37c08.scope
+│   │       ├── kubelet-kubepods-burstable-poda6cb25ed_9bca_44eb_935a_686d79329dea.slice
+│   │       │   ├── cri-containerd-583de152ad7cf89168b6f44b0c2e2aee2eb4fe51bccc13775efd8212c217999b.scope
+│   │       │   └── cri-containerd-d9f87cadd6f172e6a565081a0d615329c31e1ad985ee41516edc617209886cb3.scope
+│   │       ├── kubelet-kubepods-burstable-poda841af34_6c0f_43a8_9cf3_80281cb49293.slice
+│   │       │   ├── cri-containerd-0a71cd0a6c99673d8dd644c0f78701d00f5736243322ed5ea39e9409ad2f61e9.scope
+│   │       │   ├── cri-containerd-39bb3b512fcd1fb8709181356249dc5d003b1f45743e3cf3730ad51d981d20ca.scope
+│   │       │   └── cri-containerd-f5efc7ca70cf65c7220532000172214fe3c908dedcb8fc46428fdf9be9c33552.scope
+│   │       ├── kubelet-kubepods-burstable-poda84b6ccf_a4c7_4760_a81e_8d417468c3f8.slice
+│   │       │   ├── cri-containerd-b0449627668d72f96b6c2bd3c3ac4f2f0c549837dd63585dac02abf7a526fd81.scope
+│   │       │   └── cri-containerd-fa980d326627aae9b9b129da43e1cca47be1d2fb74051d0469ca84c72b94f50e.scope
+│   │       ├── kubelet-kubepods-burstable-podab04d96e_5de8_4568_8d48_2936ec8f6c14.slice
+│   │       │   ├── cri-containerd-210bd007b8a3e86e8c54e45d8dd642fa9235179ee8ef2802d1e445c2ad89ab80.scope
+│   │       │   └── cri-containerd-a4ee74eb650ff75254b77cef4ba6c74771161d2450bd6cf1d3d3be48d341d254.scope
+│   │       ├── kubelet-kubepods-burstable-podac2f53ff_1eb7_4304_a3fd_a81c5591fbf8.slice
+│   │       │   ├── cri-containerd-1160a2edb3b5eedf4cf7e4e4711857b79c4694de8ac83d80592194c199539ef1.scope
+│   │       │   └── cri-containerd-1f21f3a2e8f29482a941e4ce1fa96e602b90951dfae9f726d3355ab1a687b6de.scope
+│   │       ├── kubelet-kubepods-burstable-podacf4a9ce_ec75_4122_a7be_7762452a5002.slice
+│   │       │   ├── cri-containerd-618faf708be950e9c2b1ea6b345802198e1dba43e8fbafca7974e8097c8f9aa1.scope
+│   │       │   └── cri-containerd-cad054c8fa7095e17290df528f524058967304f8cbbbd8e2bad15aaf98fb5445.scope
+│   │       ├── kubelet-kubepods-burstable-podad8dda4a_ff17_44ec_b236_73e4e0caf4e7.slice
+│   │       │   ├── cri-containerd-a22ca6951931ebf968f2a50f8070b7a7556a7a65386252118143119eed28fa9a.scope
+│   │       │   └── cri-containerd-f1abca351515d0afa3399fa9dbffc9efa294b55d694b5fb6dac37bfc075174fd.scope
+│   │       ├── kubelet-kubepods-burstable-podaf843986_028b_4d5c_b87d_4653288a1351.slice
+│   │       │   ├── cri-containerd-30873cac73b1995a042ba909eca49680e928c9c3a027f277a976aed0c0f12061.scope
+│   │       │   └── cri-containerd-bf49e3df8db73754671d34d14113703b3830f728c1d6a4009542a20571b24f55.scope
+│   │       ├── kubelet-kubepods-burstable-podb0055dc3_cacc_41e7_b1ba_4266e780aadf.slice
+│   │       │   ├── cri-containerd-0fd18eb8ecfbffda88d98b4c7b45fb941c2ea7c2673c9a67f6892e1802528e70.scope
+│   │       │   ├── cri-containerd-71639e19523900750bb731138f0a5079b602920ba891283032c2f395d2a250fc.scope
+│   │       │   ├── cri-containerd-9ea3656011b06519c5ab460952d8b77ec54eb5374f5854a9dd656b2404c15320.scope
+│   │       │   └── cri-containerd-bc90493f70ed9b366b998ca7f39ca2033eff7f0e45d749c85c08234889961356.scope
+│   │       ├── kubelet-kubepods-burstable-podb07e5f92_9c62_486b_a2c2_ad4de72f9fb6.slice
+│   │       │   ├── cri-containerd-8be9ab8be3591c964accc52092f6d0b4df2356eea34846b2e813ec859101f48a.scope
+│   │       │   ├── cri-containerd-930d717b452186935bf897b169f76983121339e39d45273fda9877412db2f942.scope
+│   │       │   └── cri-containerd-c894998b084fc6176c57e4078492c574342d51fe1f36bed37a2f863bb5f82c46.scope
+│   │       ├── kubelet-kubepods-burstable-podb6b465c7_8f3d_4cb1_bbdd_9c9cf47921e8.slice
+│   │       │   ├── cri-containerd-2438f96c24fba56580b66f10d8961669efd5c9f8dac73c6c6d7a2d34dc641ae2.scope
+│   │       │   └── cri-containerd-651877af0f3dcfecc72de338650802f8540a2135457416f4acea78c1946491a3.scope
+│   │       ├── kubelet-kubepods-burstable-podb8d972c9_1ac7_43e8_a3a0_967dc4678521.slice
+│   │       │   ├── cri-containerd-451069a00aff48f1c04213d5c9e353e4aa794619838e352ed67c928a3168a8ad.scope
+│   │       │   └── cri-containerd-4ba1e105e95521ec187d78bc5711ff37913da44e7913133bf836e98ca0be97aa.scope
+│   │       ├── kubelet-kubepods-burstable-podbcc7f1b6_8c2a_4505_9254_cff17e415240.slice
+│   │       │   ├── cri-containerd-0ec993ff610af1d2847dc2e3b962ca458ee993c6e96ea85147fc6ef150b8758d.scope
+│   │       │   └── cri-containerd-417f8e936b47b630dd97ec7cdf7462995dad6b175d25a84a3716d1b4de15a25d.scope
+│   │       ├── kubelet-kubepods-burstable-podbceba3d9_0e52_4f06_b9ad_8c878575efc8.slice
+│   │       │   ├── cri-containerd-0e0f03bdd6fc7185509b1bb267296608cbbfe3112e0312949c31bf70b815ae9f.scope
+│   │       │   ├── cri-containerd-39e60dd44f55b342ffad9911c697a58add7258e88391cfb0c1bdca90775b1a4e.scope
+│   │       │   ├── cri-containerd-b892e3d53ed0dcaf55e261db92038ebe7131abb095b88b3b342f2fe408e7713e.scope
+│   │       │   ├── cri-containerd-c5abb4e4405acbb1bce7ca2f986311c32b18f587613875dea9f3d1a87c3f1981.scope
+│   │       │   └── cri-containerd-d2a2755f4779f4685a1ead42fb6b3ec674d52a8638645aab60f3f59be4a95b49.scope
+│   │       ├── kubelet-kubepods-burstable-podbed42870_32bc_4510_b000_8b240cbd2c80.slice
+│   │       │   ├── cri-containerd-b555b40c525bdedef64b555d45e9ec745b13a1c78bd84df89596a70998c99a29.scope
+│   │       │   └── cri-containerd-d3a5d64dc030ca89a086d84f5153cbb3a3cc872e9c05904c02820bb07c170c16.scope
+│   │       ├── kubelet-kubepods-burstable-podc08a49d2_d135_4329_888b_b498ed7e9c93.slice
+│   │       │   ├── cri-containerd-637b6b91d2f3ce699ee20151bcdab6d2f11548d398d1570b639117d3b1fe7c53.scope
+│   │       │   └── cri-containerd-b7947cfdef0326ae05bb13ef09f948c2468d679c9827853b8db33afbb25eceb0.scope
+│   │       ├── kubelet-kubepods-burstable-podc4378b81_d141_46a9_a196_61d6464df501.slice
+│   │       │   ├── cri-containerd-1915f7bf2656f98d747c93bc6fe12df2c04b00f983202708d776f6b9474cbbb5.scope
+│   │       │   └── cri-containerd-b584e6aff3189a3d538c214607f213c303827537cbe3fb1a6ca2fc66fb032227.scope
+│   │       ├── kubelet-kubepods-burstable-podcb74b036_2b5d_411b_9326_6d7a9947a80b.slice
+│   │       │   ├── cri-containerd-649b758480b00efb5a4c99bb6d34fac0b2bd949e7db34b62f147901137b3c2a3.scope
+│   │       │   └── cri-containerd-a363bf0caca67212837a00bbc9848d388b0521d4fc336c2a6d56abbeb85ef85a.scope
+│   │       ├── kubelet-kubepods-burstable-podcbef7736_7804_4afc_bab9_e72fddac1d3f.slice
+│   │       │   ├── cri-containerd-16bf2a97f5d4e60a9322ff38cff7ec9c6a3c5bb90efa0443fb6979551734b25b.scope
+│   │       │   ├── cri-containerd-4754a99f49889e6596ec841dd3423b72c47cdd29cd5308aa5544dd7a3d779834.scope
+│   │       │   ├── cri-containerd-771c088b761454f384cd0a27580661fca1d4ebe0d227fba2078fe0645e02b116.scope
+│   │       │   └── cri-containerd-d779f59745a8bffef332fc7a9c39a4c8f49ca17e776ce98e0ed143e180ebba86.scope
+│   │       ├── kubelet-kubepods-burstable-podcd40ad83_9623_49d8_b423_615c9a62787b.slice
+│   │       │   ├── cri-containerd-3b7af914babed96e2a3a006d099e3dedbff0b1f3bfec4f9b96425470aba90979.scope
+│   │       │   └── cri-containerd-b36a584727a02340b53d76c847536a210fd3185117ec476933c97cdb74552aea.scope
+│   │       ├── kubelet-kubepods-burstable-podcd831dc8_7ea4_4290_b15c_e064042245c2.slice
+│   │       │   ├── cri-containerd-ab51803260eb624ce9cc23d18d8cc62f39c8314dddc87ddf96a344f1080a365d.scope
+│   │       │   ├── cri-containerd-d90e00e57f642cdb40328b1a308c8b8f0f7c1c2e029d8807783fd2750a2a5f9e.scope
+│   │       │   └── cri-containerd-e267230575ede08212007e4bc9258ab3f86762889064de9deb15e68d37b6ad03.scope
+│   │       ├── kubelet-kubepods-burstable-podd08c64ee_6871_4adc_92f5_379b1ed2cf82.slice
+│   │       │   ├── cri-containerd-2914f04dac62cf1c64a0b6e2234d3c287e55b109d02fe9bd3791ce79592aa798.scope
+│   │       │   ├── cri-containerd-9b442b091a68a2e785f155eabd1963bfe91fb269d8b342776b020690099f9121.scope
+│   │       │   └── cri-containerd-9cde48d6286555933fb6a7c9da028734bf3e7055d02019ec6ee10247a08c96f2.scope
+│   │       ├── kubelet-kubepods-burstable-podd2f9334e_4c48_4246_8796_9ed067608c74.slice
+│   │       │   ├── cri-containerd-21e2d8b2837fc60e816e7d2aaa99c9698068ba80857c4c70ad62077dcf439565.scope
+│   │       │   ├── cri-containerd-e625d621e0c72e4ac63dbede92a73c9a7b1956928668b61574809fe7bbd32d05.scope
+│   │       │   └── cri-containerd-e9d0504234bc18417fec1a2fde903b72dad4978c63b54f1f53d33b642d1a8620.scope
+│   │       ├── kubelet-kubepods-burstable-podd39a77f6_08a0_4c80_8779_17817165195f.slice
+│   │       │   ├── cri-containerd-89cda626a2553e46ae262e10942a1c744d3e9849ff4383c1912e1595136e44b8.scope
+│   │       │   ├── cri-containerd-a07035868ba6598a71b1b9a6e34066fca115b7aef051536a5f6c4d548c37077c.scope
+│   │       │   └── cri-containerd-ae8f0036bea59e9d3e2c7514d416d0e5319d971841660964e60349f3431dce2c.scope
+│   │       ├── kubelet-kubepods-burstable-podd3a0cc00_7721_4f9d_bfc1_7c632d93f0b4.slice
+│   │       │   ├── cri-containerd-0760e4894c8ba82ac7fea64425506cc2b215a09a382a54799a2db395f44a36b8.scope
+│   │       │   └── cri-containerd-cc680d6a1cae1905b2ecc64eb066c88b48f18ca1c909900fb03615abc2418931.scope
+│   │       ├── kubelet-kubepods-burstable-podd5e7153f_a091_412c_8e53_8645591e3c44.slice
+│   │       │   ├── cri-containerd-3116cfcfbd73cd4138de926458f7eab3e69db236b0a9e45b3d5d72db711352b2.scope
+│   │       │   ├── cri-containerd-6a77a9eea51da30b25ec82c1b59cd601986e3d0799da84eefbedde989d7c9c22.scope
+│   │       │   └── cri-containerd-81c2caa88966ba95c089b71f607fd53cae6986c04e75fc0f856fe81e0a2d4f75.scope
+│   │       ├── kubelet-kubepods-burstable-podd9594498_467a_4f24_8b53_ae14bbd86bad.slice
+│   │       │   ├── cri-containerd-1c61e7004f34442aa8e5d789b2a78de59e867be18c4f4cc17b57c8663720fd4e.scope
+│   │       │   └── cri-containerd-96a199e32cceb40f6978b98cb20433061dd5cd4746253a9c2e12a1b424179bd7.scope
+│   │       ├── kubelet-kubepods-burstable-podda382f2a_53e2_46ec_8dd2_d42dcff81f2c.slice
+│   │       │   ├── cri-containerd-006de94079ce112a235844129fa31cde5f89ef2f50d4e07393299e4b83231019.scope
+│   │       │   ├── cri-containerd-269db4b5e2ddd6c5f3c4dbff541f826935b10912fcfad0711b279e4cef5063ce.scope
+│   │       │   ├── cri-containerd-3f5b17c9c1e4fb07e7260c3e3359f3ca58f5f6fb59ad476263be5b3e24db3a6e.scope
+│   │       │   ├── cri-containerd-be4b4c31983476f0ef8c436203cb5c6c22bde0b7931ca2e71e20a79986f0cfd0.scope
+│   │       │   └── cri-containerd-e51f0ec6656faa1c4347e4f50d95fa49e05286c9d270803245d58e57feeb1c95.scope
+│   │       ├── kubelet-kubepods-burstable-poddd69b239_b9b8_4dbf_8ad9_a17ab89ffda1.slice
+│   │       │   ├── cri-containerd-3de6e7f9e291c129baf121b0200deb2847e8275c121d294a45f2866f9a46e94e.scope
+│   │       │   ├── cri-containerd-456a5ed9726cbb6de355038dcdd955f20a4c4c803d422feb127aeed8daa09b12.scope
+│   │       │   └── cri-containerd-51b2f5d869dd1e86cd82c2ea945858112a531a193d198d09dc85557eda95108a.scope
+│   │       ├── kubelet-kubepods-burstable-poddf0d394a_e419_47a2_8d04_73ad8f4aaf8f.slice
+│   │       │   ├── cri-containerd-df2872b1b442b03a6303d0ee3a09916f8a355ebb28dccc8946e5ebcd35ad32da.scope
+│   │       │   └── cri-containerd-f3d6aae08ae7c597d16e919133aef0663518c239bcae8d4abd95cc26b6ef38a1.scope
+│   │       ├── kubelet-kubepods-burstable-pode3bfcc6a_7b8b_4880_9d5f_7bd399b0a14d.slice
+│   │       │   ├── cri-containerd-07d141e01686ce066707badd252960252d7e2ce3ec308301a09e341c65069fa7.scope
+│   │       │   └── cri-containerd-096ca06894c1c1492b4eab996d572c30f0e4ac17d38978f9b9d6d9e410d9f2ea.scope
+│   │       ├── kubelet-kubepods-burstable-pode65b0ec102e78ae298394c182e63ede8.slice
+│   │       │   ├── cri-containerd-8f24e6aef6821c5eface3909a380e03c8360bfac7364245f8af2cedc39987b89.scope
+│   │       │   └── cri-containerd-a65de30f2462525c381bc95c183fc78b38393a12f1bd62113684e297370db3b6.scope
+│   │       ├── kubelet-kubepods-burstable-pode69808f0_8572_4609_a2e1_992210385c3b.slice
+│   │       │   ├── cri-containerd-1e3912dc93fb944ffdab6bb44c1cb1b83335103bb12581bd750374a59ceb0db8.scope
+│   │       │   └── cri-containerd-dc2c1e33b54b9d67b9fdaf8ad33df42d1a3402a3faa487a1383e5ef80e4b0b1c.scope
+│   │       ├── kubelet-kubepods-burstable-pode6d13ea5_99c5_4df9_bb6c_a75a736ec4da.slice
+│   │       │   ├── cri-containerd-6ebb40ae6d08b1f672aa13d3a05060dd2ba0ddd770b30b0e2a45ed81e933a598.scope
+│   │       │   └── cri-containerd-90b4a14b1c09e74def75406b3900932dd5b2d67708fac857bd9861014f185f1b.scope
+│   │       ├── kubelet-kubepods-burstable-pode915d4aa_1101_4f3b_a37c_63000aefb49c.slice
+│   │       │   ├── cri-containerd-9d4ad55ce17bedcdea83ae66867068f9e0275ed6312f4ed8b8c9d406d3d427ac.scope
+│   │       │   ├── cri-containerd-b22681932e7ca0ba617372dde85fecf1c483515f1494f3ee6fecd6c33020a215.scope
+│   │       │   └── cri-containerd-dc04673a22fa878c03739d511abe1a35c43654600f46c4f70e821f3d178630ec.scope
+│   │       ├── kubelet-kubepods-burstable-pode9f3b691_93cf_4387_a3c9_6cf9b0535e3c.slice
+│   │       │   ├── cri-containerd-17b97c3ef9e940eb6e2b0a9939a63b70ca0d5f8ff4d8f1c798c08e192329edcc.scope
+│   │       │   └── cri-containerd-bdd1d5a403dd3bc6a6c7b678749f00560152fbcfc0f2dea022697cbe266450ce.scope
+│   │       ├── kubelet-kubepods-burstable-podea3ade56_e4ef_4940_9d29_cf7f63f85913.slice
+│   │       │   ├── cri-containerd-07fa9f7b8dd151deffbd4e6e6674167b2999f89befc1cba9d9229e733c319e9e.scope
+│   │       │   ├── cri-containerd-b0d8912a4b238904da924e8963eb5582194abe1df3e7cc0d37617a7227748326.scope
+│   │       │   └── cri-containerd-ccfd9af9cfc229e745e5b07971d59dcc72911bcf194890d6125b694f6c182aec.scope
+│   │       ├── kubelet-kubepods-burstable-podeb3076da_2a2a_44f9_b107_ab5132b7b486.slice
+│   │       │   ├── cri-containerd-4244f86be921edf0bf5e148382640f445ec652a1b7496fb28c259eb171270077.scope
+│   │       │   └── cri-containerd-c503bba87ab6cd3dddce65ef5b922d4dd9da2cda3ca76ec33f8fedb91644fa0d.scope
+│   │       ├── kubelet-kubepods-burstable-poded5a3f18_7188_4877_bfb9_89f6d319fb11.slice
+│   │       │   ├── cri-containerd-2c6ece87557786037be4fe8358a2db09d3c4e808562b76ec82c9e3b43a924611.scope
+│   │       │   ├── cri-containerd-a274cc4f59a21059058ee6d244e87e0a8a0e1fa347193686877f46edb87899a5.scope
+│   │       │   └── cri-containerd-e89ccccfdeacdf70a3c8094dd88fc2c40cc00be815cd17a9bcbc9558a507d665.scope
+│   │       ├── kubelet-kubepods-burstable-podee9dfecc_0b66_45dd_9680_24b545314494.slice
+│   │       │   ├── cri-containerd-2c900725638d781af95f4ebc09b308f3254723a70b59b9554e434291275ce865.scope
+│   │       │   └── cri-containerd-ffe2dd7bdddcfd4405e3a3c251019d0885d28e4b3cbed985de2adf2f422644ec.scope
+│   │       ├── kubelet-kubepods-burstable-podf40913cd_b9e2_4ea5_ab2d_8c4f3233929f.slice
+│   │       │   ├── cri-containerd-718105c699debac20c13e79511773066aa2f3218d853634eb70c0c53b2e0a941.scope
+│   │       │   └── cri-containerd-ffa01ab6378783af047837fed91ee65d73847b0f0e924aa59b53dc0830b56b02.scope
+│   │       ├── kubelet-kubepods-burstable-podf40e5683_6619_4192_a7d3_422eb8794e10.slice
+│   │       │   ├── cri-containerd-3404846cdc474ef43c35d3a33585c6c9f75cef53a67085f6fcd357e47f3712f8.scope
+│   │       │   └── cri-containerd-3faa499d1a9abb82c06655cd7284bb8e8541458efd7d9992f56cd0a1fc724449.scope
+│   │       ├── kubelet-kubepods-burstable-podf8e35097_013b_48cb_a1e8_b7195f4df504.slice
+│   │       │   ├── cri-containerd-7a9368396f5317e44f93b0c1bffb34a1c6069ad67c3d4ab40491e2467a35f792.scope
+│   │       │   ├── cri-containerd-a0b9121bc4b264c3e1215148726b8370642d3ac66e2c2368a92523254467d85b.scope
+│   │       │   └── cri-containerd-e8dc93ab30801301ae51f9c3b8d498c236c57f560859d1fdcf0a99690726697b.scope
+│   │       ├── kubelet-kubepods-burstable-podfb1e044f_1688_4c99_af65_30c13dd0224c.slice
+│   │       │   ├── cri-containerd-114f49d55c7682f0f9d32e1fe686715df49f42bb5eb117bf60f30e6c0a75c742.scope
+│   │       │   └── cri-containerd-a653401de005436d140147cd1f753516a35c1558324776d8b357345076eb0fc6.scope
+│   │       ├── kubelet-kubepods-burstable-podfea8e681_ba60_4254_836d_832971a77a28.slice
+│   │       │   ├── cri-containerd-74727b7c039dc1206cbf07c24f2374f8d5547af5b23084cd6ce6da351b2fa298.scope
+│   │       │   └── cri-containerd-7e3d041356e682ee00faf94f556c0a98f116d8eb925fd5f0781e0e6e47290af1.scope
+│   │       ├── kubelet-kubepods-burstable-podfee1549f_149f_44b4_a8c7_6f887adcd306.slice
+│   │       │   ├── cri-containerd-5ebe8a0eccbe21d63e30535a5c8acc84ff6d54343a3e827360c8d59052c2dd4a.scope
+│   │       │   └── cri-containerd-c02318dc4ad99e615ae70ee33f12b6d3c1a0875aaddc0aeee82ecc6eeb8f905c.scope
+│   │       ├── kubelet-kubepods-burstable-podff23006d_3a2b_42b5_ae32_c676f1e412fd.slice
+│   │       │   ├── cri-containerd-749a7728192ea8a0b8134d89edad7b32bf2e496af91ba538f9badbb7b26b3961.scope
+│   │       │   └── cri-containerd-f6f861771bec73ff9704f686c4bae505364154df37219ce6e6f630b243616f79.scope
+│   │       └── kubelet-kubepods-burstable-podff8b410b_92d6_4eeb_905d_51065512a84c.slice
+│   │           ├── cri-containerd-cd6d49eb877cbdb3ab2df4086bf0fba95a91faf3d0c0fd41ba4d302fa967dfb7.scope
+│   │           └── cri-containerd-df174a5a9261106eb3aea3605bad32796dea4df61eabecefe98c8a7667722555.scope
+│   └── kubelet.service
+
+
+├── kubepods.slice
+│   ├── kubepods-besteffort.slice
+│   └── kubepods-burstable.slice
+├── sys-fs-fuse-connections.mount
+├── sys-kernel-debug.mount
+├── sys-kernel-tracing.mount
+└── system.slice
+├── containerd.service
+├── system-modprobe.slice
+└── systemd-journald.service

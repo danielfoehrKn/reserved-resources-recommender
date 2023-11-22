@@ -2,7 +2,7 @@ apiVersion: chaos-mesh.org/v1alpha1
 kind: StressChaos
 metadata:
   name: mem-stress
-  namespace: stress
+  namespace: did
 spec:
   mode: all
   selector:
@@ -12,7 +12,7 @@ spec:
     - dummy
   stressors:
     memory:
-      workers: 6
-      size: 800MiB
+      workers: 1
+      size: 400MiB
       options: [""]
-  duration: "5h"
+  duration: "1h"

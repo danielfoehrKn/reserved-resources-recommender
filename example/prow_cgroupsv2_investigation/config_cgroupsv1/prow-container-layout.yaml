@@ -1,0 +1,88 @@
+  # not virtualised cgroupfs, hence sees the hosts kubepods
+  root@gardener-local-control-plane:/# tree -d /sys/fs/cgroup/memory -L 4
+    /sys/fs/cgroup/memory
+    |-- dev-hugepages.mount
+    |-- kubelet
+    |-- kubelet.slice
+    |   |-- kubelet-kubepods.slice
+    |   |   |-- kubelet-kubepods-besteffort.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod1ce6ad4e_fd98_424c_977c_ba882d7d109f.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod45589f70_671d_4fbc_ae09_4a1b6482286b.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod5323be3e_612e_4d73_b8ec_f38849ac8089.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod538a7ff0_6b58_46a7_8593_b822d4bd759c.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod5f36931e_0509_4528_a0e8_fb5cfd33f713.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod6999372a_47ce_4216_be1a_13f9390e277d.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod7010ebb5_0a24_4d9a_9bd3_1f0e259495ed.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod8094e9e4_5ebb_4ccc_95fc_b40a09d9629a.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pod81e465fe_534f_41ab_b918_b3d67dd3e583.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-podabf3f8a4_24a6_42b9_966a_538286ececc4.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-podcfe43db7_c87c_45ff_aa99_620ab03508be.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-podd638ffab_ca52_418b_83a2_9d9dde5309d9.slice
+    |   |   |   |-- kubelet-kubepods-besteffort-pode04c6822_c581_4d70_b684_891c5011ccb8.slice
+    |   |   |   `-- kubelet-kubepods-besteffort-poded53bd4c_c9e9_4da6_b0b3_a3a8be757e8c.slice
+    |   |   `-- kubelet-kubepods-burstable.slice
+    |   |       |-- kubelet-kubepods-burstable-pod010ba45f_4a6a_4c44_86a5_32e05f2825d3.slice
+    |   |       |-- kubelet-kubepods-burstable-pod0c54276a_c2ba_4ab1_a22a_f5ff7f84de69.slice
+    |   |       |-- kubelet-kubepods-burstable-pod15bc5d70_b1b0_4458_970e_4c0fdb5e17e7.slice
+    |   |       |-- kubelet-kubepods-burstable-pod192aea4c_88d0_4606_855c_45e441d31841.slice
+    |   |       |-- kubelet-kubepods-burstable-pod19f22c18_62dc_4392_bdb2_0b5b4553a869.slice
+    |   |       |-- kubelet-kubepods-burstable-pod1c273451_fb34_4d2d_b998_a3e2b368b5c5.slice
+    |   |       |-- kubelet-kubepods-burstable-pod1f14c2ca_4d6f_470b_a677_b5d992314f39.slice
+    |   |       |-- kubelet-kubepods-burstable-pod2c65acb6_90ea_46be_901b_18bd47996b18.slice
+    |   |       |-- kubelet-kubepods-burstable-pod31b53665_154b_48bd_a9ac_80d9033143e0.slice
+    |   |       |-- kubelet-kubepods-burstable-pod4128879e_88d8_498c_ab15_3af8a2994a90.slice
+    |   |       |-- kubelet-kubepods-burstable-pod4560c535_c025_43af_a0b1_a7382ce7fa36.slice
+    |   |       |-- kubelet-kubepods-burstable-pod47097752_d43c_4b9a_a2e9_b0113176cfb7.slice
+    |   |       |-- kubelet-kubepods-burstable-pod51c79982b870294f404d7fd2d3702669.slice
+    |   |       |-- kubelet-kubepods-burstable-pod56644c2f_191a_44c7_94a1_1977c2de9dab.slice
+    |   |       |-- kubelet-kubepods-burstable-pod568c27a3_d5a5_4827_bf2a_2c93e5342030.slice
+    |   |       |-- kubelet-kubepods-burstable-pod58ce8464_5e05_4ea4_b0d2_8569a5724121.slice
+    |   |       |-- kubelet-kubepods-burstable-pod5ca58288_0857_4f4e_a2d6_14ef12cb3829.slice
+    |   |       |-- kubelet-kubepods-burstable-pod6451d2e4_c949_48f3_82e2_79c077e37c8e.slice
+    |   |       |-- kubelet-kubepods-burstable-pod68487d16_7fab_4941_9f37_78c30be9fe17.slice
+    |   |       |-- kubelet-kubepods-burstable-pod81137ed6_b9b0_42df_bbb5_f8d02c7e1e55.slice
+    |   |       |-- kubelet-kubepods-burstable-pod82c3fcd6_7531_43e8_8255_3e42286662ac.slice
+    |   |       |-- kubelet-kubepods-burstable-pod8e0fdf5b_1c51_4139_9928_3dfb081791e5.slice
+    |   |       |-- kubelet-kubepods-burstable-pod8e124458_555a_4b11_953b_15061ee077a2.slice
+    |   |       |-- kubelet-kubepods-burstable-pod8f3744d3ab6132817a134e6a3734659c.slice
+    |   |       |-- kubelet-kubepods-burstable-pod92c07fa3_a17e_4f6f_a2fb_92888e07c393.slice
+    |   |       |-- kubelet-kubepods-burstable-pod94b427a0_c1f7_43c0_ac6b_365c1b23ef59.slice
+    |   |       |-- kubelet-kubepods-burstable-pod94c206bf_38c0_406d_bf25_400f30abadd2.slice
+    |   |       |-- kubelet-kubepods-burstable-pod984c3c3b_65cf_42d7_b9ba_edcfe47316ae.slice
+    |   |       |-- kubelet-kubepods-burstable-pod989da57a_8bf2_459c_98de_f6694a2c6e42.slice
+    |   |       |-- kubelet-kubepods-burstable-pod9b45d5869da5f91a0bdb949e8679726a.slice
+    |   |       |-- kubelet-kubepods-burstable-poda60f0bc6_4d17_41cb_998d_80163014143d.slice
+    |   |       |-- kubelet-kubepods-burstable-poda6605629_9cc4_4dd4_8448_c171bcb2c84b.slice
+    |   |       |-- kubelet-kubepods-burstable-poda8218d2b_d725_4b33_b12c_945725a78a84.slice
+    |   |       |-- kubelet-kubepods-burstable-podb675050a_d1bf_486e_adc7_f03d65400df5.slice
+    |   |       |-- kubelet-kubepods-burstable-podb8e09d24_3137_4b26_a4d2_5d19f2d31a82.slice
+    |   |       |-- kubelet-kubepods-burstable-podbb42c45e_7df2_4364_bf74_4b2d3bbf55da.slice
+    |   |       |-- kubelet-kubepods-burstable-podbd099b3a_5768_430d_9fb0_16b5da2dd3c7.slice
+    |   |       |-- kubelet-kubepods-burstable-podc67bae27_39c2_4576_b27d_77fef3e57ba4.slice
+    |   |       |-- kubelet-kubepods-burstable-podccb44fea_6d1f_4f50_8beb_40d6ee70b318.slice
+    |   |       |-- kubelet-kubepods-burstable-podd125fabe_c51e_429a_9388_99a16f263312.slice
+    |   |       |-- kubelet-kubepods-burstable-podd17a8e14_bb77_4bf2_a09c_c3ad1723da31.slice
+    |   |       |-- kubelet-kubepods-burstable-podd3b34e24_26eb_4f8c_bf9a_033780b17a90.slice
+    |   |       |-- kubelet-kubepods-burstable-poddea1be6c_d9dc_4269_a675_f0a20e80e91d.slice
+    |   |       |-- kubelet-kubepods-burstable-poddf5c80fe_19fd_4975_9a8c_904acfcc76d1.slice
+    |   |       |-- kubelet-kubepods-burstable-pode65b0ec102e78ae298394c182e63ede8.slice
+    |   |       |-- kubelet-kubepods-burstable-podeb7c9c90_6328_46eb_b9b6_e527591f5556.slice
+    |   |       |-- kubelet-kubepods-burstable-podeba9872b_5b8f_4e4e_bd53_8309b1137939.slice
+    |   |       |-- kubelet-kubepods-burstable-poded350f85_eeea_4cf8_9e7f_da5710b9834e.slice
+    |   |       |-- kubelet-kubepods-burstable-podeeeb2fb9_66a9_457b_926b_e531946182f8.slice
+    |   |       |-- kubelet-kubepods-burstable-podf17ae90c_f36b_4c15_b323_efc91656fc84.slice
+    |   |       `-- kubelet-kubepods-burstable-podf90b722a_819b_47f8_89b2_8beea17252be.slice
+    |   `-- kubelet.service
+    |-- kubepods
+    |   `-- burstable
+    |       `-- podcd50075c-ffb5-40dd-adfe-045a5f7764c0
+    |           `-- 7835945a316af07bc6e0ea76f7c781d96a8fd1d1ed64b602d09ec2ef4ea8db72
+    |-- sys-fs-fuse-connections.mount
+    |-- sys-kernel-debug.mount
+    |-- sys-kernel-tracing.mount
+    `-- system.slice
+    |-- containerd.service
+    |-- system-modprobe.slice
+    `-- systemd-journald.service
+    
+    83 directories

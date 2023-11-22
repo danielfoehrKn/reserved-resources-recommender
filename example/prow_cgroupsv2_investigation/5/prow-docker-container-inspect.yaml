@@ -1,0 +1,337 @@
+  root@prow-custom-config:/home/prow/go/src/github.com/danielfoehrKn/gardener# docker inspect 960737d08b42
+    [
+      {
+        "Id": "960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e",
+        "Created": "2023-04-05T08:23:40.516174024Z",
+        "Path": "/usr/local/bin/entrypoint",
+        "Args": [
+          "/sbin/init"
+        ],
+        "State": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 1013,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2023-04-05T08:23:45.854187626Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:99f212a7be2b0b19b9ccc68e905c9ee715bb999ba0b92cdeb90d7688282ed30c",
+        "ResolvConfPath": "/var/lib/docker/containers/960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e/hostname",
+        "HostsPath": "/var/lib/docker/containers/960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e/hosts",
+        "LogPath": "/var/lib/docker/containers/960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e/960737d08b42a9f14e95a903718aa8c3e9582c898c93b2cb94fec07eacc2679e-json.log",
+        "Name": "/gardener-local-control-plane",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": [
+          "c5d47f5d5b49276638f2094bfe4b194f2b4a0741d18e6b1b9e8ab0aaae8a39cd",
+          "2e319e66522b4c35e41c2fb72e6c4ea90b3e3a43d953675d4864c2114122d5d1"
+        ],
+        "HostConfig": {
+          "Binds": [
+            "/home/prow/go/src/github.com/danielfoehrKn/gardener/dev/local-registry:/etc/gardener/local-registry",
+            "/lib/modules:/lib/modules:ro",
+            "/home/prow/go/src/github.com/danielfoehrKn/gardener/example/gardener-local/controlplane:/etc/gardener/controlplane:ro",
+            "/home/prow/go/src/github.com/danielfoehrKn/gardener/dev/local-backupbuckets:/etc/gardener/local-backupbuckets"
+          ],
+          "ContainerIDFile": "",
+          "LogConfig": {
+            "Type": "json-file",
+            "Config": {}
+          },
+          "NetworkMode": "kind",
+          "PortBindings": {
+            "30053/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "5353"
+              }
+            ],
+            "30443/tcp": [
+              {
+                "HostIp": "127.0.0.1",
+                "HostPort": "443"
+              }
+            ],
+            "30448/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "8448"
+              }
+            ],
+            "32379/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "32379"
+              }
+            ],
+            "5001/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "5001"
+              }
+            ],
+            "6443/tcp": [
+              {
+                "HostIp": "127.0.0.1",
+                "HostPort": "39745"
+              }
+            ]
+          },
+          "RestartPolicy": {
+            "Name": "on-failure",
+            "MaximumRetryCount": 1
+          },
+          "AutoRemove": false,
+          "VolumeDriver": "",
+          "VolumesFrom": null,
+          "ConsoleSize": [
+            0,
+            0
+          ],
+          "CapAdd": null,
+          "CapDrop": null,
+          "CgroupnsMode": "private", # create the container in its own private cgroup namespace. --- default is "host" so that is det deliberate
+          "Dns": [],
+          "DnsOptions": [],
+          "DnsSearch": [],
+          "ExtraHosts": null,
+          "GroupAdd": null,
+          "IpcMode": "private",
+          "Cgroup": "",
+          "Links": null,
+          "OomScoreAdj": 0,
+          "PidMode": "",
+          # Docker privileged mode grants a Docker container root capabilities to all devices on the host system. Running a container in privileged mode gives it the capabilities of its host machine
+          "Privileged": true, # but has a different meaning than in a k8s pod
+          "PublishAllPorts": false,
+          "ReadonlyRootfs": false,
+          "SecurityOpt": [ # unconfined seccomp
+            "seccomp=unconfined",
+            "apparmor=unconfined",
+            "label=disable"
+          ],
+          "Tmpfs": {
+            "/run": "",
+            "/tmp": ""
+          },
+          "UTSMode": "",
+          "UsernsMode": "",
+          "ShmSize": 67108864,
+          "Runtime": "runc",
+          "Isolation": "",
+          "CpuShares": 0,
+          "Memory": 0,
+          "NanoCpus": 0,
+          "CgroupParent": "",
+          "BlkioWeight": 0,
+          "BlkioWeightDevice": [],
+          "BlkioDeviceReadBps": [],
+          "BlkioDeviceWriteBps": [],
+          "BlkioDeviceReadIOps": [],
+          "BlkioDeviceWriteIOps": [],
+          "CpuPeriod": 0,
+          "CpuQuota": 0,
+          "CpuRealtimePeriod": 0,
+          "CpuRealtimeRuntime": 0,
+          "CpusetCpus": "",
+          "CpusetMems": "",
+          "Devices": [],
+          "DeviceCgroupRules": null,
+          "DeviceRequests": null,
+          "MemoryReservation": 0,
+          "MemorySwap": 0,
+          "MemorySwappiness": null,
+          "OomKillDisable": null,
+          "PidsLimit": null,
+          "Ulimits": null,
+          "CpuCount": 0,
+          "CpuPercent": 0,
+          "IOMaximumIOps": 0,
+          "IOMaximumBandwidth": 0,
+          "MaskedPaths": null,
+          "ReadonlyPaths": null,
+          "Init": false
+        },
+        "GraphDriver": {
+          "Data": {
+            "LowerDir": "/var/lib/docker/overlay2/6e93666fce055e76521c58885531283a49d37f6254bc16ee3063c9cb2722d949-init/diff:/var/lib/docker/overlay2/de2973df05f6035e0aa4ee8e82b306e200ef2dbebb1822a61bff38e69f97f02e/diff:/var/lib/docker/overlay2/9541bc573fa122e87a946b4ed9f84ea5e9f1c36159a0f480d3b87ae3462cf9d8/diff",
+            "MergedDir": "/var/lib/docker/overlay2/6e93666fce055e76521c58885531283a49d37f6254bc16ee3063c9cb2722d949/merged",
+            "UpperDir": "/var/lib/docker/overlay2/6e93666fce055e76521c58885531283a49d37f6254bc16ee3063c9cb2722d949/diff",
+            "WorkDir": "/var/lib/docker/overlay2/6e93666fce055e76521c58885531283a49d37f6254bc16ee3063c9cb2722d949/work"
+          },
+          "Name": "overlay2"
+        },
+        "Mounts": [ # does not mount /sys/fs/cgroup
+          {
+            "Type": "bind",
+            "Source": "/home/prow/go/src/github.com/danielfoehrKn/gardener/dev/local-registry",
+            "Destination": "/etc/gardener/local-registry",
+            "Mode": "",
+            "RW": true,
+            "Propagation": "rprivate"
+          },
+          {
+            "Type": "bind",
+            "Source": "/lib/modules",
+            "Destination": "/lib/modules",
+            "Mode": "ro",
+            "RW": false,
+            "Propagation": "rprivate"
+          },
+          {
+            "Type": "bind",
+            "Source": "/home/prow/go/src/github.com/danielfoehrKn/gardener/example/gardener-local/controlplane",
+            "Destination": "/etc/gardener/controlplane",
+            "Mode": "ro",
+            "RW": false,
+            "Propagation": "rprivate"
+          },
+          {
+            "Type": "bind",
+            "Source": "/home/prow/go/src/github.com/danielfoehrKn/gardener/dev/local-backupbuckets",
+            "Destination": "/etc/gardener/local-backupbuckets",
+            "Mode": "",
+            "RW": true,
+            "Propagation": "rprivate"
+          },
+          {
+            "Type": "volume",
+            "Name": "88b8f0c39fc7b08182382f9e9cf308505870a3674b8330117961362e7719f27c",
+            "Source": "/var/lib/docker/volumes/88b8f0c39fc7b08182382f9e9cf308505870a3674b8330117961362e7719f27c/_data",
+            "Destination": "/var",
+            "Driver": "local",
+            "Mode": "",
+            "RW": true,
+            "Propagation": ""
+          }
+        ],
+        "Config": {
+          "Hostname": "gardener-local-control-plane",
+          "Domainname": "",
+          "User": "",
+          "AttachStdin": false,
+          "AttachStdout": false,
+          "AttachStderr": false,
+          "ExposedPorts": {
+            "30053/tcp": {},
+            "30443/tcp": {},
+            "30448/tcp": {},
+            "32379/tcp": {},
+            "5001/tcp": {},
+            "6443/tcp": {}
+          },
+          "Tty": true,
+          "OpenStdin": false,
+          "StdinOnce": false,
+          "Env": [
+            "KIND_EXPERIMENTAL_CONTAINERD_SNAPSHOTTER",
+            "KUBECONFIG=/etc/kubernetes/admin.conf",
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "container=docker"
+          ],
+          "Cmd": null,
+          "Image": "kindest/node:v1.24.7",
+          "Volumes": {
+            "/var": {}
+          },
+          "WorkingDir": "/",
+          "Entrypoint": [
+            "/usr/local/bin/entrypoint",
+            "/sbin/init"
+          ],
+          "OnBuild": null,
+          "Labels": {
+            "io.x-k8s.kind.cluster": "gardener-local",
+            "io.x-k8s.kind.role": "control-plane"
+          },
+          "StopSignal": "SIGRTMIN+3"
+        },
+        "NetworkSettings": {
+          "Bridge": "",
+          "SandboxID": "510dd759da4ed981751b69501c54b886273315ef2ed5c4d8f7fe4a9decf04d4e",
+          "HairpinMode": false,
+          "LinkLocalIPv6Address": "",
+          "LinkLocalIPv6PrefixLen": 0,
+          "Ports": {
+            "30053/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "5353"
+              }
+            ],
+            "30443/tcp": [
+              {
+                "HostIp": "127.0.0.1",
+                "HostPort": "443"
+              }
+            ],
+            "30448/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "8448"
+              }
+            ],
+            "32379/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "32379"
+              }
+            ],
+            "5001/tcp": [
+              {
+                "HostIp": "0.0.0.0",
+                "HostPort": "5001"
+              }
+            ],
+            "6443/tcp": [
+              {
+                "HostIp": "127.0.0.1",
+                "HostPort": "39745"
+              }
+            ]
+          },
+          "SandboxKey": "/var/run/docker/netns/510dd759da4e",
+          "SecondaryIPAddresses": null,
+          "SecondaryIPv6Addresses": null,
+          "EndpointID": "",
+          "Gateway": "",
+          "GlobalIPv6Address": "",
+          "GlobalIPv6PrefixLen": 0,
+          "IPAddress": "",
+          "IPPrefixLen": 0,
+          "IPv6Gateway": "",
+          "MacAddress": "",
+          "Networks": {
+            "kind": {
+              "IPAMConfig": null,
+
+              "Links": null,
+              "Aliases": [
+                "960737d08b42",
+                "gardener-local-control-plane"
+              ],
+              "NetworkID": "0a666024b0e9c7cc16be8def9e6f69d7b48ba42012f9b504a598c816441b10da",
+              "EndpointID": "6a50684710a7555269b38d28e5af3d51871ae603ad96f2ec4578e19af61cf504",
+              "Gateway": "172.18.0.1",
+              "IPAddress": "172.18.0.2",
+              "IPPrefixLen": 16,
+              "IPv6Gateway": "fc00:f853:ccd:e793::1",
+              "GlobalIPv6Address": "fc00:f853:ccd:e793::2",
+              "GlobalIPv6PrefixLen": 64,
+              "MacAddress": "02:42:ac:12:00:02",
+              "DriverOpts": null
+            }
+          }
+        }
+      }
+    ]

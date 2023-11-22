@@ -1,0 +1,176 @@
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    labels:
+      app: machine
+      machine-provider: local
+      networking.gardener.cloud/from-prometheus: allowed
+      networking.gardener.cloud/from-shoot-apiserver: allowed
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-istio-ingressgateway: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-seed-apiserver: allowed
+      networking.gardener.cloud/to-shoot-apiserver: allowed
+      networking.gardener.cloud/to-shoot-networks: allowed
+    name: local
+    namespace: shoot--local--e2e-default
+  spec:
+    containers:
+      - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+        image: danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0
+        imagePullPolicy: IfNotPresent
+        name: node
+        command: [ "/usr/local/bin/entry.sh" ]
+        # TODO: try this -- I need to see the output of /sbin/init
+        #args: [ "cat </dev/console >/dev/null 2>&1 & exec /sbin/init" ]
+#        command: ["/usr/bin/bash"]
+        # TODO: sbin init fails as it detects that it is not run directly, but through bash ...
+        # but how the heck, if I run the normal entry point of the image it works
+#        args: ["-c","/usr/local/bin/entrypoint /sbin/init; echo '/sbin/init failed'; sleep 2999"]
+
+        ports:
+          - containerPort: 30123
+            name: vpn-shoot
+            protocol: TCP
+#        readinessProbe:
+#          exec:
+#            command:
+#              - sh
+#              - -c
+#              - /opt/bin/kubectl --kubeconfig /var/lib/kubelet/kubeconfig-real get no $NODE_NAME
+#          failureThreshold: 3
+#          periodSeconds: 10
+#          successThreshold: 1
+#          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          seccompProfile:
+            type: Unconfined
+          privileged: false
+          capabilities:
+            add:
+              - "CHOWN"
+              - "DAC_OVERRIDE"
+              - "DAC_READ_SEARCH"
+              - "FOWNER"
+              - "FSETID"
+              - "KILL"
+              - "SETGID"
+              - "SETUID"
+              - "SETPCAP"
+              - "LINUX_IMMUTABLE"
+              - "NET_BIND_SERVICE"
+              - "NET_BROADCAST"
+              - "NET_ADMIN"
+              - "NET_RAW"
+              - "IPC_LOCK"
+              - "IPC_OWNER"
+              - "SYS_MODULE"
+              - "SYS_RAWIO"
+              - "SYS_CHROOT"
+              - "SYS_PTRACE"
+              - "SYS_PACCT"
+              - "SYS_ADMIN"
+              - "SYS_BOOT"
+              - "SYS_NICE"
+              - "SYS_RESOURCE"
+              - "SYS_TIME"
+              - "SYS_TTY_CONFIG"
+              - "MKNOD"
+              - "LEASE"
+              - "AUDIT_WRITE"
+              - "AUDIT_CONTROL"
+              - "SETFCAP"
+              - "MAC_OVERRIDE"
+              - "MAC_ADMIN"
+              - "SYSLOG"
+              - "WAKE_ALARM"
+              - "BLOCK_SUSPEND"
+              - "AUDIT_READ"
+              - "PERFMON"
+#              - // "BPF"
+#              - "CHECKPOINT_RESTOR"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /etc/machine
+            name: userdata
+          - mountPath: /var/lib/containerd
+            name: containerd
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /dev
+            name: devices
+            readOnly: false
+          - name: entry
+            mountPath: /usr/local/bin/entry.sh
+            subPath: entry.sh
+    dnsConfig:
+      nameservers:
+        - 10.2.27.187
+      options:
+        - name: ndots
+          value: "5"
+      searches:
+        - shoot--local--e2e-default.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+    dnsPolicy: None
+    enableServiceLinks: true
+    nodeName: gardener-local-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext:
+      seccompProfile:
+        type: Unconfined
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+    volumes:
+      - name: userdata
+        secret:
+          defaultMode: 511
+          secretName: machine-shoot--local--e2e-default-local-69865-7p7k8-userdata # TODO: adjust to valid secret
+      - emptyDir: {}
+        name: containerd
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: modules
+      - hostPath:
+          path: /dev
+          type: "Directory"
+        name: devices
+      - name: entry
+        configMap:
+          name: entry
+          defaultMode: 0777
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entry
+  namespace: shoot--local--e2e-default
+data:
+  entry.sh: |-
+    #!/bin/bash
+    # init process fails, but I am unable to capture the STDERR/STDOUT of init :(
+    /usr/local/bin/entrypoint && exec /sbin/init

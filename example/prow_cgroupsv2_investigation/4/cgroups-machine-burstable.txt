@@ -1,0 +1,11 @@
+#constantly changes
+root@machine-shoot--local--e2e-default-local-69865-4n6fg:/# ls /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/
+cgroup.controllers      cgroup.threads   cpuset.cpus               hugetlb.1GB.rsvd.current  io.pressure                                                       memory.events        memory.stat          pids.max
+cgroup.events           cgroup.type      cpuset.cpus.effective     hugetlb.1GB.rsvd.max      io.stat                                                           memory.events.local  memory.swap.current  rdma.current
+cgroup.freeze           cpu.idle         cpuset.cpus.partition     hugetlb.2MB.current       io.weight                                                         memory.high          memory.swap.events   rdma.max
+cgroup.kill             cpu.max          cpuset.mems               hugetlb.2MB.events        kubepods-burstable-pod178bb0dc_8950_447d_9e1a_74cc72c8bf47.slice  memory.low           memory.swap.high
+cgroup.max.depth        cpu.max.burst    cpuset.mems.effective     hugetlb.2MB.events.local  kubepods-burstable-pod26fe6127_670f_4a4e_b6ca_376c25dc495e.slice  memory.max           memory.swap.max
+cgroup.max.descendants  cpu.pressure     hugetlb.1GB.current       hugetlb.2MB.max           kubepods-burstable-pod7ab1703b_d5e4_4244_98c4_687c58c262ae.slice  memory.min           misc.current
+cgroup.procs            cpu.stat         hugetlb.1GB.events        hugetlb.2MB.rsvd.current  kubepods-burstable-pod88f9a9b1_4142_4d4b_b602_13b5da031ff8.slice  memory.numa_stat     misc.max
+cgroup.stat             cpu.weight       hugetlb.1GB.events.local  hugetlb.2MB.rsvd.max      kubepods-burstable-poda06ecbde_a5cd_4cc2_9f06_9761291bae5a.slice  memory.oom.group     pids.current
+cgroup.subtree_control  cpu.weight.nice  hugetlb.1GB.max           io.max                    memory.current                                                    memory.pressure      pids.events

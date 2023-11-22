@@ -1,0 +1,56 @@
+  root@gardener-local-control-plane:/# tree /sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-besteffort.slice/ -d -L 2
+    /sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-besteffort.slice/
+    |-- kubelet-kubepods-besteffort-pod06b64a7b_206f_4d89_8700_eb36d5650534.slice
+    |   |-- cri-containerd-aa6da58365761b37b818049b0a516dbfdf91e72fae3381981f6af4d900c1ae0c.scope
+    |   `-- cri-containerd-b08df9c5dfeb297ad8dbbd8e12ec53a8c4cc7db8f97a076b41183d39a8bde1c6.scope
+    |-- kubelet-kubepods-besteffort-pod0a111b9c_2cca_4ea5_a1e8_b6f9abd91662.slice
+    |   |-- cri-containerd-24d23dd2f7ae63b3a6d0e53d5dcd820cda7017652f60965ad35670f260c203cb.scope
+    |   `-- cri-containerd-5bceb708305ca363d62bf870877cee45bef716e04d9cbdf0cacdea2fd166adcf.scope
+    |-- kubelet-kubepods-besteffort-pod16ea8aef_94ea_4ee7_a518_4e5e2e388b20.slice
+    |   |-- cri-containerd-313afa07ce2f1b4a970fcac4a05e815142e7e5938c87f06328aeefc4728dbe04.scope
+    |   `-- cri-containerd-c5ca6aed14d8558e693e1100bb2d47726e7c80557124175fab21631930d144ef.scope
+    |-- kubelet-kubepods-besteffort-pod37dab015_6559_4fab_8103_19d925782366.slice
+    |   |-- cri-containerd-99225b37e03bc430e85fc4d27821c1d46c0510ed9e7315861ed245945b25446b.scope
+    |   `-- cri-containerd-aa21412f7718e34661dab9d6bc5e80372666f3c6eefba78d4f39b72fe344e188.scope
+    |-- kubelet-kubepods-besteffort-pod3e871ea9_3fdc_451b_95a0_d1c835ffd88d.slice
+    |   |-- cri-containerd-416cb9d71ee18c9363ff7b9b9a1ba6dc8008ce29696e0aeccfda7b05d693eb09.scope
+    |   `-- cri-containerd-8b4cf777074fb5b5e99b6f02253253ce754fa16a6b9f86582a525259c15483a0.scope
+    |-- kubelet-kubepods-besteffort-pod435de296_0fd9_400d_867c_80b650accc05.slice
+    |   |-- cri-containerd-1058f2ef9d8d88615e1c22e10d77337fbb95074a0555206f6793d4c9939eba59.scope
+    |   `-- cri-containerd-79f8a29d44b341437954e6684d45c7d48a8e8969dac583b93c0b60ae41e0fa5f.scope
+    |-- kubelet-kubepods-besteffort-pod619c74ae_10bf_4f0d_a987_d3ec75be13a7.slice
+    |   |-- cri-containerd-707cbdb4c0cd8c346967ecf7af8c596b5d9dcc62d245c38c2d3ad7f36354609a.scope
+    |   `-- cri-containerd-f14567859c4bac15891df8725f2b58e06087ebfcc1e91316ff014acabc30fb1f.scope
+    |-- kubelet-kubepods-besteffort-pod7f95fd98_f828_4e32_abb7_8f81f6c0a7ba.slice
+    |   |-- cri-containerd-05b07f78d738e85b69621b8fa5d65669d35bedf3618751764640ecfe140b2d91.scope
+    |   `-- cri-containerd-58d90be73eb28361969a92450d195a772d5a36cfc60422526878249f0798e32d.scope
+    |-- kubelet-kubepods-besteffort-pod801ae703_1ed8_43d7_a0ab_4cd3d13b9c75.slice
+    |   |-- cri-containerd-001e1d2eea1fd3168a3cc4a63837a61cf49b052c2d883c63d0d3765ae1b3a8db.scope
+    |   `-- cri-containerd-754be2cfd18b06f471a2ef12d5be90bb61a6a04365592c854e467ecbbe638f25.scope
+    |-- kubelet-kubepods-besteffort-pod85a72f1b_49ff_4236_a18e_c6335edcd436.slice
+    |   |-- cri-containerd-67ff5abf54b44dabaa1b701c9d17c7475eb3460e325410a4a180e6c433b24941.scope
+    |   `-- cri-containerd-b1d133cebf6a6836188e202db68b792052cf5e3679195398003e17b7d189e7e3.scope
+    |-- kubelet-kubepods-besteffort-pod8f0c30ba_dc63_420d_9a51_1957096299be.slice
+    |   |-- cri-containerd-75b1cd39fa5fab98322ed4662a3dd0062e04c28da2c24258d8f6e29efedb5576.scope
+    |   `-- cri-containerd-a53276c27581a1b21228b071d3c2766a7b4edd720e800bfbdaba95f4d7437a02.scope
+    |-- kubelet-kubepods-besteffort-pod93041639_7fe5_4032_98ee_02ae30b519f5.slice
+    |   |-- cri-containerd-42fee7eb593890d7337f34c6228324b8dee15ae63ff7c5373118d93d199432ce.scope
+    |   `-- cri-containerd-b7164b67cc029d3d525e22b44642f35f765a190b9f1ca61c38e8fa7f89f1320d.scope
+    |-- kubelet-kubepods-besteffort-poda6db0eac_6be6_49e6_a437_2665304e82c6.slice
+    |   |-- cri-containerd-c675ccef73adc8e244a8e9f19a46ccb0fb4d10393b8b0e11bb13eeedca0a5088.scope
+    |   `-- cri-containerd-eed88b4329f47b9197aee25868f42fc7c59883bd79e90880ab83e123b6ccc02f.scope
+    |-- kubelet-kubepods-besteffort-podb8527ef4_1c0d_40b7_b90f_2f5478210abf.slice
+    |   |-- cri-containerd-07e1540a8075215dfb148a6a59eef8c73b828bae480894e8241509319ac67469.scope
+    |   `-- cri-containerd-209fcd208d707e90d93ad4d17752d241d802cf67e9697e67db055f653d106f84.scope
+    |-- kubelet-kubepods-besteffort-podbd296470_1420_4bc1_a42b_bd5e42b73082.slice
+    |   |-- cri-containerd-5687e0e963eff18e13e83ec4f32b23a545a1c8a930f3c446c581d5a739323899.scope
+    |   `-- cri-containerd-adba9db75a0c432de765dedd19f6da498ac71a0c924d357f4ec13218fefac244.scope
+    |-- kubelet-kubepods-besteffort-pode5fe6d90_4592_4f50_b32f_d2f931b6c7bf.slice
+    |   |-- cri-containerd-548b9f8754503f2667d616bd4997fc3b1aa8d090d6e42c8bc5829af3ac16a8a5.scope
+    |   `-- cri-containerd-cedc6a9b35f699e9eb9adad77411e8deeb0f31f2ce295bcf5d4f8e1a94b62b27.scope
+    |-- kubelet-kubepods-besteffort-podf85fe7e2_43ff_4e6a_b0ea_283665750326.slice
+    |   |-- cri-containerd-06232b63ca110526e8174406fc708f0a8c9dd5e0dfaa781064e125771b8ea9fd.scope
+    |   `-- cri-containerd-185893d4444470e548b9fc0205cc9acf8797fcfa1e5b06ad3516cad8fe0f8428.scope
+    `-- kubelet-kubepods-besteffort-podfdcac6c4_0c2f_4263_931a_c7d6c4c34e06.slice
+    |-- cri-containerd-0743e182f14d759feee3fe2d314c945f8668c3da13564d2a15ff2306d5755a8c.scope
+    `-- cri-containerd-ce50a207745a59b33eebf24c9eb53a09fdb4089a154d39f85c0b4abe83ef5003.scope

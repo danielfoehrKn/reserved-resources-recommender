@@ -1,0 +1,93 @@
+# NOTE: there is no kubepods slice, only one under kubelet.slice
+root@gardener-local-control-plane:/# tree /sys/fs/cgroup/ -d
+/sys/fs/cgroup/
+|-- dev-hugepages.mount
+|-- init.scope
+|-- kubelet
+|-- kubelet.slice
+|   |-- kubelet-kubepods.slice
+|   |   |-- kubelet-kubepods-besteffort.slice
+|   |   |   |-- kubelet-kubepods-besteffort-pod1bbfbbd2_30e9_40ad_b8b9_8b0100e00366.slice
+|   |   |   |   |-- cri-containerd-134b84ec5847b7ac0b9dde06166152f1587a29e099f4abf446ecdaa535a0ab13.scope
+|   |   |   |   `-- cri-containerd-db03602ed371d4c51a2545075fa673d33cfeb6e2e5753c872402642c41637826.scope
+|   |   |   |-- kubelet-kubepods-besteffort-pod1cda8396_affa_40a5_89ef_f13a3ac80af8.slice
+|   |   |   |   |-- cri-containerd-557b905ec9c50c6a62cb3666375cc77d2d69bf1306e8a237222e28619aef0aef.scope
+|   |   |   |   `-- cri-containerd-57698d936c83c6ace00ce0f18c5677ccb16287c892f1356585cbfac588c5aafa.scope
+|   |   |   |-- kubelet-kubepods-besteffort-pod21af77b3_5975_4ad9_9d9a_748cbb5a1144.slice
+|   |   |   |   |-- cri-containerd-02e46ca9831226ad8304e40adbccf8599cd9ee98d402da6050489e877c99785b.scope
+|   |   |   |   `-- cri-containerd-93bff5d419cc3cd5b24d63cd5f9fd10fc14382a2bf6a59a025644a79a0f9a018.scope
+|   |   |   |-- kubelet-kubepods-besteffort-pod3e577d2f_4353_4153_8669_848cee7b73a6.slice
+|   |   |   |   |-- cri-containerd-b2cf89df10d6ea28d34093d56a2edbf45ffbdcf7db9390f55e71fd54442234a5.scope
+|   |   |   |   `-- cri-containerd-c9341abeea0b0e27113a219228bbbcb8c20906ef504270ff458d1852003e8e5c.scope
+|   |   |   |-- kubelet-kubepods-besteffort-pod5b3147fc_0926_4f10_b6ef_936ca6bb9d96.slice
+|   |   |   |   |-- cri-containerd-59528d22988c75c151c3092495215dc50990c2007fca5ffc26c38aaa3791d6e0.scope
+|   |   |   |   `-- cri-containerd-e6fe7a762db47a174189de3ed10a0cfd57f0d032f2bd7d3dd88de37b0cc0225b.scope
+|   |   |   |-- kubelet-kubepods-besteffort-pod87738a2c_b7a5_42bf_a153_16ca631576ea.slice
+|   |   |   |   |-- cri-containerd-a293a1c1243585b7f845eefac7639295df698917289be0e886645dc09381e5a0.scope
+|   |   |   |   `-- cri-containerd-ed71aebdcc50981d694c7dd0abfc3dc7ac76643d72040330dc6c2d3d5791bc2a.scope
+|   |   |   |-- kubelet-kubepods-besteffort-poda4473c1f_5943_4dc8_8faa_a25a8ea9fe24.slice
+|   |   |   |   |-- cri-containerd-17371b12ef7f35a83edd6c447b6d59e52299aa4b510fa2a34c5ea8eadeb4a1eb.scope
+|   |   |   |   `-- cri-containerd-393074c0e10dfc2aedad0a1634824ef27e26188a43bb6ad16d4ed473d9f6c9f8.scope
+|   |   |   |-- kubelet-kubepods-besteffort-poda7820319_dbc7_4807_b0cb_263aa29370b2.slice
+|   |   |   |   |-- cri-containerd-1d26f1dc03c480d33fbec805dd7d79c4f4f1a39ce5a865537bc84c9b3b562710.scope
+|   |   |   |   `-- cri-containerd-8fb361322e1ba595258390c7c8e00aefc06749d209f5c6df7fc9c5ff87046f39.scope
+|   |   |   |-- kubelet-kubepods-besteffort-podbec7f8fc_462e_422a_b586_81187550dac0.slice
+|   |   |   |   |-- cri-containerd-3d40c6a28d7030a4deb663b1cc76d53e2875328b2686da3b94d484210e91cc16.scope
+|   |   |   |   `-- cri-containerd-53bb340ed16b61de4792665cb21b165f145ee17c69bad9ee2904fa514a9807ff.scope
+|   |   |   |-- kubelet-kubepods-besteffort-podd4423d5c_774b_4b45_b516_10a9ef7e8542.slice
+|   |   |   |   |-- cri-containerd-e6384720b7cd760eabe240425717a96dc07498c7cf0c9b9c3c867c2cfbbbece1.scope
+|   |   |   |   `-- cri-containerd-e8f90abccaf2ede9d42320f2da0557bdeddd64e6fd10e80c6a7d605adaea73c4.scope
+|   |   |   `-- kubelet-kubepods-besteffort-pode89775e7_59b8_4fd6_a0a0_4722d1b52acb.slice
+|   |   |       |-- cri-containerd-3512f7f037231ce3803c2ca63fdc06763b8515929c7fba45c9b1b648385af0f4.scope
+|   |   |       `-- cri-containerd-9d0277c53bbac4cc057d9b5413e9f40e4ca1bee4f507c06d0af8f7e4da0d3f93.scope
+|   |   `-- kubelet-kubepods-burstable.slice
+|   |       |-- kubelet-kubepods-burstable-pod0b056df3_0a68_4e79_95f0_60ddf1dfde22.slice
+|   |       |   |-- cri-containerd-3def8473bbfde45e2b81216cbb4a29ddb84593946df7ff4452ba46614b6e5f35.scope
+|   |       |   `-- cri-containerd-7b818518a56f8098d19fdf70213d73c020f60a33bfc5d66e35cc3ba6dfa6f9dc.scope
+|   |       |-- kubelet-kubepods-burstable-pod1591360f_933e_4c4f_b3dc_015c7548a085.slice
+|   |       |   |-- cri-containerd-03b82679c3e6e5c3d3040afbbc802abbd47e0e797d1d2538cee825fed5e663df.scope
+|   |       |   `-- cri-containerd-77fe5fe9da5a64e5f9008e7c479cc8560daa85a883e5405086ae60d3606dba17.scope
+|   |       |-- kubelet-kubepods-burstable-pod1b7ae213_596e_401e_a89c_37ae6473f864.slice
+|   |       |   |-- cri-containerd-22c7fc309dde4ce06e992018befdb98f62a9d6e3ad4a1b9daf92bb06573c6060.scope
+|   |       |   `-- cri-containerd-3c3e7f4bb13d6e6ac09bc835120168c6aa9c324629acf7bb9389d1758f57da4e.scope
+|   |       |-- kubelet-kubepods-burstable-pod24300f38_04ab_4109_9478_724434adb9dc.slice
+|   |       |   |-- cri-containerd-a44295e34198512851920242d99554b94fd0756d78256c57df6345733f07e7f3.scope
+|   |       |   `-- cri-containerd-f81c32358b25206e910b156287a7138162d55bd30a27b9fde2681dee38ff6dce.scope
+|   |       |-- kubelet-kubepods-burstable-pod3608cb38_968a_4088_909c_ce82d8ddf236.slice
+|   |       |   |-- cri-containerd-a1a6d25f56507d68475c86b2b4c986a466ff9575a6a1c8a8a9b42c8f8e14420c.scope
+|   |       |   `-- cri-containerd-c7391b8921e36ac79d4e1778bd83ef7faafb430d429217d9f63c722f5f41f3ef.scope
+|   |       |-- kubelet-kubepods-burstable-pod51c79982b870294f404d7fd2d3702669.slice
+|   |       |   |-- cri-containerd-5ff04c4ff997e98a8d495851faa5151d8babdcfe343b88a95a1bd2377aa61361.scope
+|   |       |   `-- cri-containerd-ae140f8c7e723ece04d2d89a5e98796b7d9640b290ba9ca56b88341af9c9d390.scope
+|   |       |-- kubelet-kubepods-burstable-pod7107193c_674d_47af_8b83_1931ff92fcc8.slice
+|   |       |   |-- cri-containerd-845c5b67b89009b6b0ab347b6fc814df0942e7ab0e6c7080a8b1ad4d175cf8eb.scope
+|   |       |   `-- cri-containerd-9564ab8f50f265df204addcc925933e8eacd29b95cc9d414addcd10aab0b2f71.scope
+|   |       |-- kubelet-kubepods-burstable-pod898e9719_eabe_4ccb_8c82_a6f5272ba238.slice
+|   |       |   |-- cri-containerd-0a8e58f7037f988c1d5b5d29c1e71ab2803ab35fc1a7c57b41e4fe0c4c386908.scope
+|   |       |   `-- cri-containerd-8b5fc6feff0b46385f85cf0330d04737467d2c80ecbb4fc15bc030f77e1fc354.scope
+|   |       |-- kubelet-kubepods-burstable-pod8f3744d3ab6132817a134e6a3734659c.slice
+|   |       |   |-- cri-containerd-46ea5357322e583939a87c8d30ce07abcaee1edd0e9d9e9d0a236d45a486b811.scope
+|   |       |   `-- cri-containerd-ee45cc000ba67f9eb4d31a8dbc396a34d31cf9ef0c095ca6179fcdc70168d421.scope
+|   |       |-- kubelet-kubepods-burstable-pod9afe8d52_1dfb_438d_8a81_d72596c9c3ea.slice
+|   |       |   |-- cri-containerd-4dd67c2ba3ad74ea2652d9b619884d9df32009a20f09641a108b42b77b6a0750.scope
+|   |       |   `-- cri-containerd-dc3eb1089ab65b98717cd2e9ea1a72d3d2912fc3fc678953c75d52232222756d.scope
+|   |       |-- kubelet-kubepods-burstable-pod9b45d5869da5f91a0bdb949e8679726a.slice
+|   |       |   |-- cri-containerd-1c88e9994539ca55bbd59d35e96d0bf30ef7030ed3e9c2225cf52ba00859f31d.scope
+|   |       |   `-- cri-containerd-c21179139b6944b2de842c804c5e951a7ef9a94e991835e355415aad76edfc33.scope
+|   |       |-- kubelet-kubepods-burstable-poda65b7200_1ac3_4dde_b34e_f02545514ded.slice
+|   |       |   |-- cri-containerd-19a06bca7bf2fdcb1898a39b14ee5219b6bf0ae89872f6296037aec8c35daad5.scope
+|   |       |   `-- cri-containerd-f6616816fef37e8d35aa115b06eb8b340d013254c99c8ece34540600a3b37c08.scope
+|   |       |-- kubelet-kubepods-burstable-pode65b0ec102e78ae298394c182e63ede8.slice
+|   |       |   |-- cri-containerd-8f24e6aef6821c5eface3909a380e03c8360bfac7364245f8af2cedc39987b89.scope
+|   |       |   `-- cri-containerd-a65de30f2462525c381bc95c183fc78b38393a12f1bd62113684e297370db3b6.scope
+|   |       `-- kubelet-kubepods-burstable-pode69808f0_8572_4609_a2e1_992210385c3b.slice
+|   |           |-- cri-containerd-1e3912dc93fb944ffdab6bb44c1cb1b83335103bb12581bd750374a59ceb0db8.scope
+|   |           `-- cri-containerd-dc2c1e33b54b9d67b9fdaf8ad33df42d1a3402a3faa487a1383e5ef80e4b0b1c.scope
+|   `-- kubelet.service
+|-- sys-fs-fuse-connections.mount
+|-- sys-kernel-debug.mount
+|-- sys-kernel-tracing.mount
+`-- system.slice
+    |-- containerd.service
+    |-- system-modprobe.slice
+    `-- systemd-journald.service

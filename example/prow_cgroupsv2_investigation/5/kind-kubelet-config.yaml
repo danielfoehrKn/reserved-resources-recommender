@@ -1,0 +1,58 @@
+  root@gardener-local-control-plane:/# cat /var/lib/kubelet/config.yaml
+  apiVersion: kubelet.config.k8s.io/v1beta1
+  authentication:
+    anonymous:
+      enabled: false
+    webhook:
+      cacheTTL: 0s
+      enabled: true
+    x509:
+      clientCAFile: /etc/kubernetes/pki/ca.crt
+  authorization:
+    mode: Webhook
+    webhook:
+      cacheAuthorizedTTL: 0s
+      cacheUnauthorizedTTL: 0s
+  cgroupDriver: systemd
+  # TODO: under kubelet, that matches what I see on the cgroup fs
+  cgroupRoot: /kubelet
+  clusterDNS:
+    - 10.2.0.10
+  clusterDomain: cluster.local
+  cpuManagerReconcilePeriod: 0s
+  evictionHard:
+    imagefs.available: 0%
+    nodefs.available: 0%
+    nodefs.inodesFree: 0%
+  evictionPressureTransitionPeriod: 0s
+  failSwapOn: false
+  featureGates:
+    ExpandedDNSConfig: true
+  fileCheckFrequency: 0s
+  healthzBindAddress: 127.0.0.1
+  healthzPort: 10248
+  httpCheckFrequency: 0s
+  imageGCHighThresholdPercent: 100
+  imageMinimumGCAge: 0s
+  kind: KubeletConfiguration
+  logging:
+    flushFrequency: 0
+    options:
+      json:
+        infoBufferSize: "0"
+    verbosity: 0
+  maxPods: 500
+  memorySwap: {}
+  nodeStatusReportFrequency: 0s
+  nodeStatusUpdateFrequency: 0s
+  registryBurst: 20
+  registryPullQPS: 10
+  rotateCertificates: true
+  runtimeRequestTimeout: 0s
+  serializeImagePulls: false
+  shutdownGracePeriod: 0s
+  shutdownGracePeriodCriticalPods: 0s
+  staticPodPath: /etc/kubernetes/manifests
+  streamingConnectionIdleTimeout: 0s
+  syncFrequency: 0s
+  volumeStatsAggPeriod: 0s

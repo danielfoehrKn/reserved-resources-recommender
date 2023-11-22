@@ -1,0 +1,1696 @@
+  root@gardener-local-control-plane:/# nerdctl inspect ddafbc6269f6 --mode native
+    [
+      {
+        "ID": "ddafbc6269f61f0534c60d1c6d5b18b0ecb6bf19858e1f8c2c67641c87eb5651",
+        "Labels": {
+          "io.cri-containerd.kind": "container",
+          "io.kubernetes.container.name": "node",
+          "io.kubernetes.pod.name": "machine-shoot--local--e2e-default-local-69865-q75fx",
+          "io.kubernetes.pod.namespace": "shoot--local--e2e-default",
+          "io.kubernetes.pod.uid": "0d70eef4-fb90-4fae-bd1e-b3590013ea1e"
+        },
+        "Image": "docker.io/danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0",
+        "Runtime": {
+          "Name": "io.containerd.runc.v2",
+          "Options": {
+            "type_url": "containerd.runc.v1.Options",
+            "value": "SAE="
+          }
+        },
+        "SnapshotKey": "ddafbc6269f61f0534c60d1c6d5b18b0ecb6bf19858e1f8c2c67641c87eb5651",
+        "Snapshotter": "overlayfs",
+        "CreatedAt": "2023-04-05T10:13:36.685966217Z",
+        "UpdatedAt": "2023-04-05T10:13:36.685966217Z",
+        "Extensions": {
+          "io.cri-containerd.container.metadata": {
+            "type_url": "github.com/containerd/cri/pkg/store/container/Metadata",
+            "value": "eyJWZXJzaW9uIjoidjEiLCJNZXRhZGF0YSI6eyJJRCI6ImRkYWZiYzYyNjlmNjFmMDUzNGM2MGQxYzZkNWIxOGIwZWNiNmJmMTk4NThlMWY4YzJjNjc2NDFjODdlYjU2NTEiLCJOYW1lIjoibm9kZV9tYWNoaW5lLXNob290LS1sb2NhbC0tZTJlLWRlZmF1bHQtbG9jYWwtNjk4NjUtcTc1Znhfc2hvb3QtLWxvY2FsLS1lMmUtZGVmYXVsdF8wZDcwZWVmNC1mYjkwLTRmYWUtYmQxZS1iMzU5MDAxM2VhMWVfMCIsIlNhbmRib3hJRCI6IjVjN2QzNDZjYzU5ODVlZWU2ZTU2MjliNDgyZDc2ODljYTU1MDZkMDQ2MWJlMTRhZGJjMThmZjcwN2MzZmJmNWMiLCJDb25maWciOnsibWV0YWRhdGEiOnsibmFtZSI6Im5vZGUifSwiaW1hZ2UiOnsiaW1hZ2UiOiJzaGEyNTY6N2NhNGNkNGYwYjBiNWQwYzc4MjRkOTI2NzdjN2ZmMjQxMDY2YTI0ZjJiYzA3YzA0ZWRlODJkZDVkYzkzMGJjMSJ9LCJlbnZzIjpbeyJrZXkiOiJOT0RFX05BTUUiLCJ2YWx1ZSI6Im1hY2hpbmUtc2hvb3QtLWxvY2FsLS1lMmUtZGVmYXVsdC1sb2NhbC02OTg2NS1xNzVmeCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfOTQ0M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMjE5LjExNzo5NDQzIn0seyJrZXkiOiJMT0tJX1NFUlZJQ0VfUE9SVF9URUxFR1JBRiIsInZhbHVlIjoiOTI3MyJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjEwOC4xNjkifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuOC40NiJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfODA4MF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF80NDNfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuNDMuMjQ2In0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM4MF9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuOC4xODc6MjM4MCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODBfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkxPS0lfUE9SVF84MDgwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuNDMuMjQ2OjgwODAifSx7ImtleSI6IkxPS0lfUE9SVF8zMTAwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi40OS4xNTQ6MzEwMCJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfUE9SVF80NDNfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjEwOC4xNjk6NDQzIn0seyJrZXkiOiJLVUJFUk5FVEVTX1BPUlRfNDQzX1RDUF9QT1JUIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9TRVJWSUNFX1BPUlRfQ0xJRU5UIiwidmFsdWUiOiIyMzc5In0seyJrZXkiOiJHUkFGQU5BX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTI3LjE5NzozMDAwIn0seyJrZXkiOiJLVUJFX0FQSVNFUlZFUl9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuNTAuMTA4In0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjIxOS4xMTcifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzgwODBfVENQX1BPUlQiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IkdSQUZBTkFfU0VSVklDRV9QT1JUIiwidmFsdWUiOiIzMDAwIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfODA4MF9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi40My4yNDYifSx7ImtleSI6IkxPS0lfUE9SVF85MjczX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUEFfV0VCSE9PS19QT1JUXzQ0M19UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfU0VSVklDRV9QT1JUIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfU0VSVklDRV9QT1JUX0NMSUVOVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzIzNzlfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuOC4xODcifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzIzNzlfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IktVQkVfQVBJU0VSVkVSX1BPUlRfNDQzX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjEwMjU5In0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfNDQzX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM4MF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzIzODBfVENQX1BPUlQiLCJ2YWx1ZSI6IjIzODAifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1BPUlRfMTAyNTlfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjUwLjYwOjEwMjU5In0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfODA4MF9UQ1BfUE9SVCIsInZhbHVlIjoiODA4MCJ9LHsia2V5IjoiS1VCRVJORVRFU19TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuMC4xIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfU0VSVklDRV9QT1JUIiwidmFsdWUiOiIyMzc5In0seyJrZXkiOiJMT0tJX1BPUlRfOTI3M19UQ1BfUE9SVCIsInZhbHVlIjoiOTI3MyJ9LHsia2V5IjoiR1JBRkFOQV9QT1JUXzMwMDBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTI3LjE5NyJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfUE9SVF80NDNfVENQX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1NFUlZJQ0VfUE9SVCIsInZhbHVlIjoiMTE5NCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjQzLjI0Njo4MDgwIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM3OV9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuOC4xODc6MjM3OSJ9LHsia2V5IjoiTE9LSV9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjMxMDAifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9TRVJWSUNFX1BPUlRfTUVUUklDUyIsInZhbHVlIjoiMTUwMDAifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1BPUlRfMTAyNTlfVENQX1BPUlQiLCJ2YWx1ZSI6IjEwMjU5In0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi4yMTkuMTE3OjExOTQifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfU0VSVklDRV9QT1JUX0JBQ0tVUFJFU1RPUkUiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzE1MDAwX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjIxOS4xMTcifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF80NDNfVENQX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9TRVJWSUNFX1BPUlRfU0VSVkVSIiwidmFsdWUiOiIyMzgwIn0seyJrZXkiOiJLVUJFUk5FVEVTX1BPUlRfNDQzX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzc5X1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi44LjQ2OjIzNzkifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzIzNzlfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuOC40NiJ9LHsia2V5IjoiS1VCRV9TQ0hFRFVMRVJfUE9SVF8xMDI1OV9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjIzNzkifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzE1MDAwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM3OV9UQ1BfUE9SVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzIzODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuOC4xODcifSx7ImtleSI6IkxPS0lfUE9SVF84MDgwX1RDUF9QT1JUIiwidmFsdWUiOiI4MDgwIn0seyJrZXkiOiJLVUJFUk5FVEVTX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMC4xOjQ0MyJ9LHsia2V5IjoiR1JBRkFOQV9QT1JUXzMwMDBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjEyNy4xOTc6MzAwMCJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi41MC4xMDg6NDQzIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfU0VSVklDRV9QT1JUX1ZQTl9TRUVEX1NFUlZFUiIsInZhbHVlIjoiMTE5NCJ9LHsia2V5IjoiTE9LSV9QT1JUXzMxMDBfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkxPS0lfUE9SVF84MDgwX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjQ5LjE1NCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfMjM4MF9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuOC40NjoyMzgwIn0seyJrZXkiOiJHUkFGQU5BX1BPUlRfMzAwMF9UQ1BfUE9SVCIsInZhbHVlIjoiMzAwMCJ9LHsia2V5IjoiTE9LSV9QT1JUXzMxMDBfVENQX1BPUlQiLCJ2YWx1ZSI6IjMxMDAifSx7ImtleSI6IkxPS0lfUE9SVF84MDgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi40OS4xNTQ6ODA4MCJ9LHsia2V5IjoiS1VCRVJORVRFU19TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1NFUlZJQ0VfUE9SVF9TRVJWRVIiLCJ2YWx1ZSI6IjIzODAifSx7ImtleSI6IkdSQUZBTkFfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjEyNy4xOTcifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfU0VSVklDRV9QT1JUX0hFQUxUSCIsInZhbHVlIjoiODA4MSJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODFfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzgwODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuOC40NiJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfOTQ0M19UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4yMTkuMTE3In0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1NFUlZJQ0VfUE9SVF9TRVJWRVIiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiTE9LSV9QT1JUXzkyNzNfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuNDkuMTU0In0seyJrZXkiOiJLVUJFUk5FVEVTX1NFUlZJQ0VfUE9SVF9IVFRQUyIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfU0VSVklDRV9QT1JUX0JBQ0tVUFJFU1RPUkUiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF84MDgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi44LjE4Nzo4MDgwIn0seyJrZXkiOiJMT0tJX1BPUlRfOTI3M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuNDkuMTU0OjkyNzMifSx7ImtleSI6IlZQQV9XRUJIT09LX1BPUlRfNDQzX1RDUF9QT1JUIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkdSQUZBTkFfUE9SVF8zMDAwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF8xMTk0X1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF8xMTk0X1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjIxOS4xMTcifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF8yMzc5X1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzgwX1RDUF9QT1JUIiwidmFsdWUiOiIyMzgwIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfODA4MV9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuNDMuMjQ2OjgwODEifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF84MDgxX1RDUF9QT1JUIiwidmFsdWUiOiI4MDgxIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9QT1JUXzEwMjU5X1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjUwLjYwIn0seyJrZXkiOiJWUEFfV0VCSE9PS19TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUXzQ0M19UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4wLjEifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzgwODBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjguNDY6ODA4MCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9TRVJWSUNFX1BPUlRfTUVUUklDUyIsInZhbHVlIjoiODA4MCJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzgwODBfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IktVQkVfQVBJU0VSVkVSX1BPUlRfNDQzX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi41MC4xMDg6NDQzIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfU0VSVklDRV9QT1JUX0hUVFBfUFJPWFkiLCJ2YWx1ZSI6Ijk0NDMifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzExOTRfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjIxOS4xMTc6MTE5NCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTUwMDBfVENQX1BPUlQiLCJ2YWx1ZSI6IjE1MDAwIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuNTAuNjAifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1NFUlZJQ0VfUE9SVF9NRVRSSUNTIiwidmFsdWUiOiIxMDI1OSJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi4xMDguMTY5OjQ0MyJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUXzQ0M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMC4xOjQ0MyJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTUwMDBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjIxOS4xMTc6MTUwMDAifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjQzLjI0NiJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODFfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuNDMuMjQ2In0seyJrZXkiOiJMT0tJX1NFUlZJQ0VfSE9TVCIsInZhbHVlIjoiMTAuMi40OS4xNTQifSx7ImtleSI6IkxPS0lfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi40OS4xNTQ6MzEwMCJ9LHsia2V5IjoiTE9LSV9QT1JUXzMxMDBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuNDkuMTU0In0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi44LjQ2OjIzNzkifSx7ImtleSI6IkdSQUZBTkFfU0VSVklDRV9QT1JUX1dFQiIsInZhbHVlIjoiMzAwMCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTE5NF9UQ1BfUE9SVCIsInZhbHVlIjoiMTE5NCJ9LHsia2V5IjoiTE9LSV9TRVJWSUNFX1BPUlRfTUVUUklDUyIsInZhbHVlIjoiMzEwMCJ9LHsia2V5IjoiTE9LSV9TRVJWSUNFX1BPUlRfRVhURVJOQUwiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IlZQQV9XRUJIT09LX1BPUlRfNDQzX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjEwOC4xNjkifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzIzNzlfVENQX1BPUlQiLCJ2YWx1ZSI6IjIzNzkifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzk0NDNfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF84MDgwX1RDUF9QT1JUIiwidmFsdWUiOiI4MDgwIn0seyJrZXkiOiJLVUJFX0FQSVNFUlZFUl9QT1JUXzQ0M19UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi41MC4xMDgifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzk0NDNfVENQX1BPUlQiLCJ2YWx1ZSI6Ijk0NDMifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi44LjE4NzoyMzc5In0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzgwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzgwX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjguNDYifSx7ImtleSI6IktVQkVfQVBJU0VSVkVSX1NFUlZJQ0VfUE9SVF9LVUJFX0FQSVNFUlZFUiIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9QT1JUIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjUwLjYwOjEwMjU5In0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfNDQzX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi40My4yNDY6NDQzIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1NFUlZJQ0VfSE9TVCIsInZhbHVlIjoiMTAuMi44LjE4NyJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzgwODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuOC4xODcifV0sIm1vdW50cyI6W3siY29udGFpbmVyX3BhdGgiOiIvZXRjL21hY2hpbmUiLCJob3N0X3BhdGgiOiIvdmFyL2xpYi9rdWJlbGV0L3BvZHMvMGQ3MGVlZjQtZmI5MC00ZmFlLWJkMWUtYjM1OTAwMTNlYTFlL3ZvbHVtZXMva3ViZXJuZXRlcy5pb35zZWNyZXQvdXNlcmRhdGEiLCJyZWFkb25seSI6dHJ1ZX0seyJjb250YWluZXJfcGF0aCI6Ii92YXIvbGliL2NvbnRhaW5lcmQiLCJob3N0X3BhdGgiOiIvdmFyL2xpYi9rdWJlbGV0L3BvZHMvMGQ3MGVlZjQtZmI5MC00ZmFlLWJkMWUtYjM1OTAwMTNlYTFlL3ZvbHVtZXMva3ViZXJuZXRlcy5pb35lbXB0eS1kaXIvY29udGFpbmVyZCJ9LHsiY29udGFpbmVyX3BhdGgiOiIvbGliL21vZHVsZXMiLCJob3N0X3BhdGgiOiIvbGliL21vZHVsZXMiLCJyZWFkb25seSI6dHJ1ZX0seyJjb250YWluZXJfcGF0aCI6Ii92YXIvcnVuL3NlY3JldHMva3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudCIsImhvc3RfcGF0aCI6Ii92YXIvbGliL2t1YmVsZXQvcG9kcy8wZDcwZWVmNC1mYjkwLTRmYWUtYmQxZS1iMzU5MDAxM2VhMWUvdm9sdW1lcy9rdWJlcm5ldGVzLmlvfnByb2plY3RlZC9rdWJlLWFwaS1hY2Nlc3MtbHdqd20iLCJyZWFkb25seSI6dHJ1ZX0seyJjb250YWluZXJfcGF0aCI6Ii9ldGMvaG9zdHMiLCJob3N0X3BhdGgiOiIvdmFyL2xpYi9rdWJlbGV0L3BvZHMvMGQ3MGVlZjQtZmI5MC00ZmFlLWJkMWUtYjM1OTAwMTNlYTFlL2V0Yy1ob3N0cyJ9LHsiY29udGFpbmVyX3BhdGgiOiIvZGV2L3Rlcm1pbmF0aW9uLWxvZyIsImhvc3RfcGF0aCI6Ii92YXIvbGliL2t1YmVsZXQvcG9kcy8wZDcwZWVmNC1mYjkwLTRmYWUtYmQxZS1iMzU5MDAxM2VhMWUvY29udGFpbmVycy9ub2RlL2FkMGQ3ZjBhIn1dLCJsYWJlbHMiOnsiaW8ua3ViZXJuZXRlcy5jb250YWluZXIubmFtZSI6Im5vZGUiLCJpby5rdWJlcm5ldGVzLnBvZC5uYW1lIjoibWFjaGluZS1zaG9vdC0tbG9jYWwtLWUyZS1kZWZhdWx0LWxvY2FsLTY5ODY1LXE3NWZ4IiwiaW8ua3ViZXJuZXRlcy5wb2QubmFtZXNwYWNlIjoic2hvb3QtLWxvY2FsLS1lMmUtZGVmYXVsdCIsImlvLmt1YmVybmV0ZXMucG9kLnVpZCI6IjBkNzBlZWY0LWZiOTAtNGZhZS1iZDFlLWIzNTkwMDEzZWExZSJ9LCJhbm5vdGF0aW9ucyI6eyJpby5rdWJlcm5ldGVzLmNvbnRhaW5lci5oYXNoIjoiZjNlOTVhOWQiLCJpby5rdWJlcm5ldGVzLmNvbnRhaW5lci5wb3J0cyI6Ilt7XCJuYW1lXCI6XCJ2cG4tc2hvb3RcIixcImNvbnRhaW5lclBvcnRcIjozMDEyMyxcInByb3RvY29sXCI6XCJUQ1BcIn1dIiwiaW8ua3ViZXJuZXRlcy5jb250YWluZXIucmVzdGFydENvdW50IjoiMCIsImlvLmt1YmVybmV0ZXMuY29udGFpbmVyLnRlcm1pbmF0aW9uTWVzc2FnZVBhdGgiOiIvZGV2L3Rlcm1pbmF0aW9uLWxvZyIsImlvLmt1YmVybmV0ZXMuY29udGFpbmVyLnRlcm1pbmF0aW9uTWVzc2FnZVBvbGljeSI6IkZpbGUiLCJpby5rdWJlcm5ldGVzLnBvZC50ZXJtaW5hdGlvbkdyYWNlUGVyaW9kIjoiMzAifSwibG9nX3BhdGgiOiJub2RlLzAubG9nIiwibGludXgiOnsicmVzb3VyY2VzIjp7ImNwdV9wZXJpb2QiOjEwMDAwMCwiY3B1X3NoYXJlcyI6Miwib29tX3Njb3JlX2FkaiI6MTAwMCwiaHVnZXBhZ2VfbGltaXRzIjpbeyJwYWdlX3NpemUiOiIyTUIifSx7InBhZ2Vfc2l6ZSI6IjFHQiJ9XX0sInNlY3VyaXR5X2NvbnRleHQiOnsicHJpdmlsZWdlZCI6dHJ1ZSwibmFtZXNwYWNlX29wdGlvbnMiOnsicGlkIjoxfSwicnVuX2FzX3VzZXIiOnt9LCJtYXNrZWRfcGF0aHMiOlsiL3Byb2MvYWNwaSIsIi9wcm9jL2tjb3JlIiwiL3Byb2Mva2V5cyIsIi9wcm9jL2xhdGVuY3lfc3RhdHMiLCIvcHJvYy90aW1lcl9saXN0IiwiL3Byb2MvdGltZXJfc3RhdHMiLCIvcHJvYy9zY2hlZF9kZWJ1ZyIsIi9wcm9jL3Njc2kiLCIvc3lzL2Zpcm13YXJlIl0sInJlYWRvbmx5X3BhdGhzIjpbIi9wcm9jL2Fzb3VuZCIsIi9wcm9jL2J1cyIsIi9wcm9jL2ZzIiwiL3Byb2MvaXJxIiwiL3Byb2Mvc3lzIiwiL3Byb2Mvc3lzcnEtdHJpZ2dlciJdLCJzZWNjb21wIjp7fSwic2VjY29tcF9wcm9maWxlX3BhdGgiOiJydW50aW1lL2RlZmF1bHQifX19LCJJbWFnZVJlZiI6InNoYTI1Njo3Y2E0Y2Q0ZjBiMGI1ZDBjNzgyNGQ5MjY3N2M3ZmYyNDEwNjZhMjRmMmJjMDdjMDRlZGU4MmRkNWRjOTMwYmMxIiwiTG9nUGF0aCI6Ii92YXIvbG9nL3BvZHMvc2hvb3QtLWxvY2FsLS1lMmUtZGVmYXVsdF9tYWNoaW5lLXNob290LS1sb2NhbC0tZTJlLWRlZmF1bHQtbG9jYWwtNjk4NjUtcTc1ZnhfMGQ3MGVlZjQtZmI5MC00ZmFlLWJkMWUtYjM1OTAwMTNlYTFlL25vZGUvMC5sb2ciLCJTdG9wU2lnbmFsIjoiU0lHUlRNSU4rMyIsIlByb2Nlc3NMYWJlbCI6IiJ9fQ=="
+          }
+        },
+        "SandboxID": "",
+        "Spec": {
+          "ociVersion": "1.0.2-dev",
+          "process": {
+            "user": {
+              "uid": 0,
+              "gid": 0
+            },
+            "args": [
+              "/usr/local/bin/entrypoint",
+              "/sbin/init"
+            ],
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOSTNAME=machine-shoot--local--e2e-default-local-69865-q75fx",
+              "container=docker",
+              "NODE_NAME=machine-shoot--local--e2e-default-local-69865-q75fx",
+              "VPN_SEED_SERVER_PORT_9443_TCP=tcp://10.2.219.117:9443",
+              "LOKI_SERVICE_PORT_TELEGRAF=9273",
+              "VPA_WEBHOOK_SERVICE_HOST=10.2.108.169",
+              "ETCD_EVENTS_CLIENT_SERVICE_HOST=10.2.8.46",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT=8080",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_ADDR=10.2.43.246",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP=tcp://10.2.8.187:2380",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_PROTO=tcp",
+              "LOKI_PORT_8080_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_PORT=tcp://10.2.43.246:8080",
+              "LOKI_PORT_3100_TCP=tcp://10.2.49.154:3100",
+              "VPA_WEBHOOK_PORT_443_TCP=tcp://10.2.108.169:443",
+              "KUBERNETES_PORT_443_TCP_PORT=443",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_CLIENT=2379",
+              "GRAFANA_PORT=tcp://10.2.127.197:3000",
+              "KUBE_APISERVER_SERVICE_HOST=10.2.50.108",
+              "VPN_SEED_SERVER_SERVICE_HOST=10.2.219.117",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_PORT=8080",
+              "GRAFANA_SERVICE_PORT=3000",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_ADDR=10.2.43.246",
+              "LOKI_PORT_9273_TCP_PROTO=tcp",
+              "VPA_WEBHOOK_PORT_443_TCP_PROTO=tcp",
+              "KUBE_APISERVER_SERVICE_PORT=443",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_CLIENT=2379",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_ADDR=10.2.8.187",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_PROTO=tcp",
+              "KUBE_APISERVER_PORT_443_TCP_PROTO=tcp",
+              "KUBE_SCHEDULER_SERVICE_PORT=10259",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_PORT=2380",
+              "KUBE_SCHEDULER_PORT_10259_TCP=tcp://10.2.50.60:10259",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_PORT=8080",
+              "KUBERNETES_SERVICE_HOST=10.2.0.1",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT=2379",
+              "LOKI_PORT_9273_TCP_PORT=9273",
+              "GRAFANA_PORT_3000_TCP_ADDR=10.2.127.197",
+              "KUBE_APISERVER_PORT_443_TCP_PORT=443",
+              "VPN_SEED_SERVER_SERVICE_PORT=1194",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP=tcp://10.2.43.246:8080",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP=tcp://10.2.8.187:2379",
+              "LOKI_SERVICE_PORT=3100",
+              "VPN_SEED_SERVER_SERVICE_PORT_METRICS=15000",
+              "KUBE_SCHEDULER_PORT_10259_TCP_PORT=10259",
+              "VPN_SEED_SERVER_PORT=tcp://10.2.219.117:1194",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_BACKUPRESTORE=8080",
+              "VPN_SEED_SERVER_PORT_15000_TCP_ADDR=10.2.219.117",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_PORT=443",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_SERVER=2380",
+              "KUBERNETES_PORT_443_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP=tcp://10.2.8.46:2379",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_ADDR=10.2.8.46",
+              "KUBE_SCHEDULER_PORT_10259_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT=2379",
+              "VPN_SEED_SERVER_PORT_15000_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_PORT=2379",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_ADDR=10.2.8.187",
+              "LOKI_PORT_8080_TCP_PORT=8080",
+              "KUBERNETES_PORT=tcp://10.2.0.1:443",
+              "GRAFANA_PORT_3000_TCP=tcp://10.2.127.197:3000",
+              "KUBE_APISERVER_PORT=tcp://10.2.50.108:443",
+              "VPN_SEED_SERVER_SERVICE_PORT_VPN_SEED_SERVER=1194",
+              "LOKI_PORT_3100_TCP_PROTO=tcp",
+              "LOKI_PORT_8080_TCP_ADDR=10.2.49.154",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP=tcp://10.2.8.46:2380",
+              "GRAFANA_PORT_3000_TCP_PORT=3000",
+              "LOKI_PORT_3100_TCP_PORT=3100",
+              "LOKI_PORT_8080_TCP=tcp://10.2.49.154:8080",
+              "KUBERNETES_SERVICE_PORT=443",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_SERVER=2380",
+              "GRAFANA_SERVICE_HOST=10.2.127.197",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_HEALTH=8081",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_ADDR=10.2.8.46",
+              "VPN_SEED_SERVER_PORT_9443_TCP_ADDR=10.2.219.117",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_SERVER=443",
+              "LOKI_PORT_9273_TCP_ADDR=10.2.49.154",
+              "KUBERNETES_SERVICE_PORT_HTTPS=443",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_BACKUPRESTORE=8080",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP=tcp://10.2.8.187:8080",
+              "LOKI_PORT_9273_TCP=tcp://10.2.49.154:9273",
+              "VPA_WEBHOOK_PORT_443_TCP_PORT=443",
+              "GRAFANA_PORT_3000_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_PORT_1194_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_PORT_1194_TCP_ADDR=10.2.219.117",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_PORT=2380",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP=tcp://10.2.43.246:8081",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_PORT=8081",
+              "KUBE_SCHEDULER_PORT_10259_TCP_ADDR=10.2.50.60",
+              "VPA_WEBHOOK_SERVICE_PORT=443",
+              "KUBERNETES_PORT_443_TCP_ADDR=10.2.0.1",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP=tcp://10.2.8.46:8080",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_METRICS=8080",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_PROTO=tcp",
+              "KUBE_APISERVER_PORT_443_TCP=tcp://10.2.50.108:443",
+              "VPN_SEED_SERVER_SERVICE_PORT_HTTP_PROXY=9443",
+              "VPN_SEED_SERVER_PORT_1194_TCP=tcp://10.2.219.117:1194",
+              "VPN_SEED_SERVER_PORT_15000_TCP_PORT=15000",
+              "KUBE_SCHEDULER_SERVICE_HOST=10.2.50.60",
+              "KUBE_SCHEDULER_SERVICE_PORT_METRICS=10259",
+              "VPA_WEBHOOK_PORT=tcp://10.2.108.169:443",
+              "KUBERNETES_PORT_443_TCP=tcp://10.2.0.1:443",
+              "VPN_SEED_SERVER_PORT_15000_TCP=tcp://10.2.219.117:15000",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_HOST=10.2.43.246",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_ADDR=10.2.43.246",
+              "LOKI_SERVICE_HOST=10.2.49.154",
+              "LOKI_PORT=tcp://10.2.49.154:3100",
+              "LOKI_PORT_3100_TCP_ADDR=10.2.49.154",
+              "ETCD_EVENTS_CLIENT_PORT=tcp://10.2.8.46:2379",
+              "GRAFANA_SERVICE_PORT_WEB=3000",
+              "VPN_SEED_SERVER_PORT_1194_TCP_PORT=1194",
+              "LOKI_SERVICE_PORT_METRICS=3100",
+              "LOKI_SERVICE_PORT_EXTERNAL=8080",
+              "VPA_WEBHOOK_PORT_443_TCP_ADDR=10.2.108.169",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_PORT=2379",
+              "VPN_SEED_SERVER_PORT_9443_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_PORT=8080",
+              "KUBE_APISERVER_PORT_443_TCP_ADDR=10.2.50.108",
+              "VPN_SEED_SERVER_PORT_9443_TCP_PORT=9443",
+              "ETCD_MAIN_CLIENT_PORT=tcp://10.2.8.187:2379",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_ADDR=10.2.8.46",
+              "KUBE_APISERVER_SERVICE_PORT_KUBE_APISERVER=443",
+              "KUBE_SCHEDULER_PORT=tcp://10.2.50.60:10259",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP=tcp://10.2.43.246:443",
+              "ETCD_MAIN_CLIENT_SERVICE_HOST=10.2.8.187",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_ADDR=10.2.8.187"
+            ],
+            "cwd": "/",
+            "capabilities": {
+              "bounding": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_FSETID",
+                "CAP_KILL",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETPCAP",
+                "CAP_LINUX_IMMUTABLE",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_NET_BROADCAST",
+                "CAP_NET_ADMIN",
+                "CAP_NET_RAW",
+                "CAP_IPC_LOCK",
+                "CAP_IPC_OWNER",
+                "CAP_SYS_MODULE",
+                "CAP_SYS_RAWIO",
+                "CAP_SYS_CHROOT",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_PACCT",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_BOOT",
+                "CAP_SYS_NICE",
+                "CAP_SYS_RESOURCE",
+                "CAP_SYS_TIME",
+                "CAP_SYS_TTY_CONFIG",
+                "CAP_MKNOD",
+                "CAP_LEASE",
+                "CAP_AUDIT_WRITE",
+                "CAP_AUDIT_CONTROL",
+                "CAP_SETFCAP",
+                "CAP_MAC_OVERRIDE",
+                "CAP_MAC_ADMIN",
+                "CAP_SYSLOG",
+                "CAP_WAKE_ALARM",
+                "CAP_BLOCK_SUSPEND",
+                "CAP_AUDIT_READ",
+                "CAP_PERFMON",
+                "CAP_BPF",
+                "CAP_CHECKPOINT_RESTORE"
+              ],
+              "effective": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_FSETID",
+                "CAP_KILL",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETPCAP",
+                "CAP_LINUX_IMMUTABLE",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_NET_BROADCAST",
+                "CAP_NET_ADMIN",
+                "CAP_NET_RAW",
+                "CAP_IPC_LOCK",
+                "CAP_IPC_OWNER",
+                "CAP_SYS_MODULE",
+                "CAP_SYS_RAWIO",
+                "CAP_SYS_CHROOT",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_PACCT",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_BOOT",
+                "CAP_SYS_NICE",
+                "CAP_SYS_RESOURCE",
+                "CAP_SYS_TIME",
+                "CAP_SYS_TTY_CONFIG",
+                "CAP_MKNOD",
+                "CAP_LEASE",
+                "CAP_AUDIT_WRITE",
+                "CAP_AUDIT_CONTROL",
+                "CAP_SETFCAP",
+                "CAP_MAC_OVERRIDE",
+                "CAP_MAC_ADMIN",
+                "CAP_SYSLOG",
+                "CAP_WAKE_ALARM",
+                "CAP_BLOCK_SUSPEND",
+                "CAP_AUDIT_READ",
+                "CAP_PERFMON",
+                "CAP_BPF",
+                "CAP_CHECKPOINT_RESTORE"
+              ],
+              "permitted": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_FSETID",
+                "CAP_KILL",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETPCAP",
+                "CAP_LINUX_IMMUTABLE",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_NET_BROADCAST",
+                "CAP_NET_ADMIN",
+                "CAP_NET_RAW",
+                "CAP_IPC_LOCK",
+                "CAP_IPC_OWNER",
+                "CAP_SYS_MODULE",
+                "CAP_SYS_RAWIO",
+                "CAP_SYS_CHROOT",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_PACCT",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_BOOT",
+                "CAP_SYS_NICE",
+                "CAP_SYS_RESOURCE",
+                "CAP_SYS_TIME",
+                "CAP_SYS_TTY_CONFIG",
+                "CAP_MKNOD",
+                "CAP_LEASE",
+                "CAP_AUDIT_WRITE",
+                "CAP_AUDIT_CONTROL",
+                "CAP_SETFCAP",
+                "CAP_MAC_OVERRIDE",
+                "CAP_MAC_ADMIN",
+                "CAP_SYSLOG",
+                "CAP_WAKE_ALARM",
+                "CAP_BLOCK_SUSPEND",
+                "CAP_AUDIT_READ",
+                "CAP_PERFMON",
+                "CAP_BPF",
+                "CAP_CHECKPOINT_RESTORE"
+              ]
+            },
+            "oomScoreAdj": 1000
+          },
+          "root": {
+            "path": "rootfs"
+          },
+          "mounts": [
+            {
+              "destination": "/proc",
+              "type": "proc",
+              "source": "proc",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev"
+              ]
+            },
+            {
+              "destination": "/dev",
+              "type": "tmpfs",
+              "source": "tmpfs",
+              "options": [
+                "nosuid",
+                "strictatime",
+                "mode=755",
+                "size=65536k"
+              ]
+            },
+            {
+              "destination": "/dev/pts",
+              "type": "devpts",
+              "source": "devpts",
+              "options": [
+                "nosuid",
+                "noexec",
+                "newinstance",
+                "ptmxmode=0666",
+                "mode=0620",
+                "gid=5"
+              ]
+            },
+            {
+              "destination": "/dev/mqueue",
+              "type": "mqueue",
+              "source": "mqueue",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev"
+              ]
+            },
+            {
+              "destination": "/sys",
+              "type": "sysfs",
+              "source": "sysfs",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/sys/fs/cgroup",
+              "type": "cgroup",
+              "source": "cgroup",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev",
+                "relatime",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/etc/machine",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/0d70eef4-fb90-4fae-bd1e-b3590013ea1e/volumes/kubernetes.io~secret/userdata",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/etc/resolv.conf",
+              "type": "bind",
+              "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/5c7d346cc5985eee6e5629b482d7689ca5506d0461be14adbc18ff707c3fbf5c/resolv.conf",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/lib/modules",
+              "type": "bind",
+              "source": "/lib/modules",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/etc/hosts",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/0d70eef4-fb90-4fae-bd1e-b3590013ea1e/etc-hosts",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/dev/termination-log",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/0d70eef4-fb90-4fae-bd1e-b3590013ea1e/containers/node/ad0d7f0a",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/etc/hostname",
+              "type": "bind",
+              "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/5c7d346cc5985eee6e5629b482d7689ca5506d0461be14adbc18ff707c3fbf5c/hostname",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/dev/shm",
+              "type": "bind",
+              "source": "/run/containerd/io.containerd.grpc.v1.cri/sandboxes/5c7d346cc5985eee6e5629b482d7689ca5506d0461be14adbc18ff707c3fbf5c/shm",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/var/lib/containerd",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/0d70eef4-fb90-4fae-bd1e-b3590013ea1e/volumes/kubernetes.io~empty-dir/containerd",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/var/run/secrets/kubernetes.io/serviceaccount",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/0d70eef4-fb90-4fae-bd1e-b3590013ea1e/volumes/kubernetes.io~projected/kube-api-access-lwjwm",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            }
+          ],
+          "hooks": {
+            "createContainer": [
+              {
+                "path": "/usr/local/bin/mount-product-files"
+              }
+            ]
+          },
+          "annotations": {
+            "io.kubernetes.cri.container-name": "node",
+            "io.kubernetes.cri.container-type": "container",
+            "io.kubernetes.cri.image-name": "docker.io/danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0",
+            "io.kubernetes.cri.sandbox-id": "5c7d346cc5985eee6e5629b482d7689ca5506d0461be14adbc18ff707c3fbf5c",
+            "io.kubernetes.cri.sandbox-name": "machine-shoot--local--e2e-default-local-69865-q75fx",
+            "io.kubernetes.cri.sandbox-namespace": "shoot--local--e2e-default"
+          },
+          "linux": {
+            "resources": {
+              "devices": [
+                {
+                  "allow": true,
+                  "access": "rwm"
+                }
+              ],
+              "memory": {},
+              "cpu": {
+                "shares": 2,
+                "period": 100000
+              }
+            },
+            "cgroupsPath": "kubelet-kubepods-besteffort-pod0d70eef4_fb90_4fae_bd1e_b3590013ea1e.slice:cri-containerd:ddafbc6269f61f0534c60d1c6d5b18b0ecb6bf19858e1f8c2c67641c87eb5651",
+            "namespaces": [
+              {
+                "type": "pid"
+              },
+              {
+                "type": "ipc",
+                "path": "/proc/59232/ns/ipc"
+              },
+              {
+                "type": "uts",
+                "path": "/proc/59232/ns/uts"
+              },
+              {
+                "type": "mount"
+              },
+              {
+                "type": "network",
+                "path": "/proc/59232/ns/net"
+              }
+            ],
+            "devices": [
+              {
+                "path": "/dev/autofs",
+                "type": "c",
+                "major": 10,
+                "minor": 235,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/btrfs-control",
+                "type": "c",
+                "major": 10,
+                "minor": 234,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/cpu_dma_latency",
+                "type": "c",
+                "major": 10,
+                "minor": 61,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/cuse",
+                "type": "c",
+                "major": 10,
+                "minor": 203,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/full",
+                "type": "c",
+                "major": 1,
+                "minor": 7,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/fuse",
+                "type": "c",
+                "major": 10,
+                "minor": 229,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/hpet",
+                "type": "c",
+                "major": 10,
+                "minor": 228,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/input/event0",
+                "type": "c",
+                "major": 13,
+                "minor": 64,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 104
+              },
+              {
+                "path": "/dev/input/event1",
+                "type": "c",
+                "major": 13,
+                "minor": 65,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 104
+              },
+              {
+                "path": "/dev/input/event2",
+                "type": "c",
+                "major": 13,
+                "minor": 66,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 104
+              },
+              {
+                "path": "/dev/kmsg",
+                "type": "c",
+                "major": 1,
+                "minor": 11,
+                "fileMode": 420,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/loop-control",
+                "type": "c",
+                "major": 10,
+                "minor": 237,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 6
+              },
+              {
+                "path": "/dev/mapper/control",
+                "type": "c",
+                "major": 10,
+                "minor": 236,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/mem",
+                "type": "c",
+                "major": 1,
+                "minor": 1,
+                "fileMode": 416,
+                "uid": 0,
+                "gid": 15
+              },
+              {
+                "path": "/dev/net/tun",
+                "type": "c",
+                "major": 10,
+                "minor": 200,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/null",
+                "type": "c",
+                "major": 1,
+                "minor": 3,
+                "fileMode": 438,
+                "uid": 999,
+                "gid": 0
+              },
+              {
+                "path": "/dev/nvram",
+                "type": "c",
+                "major": 10,
+                "minor": 144,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/random",
+                "type": "c",
+                "major": 1,
+                "minor": 8,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/rtc0",
+                "type": "c",
+                "major": 253,
+                "minor": 0,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/snapshot",
+                "type": "c",
+                "major": 10,
+                "minor": 231,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/tty",
+                "type": "c",
+                "major": 5,
+                "minor": 0,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty0",
+                "type": "c",
+                "major": 4,
+                "minor": 0,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty1",
+                "type": "c",
+                "major": 4,
+                "minor": 1,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty10",
+                "type": "c",
+                "major": 4,
+                "minor": 10,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty11",
+                "type": "c",
+                "major": 4,
+                "minor": 11,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty12",
+                "type": "c",
+                "major": 4,
+                "minor": 12,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty13",
+                "type": "c",
+                "major": 4,
+                "minor": 13,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty14",
+                "type": "c",
+                "major": 4,
+                "minor": 14,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty15",
+                "type": "c",
+                "major": 4,
+                "minor": 15,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty16",
+                "type": "c",
+                "major": 4,
+                "minor": 16,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty17",
+                "type": "c",
+                "major": 4,
+                "minor": 17,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty18",
+                "type": "c",
+                "major": 4,
+                "minor": 18,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty19",
+                "type": "c",
+                "major": 4,
+                "minor": 19,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty2",
+                "type": "c",
+                "major": 4,
+                "minor": 2,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty20",
+                "type": "c",
+                "major": 4,
+                "minor": 20,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty21",
+                "type": "c",
+                "major": 4,
+                "minor": 21,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty22",
+                "type": "c",
+                "major": 4,
+                "minor": 22,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty23",
+                "type": "c",
+                "major": 4,
+                "minor": 23,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty24",
+                "type": "c",
+                "major": 4,
+                "minor": 24,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty25",
+                "type": "c",
+                "major": 4,
+                "minor": 25,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty26",
+                "type": "c",
+                "major": 4,
+                "minor": 26,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty27",
+                "type": "c",
+                "major": 4,
+                "minor": 27,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty28",
+                "type": "c",
+                "major": 4,
+                "minor": 28,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty29",
+                "type": "c",
+                "major": 4,
+                "minor": 29,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty3",
+                "type": "c",
+                "major": 4,
+                "minor": 3,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty30",
+                "type": "c",
+                "major": 4,
+                "minor": 30,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty31",
+                "type": "c",
+                "major": 4,
+                "minor": 31,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty32",
+                "type": "c",
+                "major": 4,
+                "minor": 32,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty33",
+                "type": "c",
+                "major": 4,
+                "minor": 33,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty34",
+                "type": "c",
+                "major": 4,
+                "minor": 34,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty35",
+                "type": "c",
+                "major": 4,
+                "minor": 35,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty36",
+                "type": "c",
+                "major": 4,
+                "minor": 36,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty37",
+                "type": "c",
+                "major": 4,
+                "minor": 37,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty38",
+                "type": "c",
+                "major": 4,
+                "minor": 38,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty39",
+                "type": "c",
+                "major": 4,
+                "minor": 39,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty4",
+                "type": "c",
+                "major": 4,
+                "minor": 4,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty40",
+                "type": "c",
+                "major": 4,
+                "minor": 40,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty41",
+                "type": "c",
+                "major": 4,
+                "minor": 41,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty42",
+                "type": "c",
+                "major": 4,
+                "minor": 42,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty43",
+                "type": "c",
+                "major": 4,
+                "minor": 43,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty44",
+                "type": "c",
+                "major": 4,
+                "minor": 44,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty45",
+                "type": "c",
+                "major": 4,
+                "minor": 45,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty46",
+                "type": "c",
+                "major": 4,
+                "minor": 46,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty47",
+                "type": "c",
+                "major": 4,
+                "minor": 47,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty48",
+                "type": "c",
+                "major": 4,
+                "minor": 48,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty49",
+                "type": "c",
+                "major": 4,
+                "minor": 49,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty5",
+                "type": "c",
+                "major": 4,
+                "minor": 5,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty50",
+                "type": "c",
+                "major": 4,
+                "minor": 50,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty51",
+                "type": "c",
+                "major": 4,
+                "minor": 51,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty52",
+                "type": "c",
+                "major": 4,
+                "minor": 52,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty53",
+                "type": "c",
+                "major": 4,
+                "minor": 53,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty54",
+                "type": "c",
+                "major": 4,
+                "minor": 54,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty55",
+                "type": "c",
+                "major": 4,
+                "minor": 55,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty56",
+                "type": "c",
+                "major": 4,
+                "minor": 56,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty57",
+                "type": "c",
+                "major": 4,
+                "minor": 57,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty58",
+                "type": "c",
+                "major": 4,
+                "minor": 58,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty59",
+                "type": "c",
+                "major": 4,
+                "minor": 59,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty6",
+                "type": "c",
+                "major": 4,
+                "minor": 6,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty60",
+                "type": "c",
+                "major": 4,
+                "minor": 60,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty61",
+                "type": "c",
+                "major": 4,
+                "minor": 61,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty62",
+                "type": "c",
+                "major": 4,
+                "minor": 62,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty63",
+                "type": "c",
+                "major": 4,
+                "minor": 63,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty7",
+                "type": "c",
+                "major": 4,
+                "minor": 7,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty8",
+                "type": "c",
+                "major": 4,
+                "minor": 8,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/tty9",
+                "type": "c",
+                "major": 4,
+                "minor": 9,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/ttyS0",
+                "type": "c",
+                "major": 4,
+                "minor": 64,
+                "fileMode": 400,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/ttyS1",
+                "type": "c",
+                "major": 4,
+                "minor": 65,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 20
+              },
+              {
+                "path": "/dev/ttyS2",
+                "type": "c",
+                "major": 4,
+                "minor": 66,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 20
+              },
+              {
+                "path": "/dev/ttyS3",
+                "type": "c",
+                "major": 4,
+                "minor": 67,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 20
+              },
+              {
+                "path": "/dev/urandom",
+                "type": "c",
+                "major": 1,
+                "minor": 9,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/vcs",
+                "type": "c",
+                "major": 7,
+                "minor": 0,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs1",
+                "type": "c",
+                "major": 7,
+                "minor": 1,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs2",
+                "type": "c",
+                "major": 7,
+                "minor": 2,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs3",
+                "type": "c",
+                "major": 7,
+                "minor": 3,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs4",
+                "type": "c",
+                "major": 7,
+                "minor": 4,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs5",
+                "type": "c",
+                "major": 7,
+                "minor": 5,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcs6",
+                "type": "c",
+                "major": 7,
+                "minor": 6,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa",
+                "type": "c",
+                "major": 7,
+                "minor": 128,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa1",
+                "type": "c",
+                "major": 7,
+                "minor": 129,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa2",
+                "type": "c",
+                "major": 7,
+                "minor": 130,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa3",
+                "type": "c",
+                "major": 7,
+                "minor": 131,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa4",
+                "type": "c",
+                "major": 7,
+                "minor": 132,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa5",
+                "type": "c",
+                "major": 7,
+                "minor": 133,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsa6",
+                "type": "c",
+                "major": 7,
+                "minor": 134,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu",
+                "type": "c",
+                "major": 7,
+                "minor": 64,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu1",
+                "type": "c",
+                "major": 7,
+                "minor": 65,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu2",
+                "type": "c",
+                "major": 7,
+                "minor": 66,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu3",
+                "type": "c",
+                "major": 7,
+                "minor": 67,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu4",
+                "type": "c",
+                "major": 7,
+                "minor": 68,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu5",
+                "type": "c",
+                "major": 7,
+                "minor": 69,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vcsu6",
+                "type": "c",
+                "major": 7,
+                "minor": 70,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 5
+              },
+              {
+                "path": "/dev/vfio/vfio",
+                "type": "c",
+                "major": 10,
+                "minor": 196,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/vga_arbiter",
+                "type": "c",
+                "major": 10,
+                "minor": 63,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/vhost-net",
+                "type": "c",
+                "major": 10,
+                "minor": 238,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 103
+              },
+              {
+                "path": "/dev/vhost-vsock",
+                "type": "c",
+                "major": 10,
+                "minor": 241,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 103
+              },
+              {
+                "path": "/dev/xen/xenbus",
+                "type": "c",
+                "major": 10,
+                "minor": 62,
+                "fileMode": 384,
+                "uid": 0,
+                "gid": 0
+              },
+              {
+                "path": "/dev/xvda",
+                "type": "b",
+                "major": 202,
+                "minor": 0,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 6
+              },
+              {
+                "path": "/dev/xvda1",
+                "type": "b",
+                "major": 202,
+                "minor": 1,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 6
+              },
+              {
+                "path": "/dev/xvda2",
+                "type": "b",
+                "major": 202,
+                "minor": 2,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 6
+              },
+              {
+                "path": "/dev/xvda3",
+                "type": "b",
+                "major": 202,
+                "minor": 3,
+                "fileMode": 432,
+                "uid": 0,
+                "gid": 6
+              },
+              {
+                "path": "/dev/zero",
+                "type": "c",
+                "major": 1,
+                "minor": 5,
+                "fileMode": 438,
+                "uid": 0,
+                "gid": 0
+              }
+            ]
+          }
+        },
+        "Process": {
+          "Pid": 63114,
+          "Status": {
+            "Status": "running",
+            "ExitStatus": 0,
+            "ExitTime": "0001-01-01T00:00:00Z"
+          },
+          "NetNS": {
+            "PrimaryInterface": 3,
+            "Interfaces": [
+              {
+                "Index": 1,
+                "MTU": 65536,
+                "Name": "lo",
+                "HardwareAddr": "",
+                "Flags": [
+                  "up",
+                  "loopback"
+                ],
+                "Addrs": [
+                  "127.0.0.1/8",
+                  "10.2.50.108/32",
+                  "::1/128"
+                ]
+              },
+              {
+                "Index": 2,
+                "MTU": 1480,
+                "Name": "tunl0",
+                "HardwareAddr": "",
+                "Flags": null,
+                "Addrs": []
+              },
+              {
+                "Index": 3,
+                "MTU": 1440,
+                "Name": "cali4b8df33847f",
+                "HardwareAddr": "ee:ee:ee:ee:ee:ee",
+                "Flags": [
+                  "up",
+                  "broadcast",
+                  "multicast"
+                ],
+                "Addrs": [
+                  "fe80::ecee:eeff:feee:eeee/64"
+                ]
+              },
+              {
+                "Index": 4,
+                "MTU": 1480,
+                "Name": "eth0",
+                "HardwareAddr": "02:f6:5a:47:00:27",
+                "Flags": [
+                  "up",
+                  "broadcast",
+                  "multicast"
+                ],
+                "Addrs": [
+                  "10.1.131.64/32",
+                  "fe80::f6:5aff:fe47:27/64"
+                ]
+              },
+              {
+                "Index": 7,
+                "MTU": 1440,
+                "Name": "calid5a4ec80234",
+                "HardwareAddr": "ee:ee:ee:ee:ee:ee",
+                "Flags": [
+                  "up",
+                  "broadcast",
+                  "multicast"
+                ],
+                "Addrs": [
+                  "fe80::ecee:eeff:feee:eeee/64"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]

@@ -1,0 +1,67 @@
+# will be injected by chaos mesh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-in-docker-test
+  namespace: did
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      stress: me
+  template:
+    metadata:
+      labels:
+        stress: me
+    spec:
+      initContainers:
+        - name: setup-docker-daemon-config
+          image: busybox:1.28
+          securityContext:
+            # to see host /proc through /proc/self/cgroup
+            privileged: true
+            # note that this both sets up the dockerd config file and the memory limit on the dind-pod (parent) cgroup.
+            # docker containers started from dockerd in dind pod, cannot be children of the dind container cgroup, as in cgroupsv2, only leaf cgroups can have associated PIDs (at least for the memory controller)
+          command: ['sh', '-c', 'prefix="0::";string=$(cat /proc/self/cgroup);dir=${string#"$prefix"};cgroup_parent="$(dirname "$dir")";echo "Using cgroup parent: $cgroup_parent";mkdir -p /etc/docker/; cp /tmp/daemon.json /etc/docker/daemon.json; sed -i "s|<replace>|$cgroup_parent|g" /etc/docker/daemon.json;memory_max=314572800;echo "Writing limit of $memory_max bytes to /sys/fs/cgroup${cgroup_parent}/memory.max";echo "$memory_max" > /sys/fs/cgroup${cgroup_parent}/memory.max']
+          volumeMounts:
+              # init container copies daemon config to /etc/docker/daemon.json with correct parent cgroup of the dind-pod
+              # needed because config-map volumes are mounted read-only
+            - name: dockerd-config
+              mountPath: /tmp/daemon.json
+              subPath: daemon.json
+            - name: shared-scratch
+              mountPath: /etc/docker/
+      containers:
+        - name: dummy
+          image: docker:20.10.22-dind-alpine3.17
+          resources:
+            requests:
+              cpu: 10m
+              memory: 300Mi
+            limits:
+              cpu: "2"
+              memory: 300Mi
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+            capabilities:
+              add: ["NET_ADMIN","NET_RAW"]
+          volumeMounts:
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+            - name: shared-scratch
+              mountPath: /etc/docker/daemon.json
+              subPath: daemon.json
+      priority: 0
+      nodeName: ip-10-180-23-177.eu-west-1.compute.internal
+      restartPolicy: Always
+      volumes:
+        - name: docker-graph-storage
+          emptyDir: {}
+          # mount a config map that contains an alternative docker configuration
+        - name: dockerd-config
+          configMap:
+            name: dockerd-config
+        - name: shared-scratch
+          emptyDir:
+            sizeLimit: 1Mi

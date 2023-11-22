@@ -1,0 +1,198 @@
+  root@machine-shoot--local--e2e-default-local-69865-8xpbs:/# kubectl -n kube-system describe pod calico-node-bl68r
+  Name:                 calico-node-bl68r
+  Namespace:            kube-system
+  Priority:             2000001000
+  Priority Class Name:  system-node-critical
+  Node:                 machine-shoot--local--e2e-default-local3-56c78-525jc/10.1.131.67
+  Start Time:           Tue, 04 Apr 2023 14:12:06 +0000
+  Labels:               controller-revision-hash=6b7758799c
+    gardener.cloud/role=system-component
+    k8s-app=calico-node
+    networking.gardener.cloud/to-apiserver=allowed
+    networking.gardener.cloud/to-dns=allowed
+    networking.gardener.cloud/to-public-networks=allowed
+    pod-template-generation=1
+    resources.gardener.cloud/managed-by=gardener
+    shoot.gardener.cloud/no-cleanup=true
+  Annotations:          checksum/configmap-calico: de0691073b61f6a48516a2cdf3315bc27cc29c4fb20c3587ae8fa47a128a1162
+  Status:               Running
+  IP:                   10.1.131.67
+  IPs:
+    IP:           10.1.131.67
+  Controlled By:  DaemonSet/calico-node
+  Init Containers:
+    install-cni:
+      Container ID:  containerd://90f4c659f76990e403ee21a28da90db6000cab2a062e65827c7123901786a570
+      Image:         docker.io/calico/cni:v3.23.3
+      Image ID:      docker.io/calico/cni@sha256:83db083069fc8612798feda6d9c3413f075ec44e29d302f3af0a11df1cef5823
+      Port:          <none>
+      Host Port:     <none>
+      Command:
+        /opt/cni/bin/install
+      State:          Terminated
+        Reason:       Completed
+        Exit Code:    0
+        Started:      Tue, 04 Apr 2023 14:17:06 +0000
+        Finished:     Tue, 04 Apr 2023 14:17:07 +0000
+      Ready:          True
+      Restart Count:  1
+      Environment Variables from:
+        kubernetes-services-endpoint  ConfigMap  Optional: true
+      Environment:
+        CNI_CONF_NAME:            10-calico.conflist
+        CNI_NETWORK_CONFIG:       <set to the key 'cni_network_config' of config map 'calico-config'>  Optional: false
+        KUBERNETES_NODE_NAME:      (v1:spec.nodeName)
+        CNI_MTU:                  <set to the key 'veth_mtu' of config map 'calico-config'>  Optional: false
+        SLEEP:                    false
+        KUBERNETES_SERVICE_HOST:  api.e2e-default.local.internal.local.gardener.cloud
+      Mounts:
+        /host/etc/cni/net.d from cni-net-dir (rw)
+        /host/secondary-bin-dir from cni-bin-dir (rw)
+        /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gardener (ro)
+  Containers:
+    calico-node:
+      Container ID:   containerd://246bbd5fb4b4f6d6cb8d955b0c4ebcde629a0ecd4ba6f4f14d03f73e6826103c
+      Image:          docker.io/calico/node:v3.23.3
+      Image ID:       docker.io/calico/node@sha256:b356c2334729810de4781819ac7cf7cb05e49b8be9387e6bba2755df95d1cd84
+      Port:           9091/TCP
+      Host Port:      9091/TCP
+      State:          Waiting
+        Reason:       CrashLoopBackOff
+      Last State:     Terminated
+        Reason:       Completed
+        Exit Code:    0
+        Started:      Tue, 04 Apr 2023 14:17:03 +0000
+        Finished:     Tue, 04 Apr 2023 14:17:05 +0000
+      Ready:          False
+      Restart Count:  5
+      Limits:
+        memory:  2800Mi
+      Requests:
+        cpu:      250m
+        memory:   100Mi
+      Liveness:   exec [/bin/calico-node -felix-live] delay=10s timeout=10s period=10s #success=1 #failure=6
+      Readiness:  exec [/bin/calico-node -felix-ready] delay=0s timeout=10s period=10s #success=1 #failure=3
+      Environment Variables from:
+        kubernetes-services-endpoint  ConfigMap  Optional: true
+      Environment:
+        USE_POD_CIDR:                              true
+        FELIX_PROMETHEUSMETRICSENABLED:            true
+        FELIX_PROMETHEUSMETRICSPORT:               9091
+        DATASTORE_TYPE:                            kubernetes
+        FELIX_TYPHAK8SSERVICENAME:                 <set to the key 'typha_service_name' of config map 'calico-config'>  Optional: false
+        WAIT_FOR_DATASTORE:                        true
+        NODENAME:                                   (v1:spec.nodeName)
+        CALICO_NETWORKING_BACKEND:                 <set to the key 'calico_backend' of config map 'calico-config'>  Optional: false
+        CLUSTER_TYPE:                              k8s,bgp
+        IP:                                        autodetect
+        CALICO_IPV4POOL_VXLAN:                     Never
+        CALICO_IPV6POOL_VXLAN:                     Never
+        FELIX_IPINIPMTU:                           <set to the key 'veth_mtu' of config map 'calico-config'>  Optional: false
+        FELIX_VXLANMTU:                            <set to the key 'veth_mtu' of config map 'calico-config'>  Optional: false
+        FELIX_WIREGUARDMTU:                        <set to the key 'veth_mtu' of config map 'calico-config'>  Optional: false
+        CALICO_IPV4POOL_CIDR:                      10.3.0.0/16
+        CALICO_DISABLE_FILE_LOGGING:               true
+        FELIX_DEFAULTENDPOINTTOHOSTACTION:         ACCEPT
+        FELIX_IPV6SUPPORT:                         false
+        FELIX_IPINIPENABLED:                       false
+        CALICO_IPV4POOL_IPIP:                      Never
+        FELIX_BPFENABLED:                          false
+        FELIX_BPFKUBEPROXYIPTABLESCLEANUPENABLED:  false
+        FELIX_HEALTHENABLED:                       true
+        FELIX_NATPORTRANGE:                        32768:65535
+        CALICO_MANAGE_CNI:                         true
+        KUBERNETES_SERVICE_HOST:                   api.e2e-default.local.internal.local.gardener.cloud
+      Mounts:
+        /host/etc/cni/net.d from cni-net-dir (rw)
+        /lib/modules from lib-modules (ro)
+        /run/xtables.lock from xtables-lock (rw)
+        /var/lib/calico from var-lib-calico (rw)
+        /var/log/calico/cni from cni-log-dir (ro)
+        /var/run/calico from var-run-calico (rw)
+        /var/run/nodeagent from policysync (rw)
+        /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gardener (ro)
+  Conditions:
+    Type              Status
+    Initialized       True
+    Ready             False
+    ContainersReady   False
+    PodScheduled      True
+  Volumes:
+    lib-modules:
+      Type:          HostPath (bare host directory volume)
+      Path:          /lib/modules
+      HostPathType:
+    var-run-calico:
+      Type:          HostPath (bare host directory volume)
+      Path:          /var/run/calico
+      HostPathType:
+    var-lib-calico:
+      Type:          HostPath (bare host directory volume)
+      Path:          /var/lib/calico
+      HostPathType:
+    xtables-lock:
+      Type:          HostPath (bare host directory volume)
+      Path:          /run/xtables.lock
+      HostPathType:  FileOrCreate
+    cni-bin-dir:
+      Type:          HostPath (bare host directory volume)
+      Path:          /opt/cni/bin
+      HostPathType:
+    cni-net-dir:
+      Type:          HostPath (bare host directory volume)
+      Path:          /etc/cni/net.d
+      HostPathType:
+    cni-log-dir:
+      Type:          HostPath (bare host directory volume)
+      Path:          /var/log/calico/cni
+      HostPathType:
+    policysync:
+      Type:          HostPath (bare host directory volume)
+      Path:          /var/run/nodeagent
+      HostPathType:  DirectoryOrCreate
+    kube-api-access-gardener:
+      Type:                    Projected (a volume that contains injected data from multiple sources)
+      TokenExpirationSeconds:  43200
+      ConfigMapName:           kube-root-ca.crt
+      ConfigMapOptional:       <nil>
+      DownwardAPI:             true
+  QoS Class:                   Burstable
+  Node-Selectors:              kubernetes.io/os=linux
+  Tolerations:                 :NoSchedule op=Exists
+    :NoExecute op=Exists
+    CriticalAddonsOnly op=Exists
+    node.kubernetes.io/disk-pressure:NoSchedule op=Exists
+    node.kubernetes.io/memory-pressure:NoSchedule op=Exists
+    node.kubernetes.io/network-unavailable:NoSchedule op=Exists
+    node.kubernetes.io/not-ready:NoExecute op=Exists
+    node.kubernetes.io/pid-pressure:NoSchedule op=Exists
+    node.kubernetes.io/unreachable:NoExecute op=Exists
+    node.kubernetes.io/unschedulable:NoSchedule op=Exists
+  Events:
+    Type     Reason                  Age                    From               Message
+    ----     ------                  ----                   ----               -------
+    Normal   Scheduled               7m23s                  default-scheduler  Successfully assigned kube-system/calico-node-bl68r to machine-shoot--local--e2e-default-local3-56c78-525jc
+    Warning  FailedMount             7m20s                  kubelet            MountVolume.SetUp failed for volume "kube-api-access-gardener" : failed to fetch token: Post "https://api.e2e-default.local.internal.local.gardener.cloud/api/v1/namespaces/kube-system/serviceaccounts/calico-node/token": read tcp 10.1.131.67:55970->10.2.173.123:443: use of closed network connection
+    Normal   Pulling                 7m18s                  kubelet            Pulling image "docker.io/calico/cni:v3.23.3"
+    Normal   Pulled                  6m48s                  kubelet            Successfully pulled image "docker.io/calico/cni:v3.23.3" in 29.868446449s
+    Normal   Pulling                 6m42s                  kubelet            Pulling image "docker.io/calico/node:v3.23.3"
+    Normal   Pulled                  6m21s                  kubelet            Successfully pulled image "docker.io/calico/node:v3.23.3" in 20.850087326s
+    Warning  Unhealthy               6m10s                  kubelet            Readiness probe errored: rpc error: code = NotFound desc = failed to exec in container: failed to load task: no running task found: task 550be29c1dd5af7b2e35c12edba172ef70054b0996c6534131b10f48ff5b73b8 not found: not found
+    Normal   Created                 6m7s (x2 over 6m48s)   kubelet            Created container install-cni
+    Normal   Started                 6m5s (x2 over 6m47s)   kubelet            Started container install-cni
+    Normal   Created                 6m2s (x2 over 6m21s)   kubelet            Created container calico-node
+    Normal   Pulled                  6m2s                   kubelet            Container image "docker.io/calico/node:v3.23.3" already present on machine
+    Normal   Killing                 6m1s (x2 over 6m19s)   kubelet            Stopping container calico-node
+    Normal   Started                 6m1s (x2 over 6m20s)   kubelet            Started container calico-node
+    Warning  Unhealthy               6m (x2 over 6m19s)     kubelet            Readiness probe failed: calico/node is not ready: felix is not ready: Get "http://localhost:9099/readiness": dial tcp [::1]:9099: connect: connection refused
+                                                                              # TODO D060239: make sure that the cgroup manager configuration is correct (both systemd)
+    Normal   SandboxChanged          5m56s (x3 over 6m9s)   kubelet            Pod sandbox changed, it will be killed and re-created.
+    # TODO: D060239: I see this error for each calico-node start: I think the calico-node container never got ready
+    Warning  FailedCreatePodSandBox  5m56s                  kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = failed to create containerd task: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for procHooks process: openat2 /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podceb9bf3a_46f5_45e6_a462_747d09c88997.slice/cri-containerd-220b656a007943603132ae933a793eb8db512c050ab764dd67d1d32ea8476d12.scope/cgroup.controllers: no such file or directory: unknown
+    Normal   Pulled                  5m55s (x2 over 6m8s)   kubelet            Container image "docker.io/calico/cni:v3.23.3" already present on machine
+    Warning  BackOff                 2m18s (x18 over 5m7s)  kubelet            Back-off restarting failed container
+
+# TODO: NEXT STEPS
+  # - check cgroup layout: I don't get it: who deletes the cgroups the whole time in the machine kubepods
+  # - is the deletion the reason why runc cannot create the container? ---> if the sandbox (parent) cgroup is deleted, then runc cannot create a child cgroup within!
+  #  --> ue ebpf https://manpages.ubuntu.com/manpages/bionic/man8/filelife-bpfcc.8.html

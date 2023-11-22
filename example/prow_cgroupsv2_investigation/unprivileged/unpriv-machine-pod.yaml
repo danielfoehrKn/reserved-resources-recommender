@@ -1,0 +1,948 @@
+  root@gardener-local-control-plane:/# nerdctl inspect --mode native 401b6d20c8ca
+  WARN[0000] failed to inspect Task                        error="no running task found: task 401b6d20c8ca6fac9434b4640dec823ee658ad1fca30947495b347469693c56c not found: not found" id=401b6d20c8ca6fac9434b4640dec823ee658ad1fca30947495b347469693c56c
+    [
+      {
+        "ID": "401b6d20c8ca6fac9434b4640dec823ee658ad1fca30947495b347469693c56c",
+        "Labels": {
+          "io.cri-containerd.kind": "container",
+          "io.kubernetes.container.name": "node",
+          "io.kubernetes.pod.name": "machine-shoot--local--e2e-default-daniel",
+          "io.kubernetes.pod.namespace": "shoot--local--e2e-default",
+          "io.kubernetes.pod.uid": "1e337d4f-dec7-4de0-9c11-79fb9680205a"
+        },
+        "Image": "docker.io/danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0",
+        "Runtime": {
+          "Name": "io.containerd.runc.v2",
+          "Options": {
+            "type_url": "containerd.runc.v1.Options",
+            "value": "SAE="
+          }
+        },
+        "SnapshotKey": "401b6d20c8ca6fac9434b4640dec823ee658ad1fca30947495b347469693c56c",
+        "Snapshotter": "overlayfs",
+        "CreatedAt": "2023-04-05T11:16:18.987782823Z",
+        "UpdatedAt": "2023-04-05T11:16:18.987782823Z",
+        "Extensions": {
+          "io.cri-containerd.container.metadata": {
+            "type_url": "github.com/containerd/cri/pkg/store/container/Metadata",
+            "value": "eyJWZXJzaW9uIjoidjEiLCJNZXRhZGF0YSI6eyJJRCI6IjQwMWI2ZDIwYzhjYTZmYWM5NDM0YjQ2NDBkZWM4MjNlZTY1OGFkMWZjYTMwOTQ3NDk1YjM0NzQ2OTY5M2M1NmMiLCJOYW1lIjoibm9kZV9tYWNoaW5lLXNob290LS1sb2NhbC0tZTJlLWRlZmF1bHQtZGFuaWVsX3Nob290LS1sb2NhbC0tZTJlLWRlZmF1bHRfMWUzMzdkNGYtZGVjNy00ZGUwLTljMTEtNzlmYjk2ODAyMDVhXzUiLCJTYW5kYm94SUQiOiJlMDU2OTRmZTcyZDQ2NWRlOWMzNzk2YWU3OGVhOWRlMTBkMDFlNGIxOWUwYzQ2YWFmMDY5ZWNiZDM5MWYwMzc3IiwiQ29uZmlnIjp7Im1ldGFkYXRhIjp7Im5hbWUiOiJub2RlIiwiYXR0ZW1wdCI6NX0sImltYWdlIjp7ImltYWdlIjoic2hhMjU2OjdjYTRjZDRmMGIwYjVkMGM3ODI0ZDkyNjc3YzdmZjI0MTA2NmEyNGYyYmMwN2MwNGVkZTgyZGQ1ZGM5MzBiYzEifSwiZW52cyI6W3sia2V5IjoiTk9ERV9OQU1FIiwidmFsdWUiOiJtYWNoaW5lLXNob290LS1sb2NhbC0tZTJlLWRlZmF1bHQtZGFuaWVsIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfU0VSVklDRV9QT1JUX0JBQ0tVUFJFU1RPUkUiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF84MDgxX1RDUF9QT1JUIiwidmFsdWUiOiI4MDgxIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfNDQzX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjEzNS42OSJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzIzODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTczLjI0NSJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfUE9SVF80NDNfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkxPS0lfUE9SVF85MjczX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1NFUlZJQ0VfSE9TVCIsInZhbHVlIjoiMTAuMi4xMzUuNjkifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF84MDgwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJLVUJFX0FQSVNFUlZFUl9QT1JUXzQ0M19UQ1BfUE9SVCIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJHUkFGQU5BX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTU0LjMzOjMwMDAifSx7ImtleSI6IkxPS0lfUE9SVF85MjczX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4yMTMuNDM6OTI3MyJ9LHsia2V5IjoiTE9LSV9QT1JUXzkyNzNfVENQX1BPUlQiLCJ2YWx1ZSI6IjkyNzMifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuMTQuMTQ0In0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfU0VSVklDRV9QT1JUX0NMSUVOVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfMjM4MF9UQ1BfUE9SVCIsInZhbHVlIjoiMjM4MCJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfUE9SVF80NDNfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjE2Mi4yNTo0NDMifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzExOTRfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMjUzLjE4OSJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfOTQ0M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMjUzLjE4OTo5NDQzIn0seyJrZXkiOiJMT0tJX1NFUlZJQ0VfSE9TVCIsInZhbHVlIjoiMTAuMi4yMTMuNDMifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF84MDgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNzMuMjQ1OjgwODAifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1BPUlRfMTAyNTlfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfU0VSVklDRV9QT1JUX0NMSUVOVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1NFUlZJQ0VfUE9SVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfODA4MF9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4xNC4xNDQifSx7ImtleSI6IktVQkVSTkVURVNfUE9SVF80NDNfVENQX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiR1JBRkFOQV9QT1JUXzMwMDBfVENQX1BPUlQiLCJ2YWx1ZSI6IjMwMDAifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjExOTQifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9TRVJWSUNFX1BPUlRfSFRUUF9QUk9YWSIsInZhbHVlIjoiOTQ0MyJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTUwMDBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjI1My4xODk6MTUwMDAifSx7ImtleSI6IlZQTl9TRUVEX1NFUlZFUl9QT1JUXzExOTRfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjI1My4xODk6MTE5NCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTUwMDBfVENQX1BPUlQiLCJ2YWx1ZSI6IjE1MDAwIn0seyJrZXkiOiJMT0tJX1BPUlRfODA4MF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfMjM3OV9UQ1BfUE9SVCIsInZhbHVlIjoiMjM3OSJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfODA4MF9UQ1BfUE9SVCIsInZhbHVlIjoiODA4MCJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjAuMTo0NDMifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfU0VSVklDRV9QT1JUX0hFQUxUSCIsInZhbHVlIjoiODA4MSJ9LHsia2V5IjoiTE9LSV9QT1JUXzgwODBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjIxMy40Mzo4MDgwIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1NFUlZJQ0VfUE9SVF9CQUNLVVBSRVNUT1JFIiwidmFsdWUiOiI4MDgwIn0seyJrZXkiOiJMT0tJX1NFUlZJQ0VfUE9SVF9FWFRFUk5BTCIsInZhbHVlIjoiODA4MCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfMjM3OV9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfODA4MF9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTQuMTQ0OjgwODAifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNzMuMjQ1OjIzNzkifSx7ImtleSI6IlZQQV9XRUJIT09LX1NFUlZJQ0VfUE9SVCIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJWUEFfV0VCSE9PS19QT1JUXzQ0M19UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjE2LjIyNyJ9LHsia2V5IjoiTE9LSV9QT1JUXzMxMDBfVENQX1BST1RPIiwidmFsdWUiOiJ0Y3AifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF84MDgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xMzUuNjk6ODA4MCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODFfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjEzNS42OTo4MDgxIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfODA4MV9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4xMzUuNjkifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfU0VSVklDRV9QT1JUX1NFUlZFUiIsInZhbHVlIjoiMjM4MCJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfU0VSVklDRV9QT1JUIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkxPS0lfUE9SVF84MDgwX1RDUF9QT1JUIiwidmFsdWUiOiI4MDgwIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzc5X1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNC4xNDQ6MjM3OSJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUXzQ0M19UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9TRVJWSUNFX1BPUlRfTUVUUklDUyIsInZhbHVlIjoiODA4MCJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjE2Mi4yNSJ9LHsia2V5IjoiR1JBRkFOQV9QT1JUXzMwMDBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTU0LjMzIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF8xNTAwMF9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4yNTMuMTg5In0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNC4xNDQ6MjM4MCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfODA4MF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1NFUlZJQ0VfSE9TVCIsInZhbHVlIjoiMTAuMi4yNTMuMTg5In0seyJrZXkiOiJLVUJFUk5FVEVTX1NFUlZJQ0VfUE9SVCIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfNDQzX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfU0VSVklDRV9QT1JUX01FVFJJQ1MiLCJ2YWx1ZSI6IjE1MDAwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF85NDQzX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjI1My4xODkifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9QT1JUXzIzODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTQuMTQ0In0seyJrZXkiOiJLVUJFUk5FVEVTX1NFUlZJQ0VfUE9SVF9IVFRQUyIsInZhbHVlIjoiNDQzIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlRfODA4MV9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9TRVJWSUNFX1BPUlRfU0VSVkVSIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkxPS0lfUE9SVF8zMTAwX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjIxMy40MyJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUXzQ0M19UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4wLjEifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfUE9SVF80NDNfVENQX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuMTczLjI0NSJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzgwODBfVENQX1BPUlQiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTA5LjIyMzoxMDI1OSJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTE5NF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzQ0M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTM1LjY5OjQ0MyJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9QT1JUXzIzNzlfVENQX1BPUlQiLCJ2YWx1ZSI6IjIzNzkifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1NFUlZJQ0VfUE9SVF9NRVRSSUNTIiwidmFsdWUiOiIxMDI1OSJ9LHsia2V5IjoiR1JBRkFOQV9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuMTU0LjMzIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF85NDQzX1RDUF9QT1JUIiwidmFsdWUiOiI5NDQzIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9QT1JUXzEwMjU5X1RDUF9QT1JUIiwidmFsdWUiOiIxMDI1OSJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNi4yMjc6NDQzIn0seyJrZXkiOiJHUkFGQU5BX1NFUlZJQ0VfUE9SVCIsInZhbHVlIjoiMzAwMCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfMTE5NF9UQ1BfUE9SVCIsInZhbHVlIjoiMTE5NCJ9LHsia2V5IjoiTE9LSV9QT1JUXzMxMDBfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjIxMy40MzozMTAwIn0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM3OV9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTczLjI0NToyMzc5In0seyJrZXkiOiJFVENEX01BSU5fQ0xJRU5UX1BPUlRfMjM4MF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiS1VCRV9TQ0hFRFVMRVJfUE9SVF8xMDI1OV9UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTA5LjIyMzoxMDI1OSJ9LHsia2V5IjoiVlBBX1dFQkhPT0tfUE9SVF80NDNfVENQX1BPUlQiLCJ2YWx1ZSI6IjQ0MyJ9LHsia2V5IjoiR1JBRkFOQV9TRVJWSUNFX1BPUlRfV0VCIiwidmFsdWUiOiIzMDAwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfU0VSVklDRV9QT1JUX1ZQTl9TRUVEX1NFUlZFUiIsInZhbHVlIjoiMTE5NCJ9LHsia2V5IjoiVlBOX1NFRURfU0VSVkVSX1BPUlRfOTQ0M19UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODBfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTM1LjY5In0seyJrZXkiOiJWUEFfV0VCSE9PS19QT1JUXzQ0M19UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4xNjIuMjUifSx7ImtleSI6IkdSQUZBTkFfUE9SVF8zMDAwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNTQuMzM6MzAwMCJ9LHsia2V5IjoiS1VCRVJORVRFU19QT1JUXzQ0M19UQ1AiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMC4xOjQ0MyJ9LHsia2V5IjoiRVRDRF9NQUlOX0NMSUVOVF9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjIzNzkifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF8yMzc5X1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjE3My4yNDUifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF8yMzc5X1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVF8xNTAwMF9UQ1BfUFJPVE8iLCJ2YWx1ZSI6InRjcCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlRfMjM3OV9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4xNC4xNDQifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF8yMzgwX1RDUCIsInZhbHVlIjoidGNwOi8vMTAuMi4xNzMuMjQ1OjIzODAifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF8yMzgwX1RDUF9QT1JUIiwidmFsdWUiOiIyMzgwIn0seyJrZXkiOiJWUEFfV0VCSE9PS19QT1JUIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjE2Mi4yNTo0NDMifSx7ImtleSI6IkdSQUZBTkFfUE9SVF8zMDAwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJMT0tJX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMjEzLjQzOjMxMDAifSx7ImtleSI6IktVQkVSTkVURVNfU0VSVklDRV9IT1NUIiwidmFsdWUiOiIxMC4yLjAuMSJ9LHsia2V5IjoiR0FSREVORVJfUkVTT1VSQ0VfTUFOQUdFUl9QT1JUXzgwODBfVENQX1BPUlQiLCJ2YWx1ZSI6IjgwODAifSx7ImtleSI6IkxPS0lfU0VSVklDRV9QT1JUX01FVFJJQ1MiLCJ2YWx1ZSI6IjMxMDAifSx7ImtleSI6IkxPS0lfU0VSVklDRV9QT1JUX1RFTEVHUkFGIiwidmFsdWUiOiI5MjczIn0seyJrZXkiOiJMT0tJX1BPUlRfODA4MF9UQ1BfQUREUiIsInZhbHVlIjoiMTAuMi4yMTMuNDMifSx7ImtleSI6IkVUQ0RfRVZFTlRTX0NMSUVOVF9TRVJWSUNFX1BPUlRfU0VSVkVSIiwidmFsdWUiOiIyMzgwIn0seyJrZXkiOiJFVENEX0VWRU5UU19DTElFTlRfUE9SVF8yMzgwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJWUE5fU0VFRF9TRVJWRVJfUE9SVCIsInZhbHVlIjoidGNwOi8vMTAuMi4yNTMuMTg5OjExOTQifSx7ImtleSI6IkdBUkRFTkVSX1JFU09VUkNFX01BTkFHRVJfU0VSVklDRV9QT1JUIiwidmFsdWUiOiI4MDgwIn0seyJrZXkiOiJHQVJERU5FUl9SRVNPVVJDRV9NQU5BR0VSX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTM1LjY5OjgwODAifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF84MDgwX1RDUF9QUk9UTyIsInZhbHVlIjoidGNwIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9TRVJWSUNFX0hPU1QiLCJ2YWx1ZSI6IjEwLjIuMTA5LjIyMyJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfU0VSVklDRV9QT1JUX0tVQkVfQVBJU0VSVkVSIiwidmFsdWUiOiI0NDMifSx7ImtleSI6IkxPS0lfU0VSVklDRV9QT1JUIiwidmFsdWUiOiIzMTAwIn0seyJrZXkiOiJLVUJFX1NDSEVEVUxFUl9TRVJWSUNFX1BPUlQiLCJ2YWx1ZSI6IjEwMjU5In0seyJrZXkiOiJMT0tJX1BPUlRfMzEwMF9UQ1BfUE9SVCIsInZhbHVlIjoiMzEwMCJ9LHsia2V5IjoiRVRDRF9FVkVOVFNfQ0xJRU5UX1BPUlQiLCJ2YWx1ZSI6InRjcDovLzEwLjIuMTQuMTQ0OjIzNzkifSx7ImtleSI6IkVUQ0RfTUFJTl9DTElFTlRfUE9SVF84MDgwX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjE3My4yNDUifSx7ImtleSI6IktVQkVfU0NIRURVTEVSX1BPUlRfMTAyNTlfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMTA5LjIyMyJ9LHsia2V5IjoiS1VCRV9BUElTRVJWRVJfUE9SVF80NDNfVENQIiwidmFsdWUiOiJ0Y3A6Ly8xMC4yLjE2LjIyNzo0NDMifSx7ImtleSI6IktVQkVfQVBJU0VSVkVSX1BPUlRfNDQzX1RDUF9BRERSIiwidmFsdWUiOiIxMC4yLjE2LjIyNyJ9LHsia2V5IjoiTE9LSV9QT1JUXzkyNzNfVENQX0FERFIiLCJ2YWx1ZSI6IjEwLjIuMjEzLjQzIn1dLCJtb3VudHMiOlt7ImNvbnRhaW5lcl9wYXRoIjoiL2V0Yy9tYWNoaW5lIiwiaG9zdF9wYXRoIjoiL3Zhci9saWIva3ViZWxldC9wb2RzLzFlMzM3ZDRmLWRlYzctNGRlMC05YzExLTc5ZmI5NjgwMjA1YS92b2x1bWVzL2t1YmVybmV0ZXMuaW9+c2VjcmV0L3VzZXJkYXRhIiwicmVhZG9ubHkiOnRydWV9LHsiY29udGFpbmVyX3BhdGgiOiIvdmFyL2xpYi9jb250YWluZXJkIiwiaG9zdF9wYXRoIjoiL3Zhci9saWIva3ViZWxldC9wb2RzLzFlMzM3ZDRmLWRlYzctNGRlMC05YzExLTc5ZmI5NjgwMjA1YS92b2x1bWVzL2t1YmVybmV0ZXMuaW9+ZW1wdHktZGlyL2NvbnRhaW5lcmQifSx7ImNvbnRhaW5lcl9wYXRoIjoiL2xpYi9tb2R1bGVzIiwiaG9zdF9wYXRoIjoiL2xpYi9tb2R1bGVzIiwicmVhZG9ubHkiOnRydWV9LHsiY29udGFpbmVyX3BhdGgiOiIvdmFyL3J1bi9zZWNyZXRzL2t1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQiLCJob3N0X3BhdGgiOiIvdmFyL2xpYi9rdWJlbGV0L3BvZHMvMWUzMzdkNGYtZGVjNy00ZGUwLTljMTEtNzlmYjk2ODAyMDVhL3ZvbHVtZXMva3ViZXJuZXRlcy5pb35wcm9qZWN0ZWQva3ViZS1hcGktYWNjZXNzLXB0OHR2IiwicmVhZG9ubHkiOnRydWV9LHsiY29udGFpbmVyX3BhdGgiOiIvZXRjL2hvc3RzIiwiaG9zdF9wYXRoIjoiL3Zhci9saWIva3ViZWxldC9wb2RzLzFlMzM3ZDRmLWRlYzctNGRlMC05YzExLTc5ZmI5NjgwMjA1YS9ldGMtaG9zdHMifSx7ImNvbnRhaW5lcl9wYXRoIjoiL2Rldi90ZXJtaW5hdGlvbi1sb2ciLCJob3N0X3BhdGgiOiIvdmFyL2xpYi9rdWJlbGV0L3BvZHMvMWUzMzdkNGYtZGVjNy00ZGUwLTljMTEtNzlmYjk2ODAyMDVhL2NvbnRhaW5lcnMvbm9kZS81MzNlOTJiNCJ9XSwibGFiZWxzIjp7ImlvLmt1YmVybmV0ZXMuY29udGFpbmVyLm5hbWUiOiJub2RlIiwiaW8ua3ViZXJuZXRlcy5wb2QubmFtZSI6Im1hY2hpbmUtc2hvb3QtLWxvY2FsLS1lMmUtZGVmYXVsdC1kYW5pZWwiLCJpby5rdWJlcm5ldGVzLnBvZC5uYW1lc3BhY2UiOiJzaG9vdC0tbG9jYWwtLWUyZS1kZWZhdWx0IiwiaW8ua3ViZXJuZXRlcy5wb2QudWlkIjoiMWUzMzdkNGYtZGVjNy00ZGUwLTljMTEtNzlmYjk2ODAyMDVhIn0sImFubm90YXRpb25zIjp7ImlvLmt1YmVybmV0ZXMuY29udGFpbmVyLmhhc2giOiJhZDhhM2NkOCIsImlvLmt1YmVybmV0ZXMuY29udGFpbmVyLnBvcnRzIjoiW3tcIm5hbWVcIjpcInZwbi1zaG9vdFwiLFwiY29udGFpbmVyUG9ydFwiOjMwMTIzLFwicHJvdG9jb2xcIjpcIlRDUFwifV0iLCJpby5rdWJlcm5ldGVzLmNvbnRhaW5lci5yZXN0YXJ0Q291bnQiOiI1IiwiaW8ua3ViZXJuZXRlcy5jb250YWluZXIudGVybWluYXRpb25NZXNzYWdlUGF0aCI6Ii9kZXYvdGVybWluYXRpb24tbG9nIiwiaW8ua3ViZXJuZXRlcy5jb250YWluZXIudGVybWluYXRpb25NZXNzYWdlUG9saWN5IjoiRmlsZSIsImlvLmt1YmVybmV0ZXMucG9kLnRlcm1pbmF0aW9uR3JhY2VQZXJpb2QiOiIzMCJ9LCJsb2dfcGF0aCI6Im5vZGUvNS5sb2ciLCJsaW51eCI6eyJyZXNvdXJjZXMiOnsiY3B1X3BlcmlvZCI6MTAwMDAwLCJjcHVfc2hhcmVzIjoyLCJvb21fc2NvcmVfYWRqIjoxMDAwLCJodWdlcGFnZV9saW1pdHMiOlt7InBhZ2Vfc2l6ZSI6IjJNQiJ9LHsicGFnZV9zaXplIjoiMUdCIn1dfSwic2VjdXJpdHlfY29udGV4dCI6eyJjYXBhYmlsaXRpZXMiOnsiYWRkX2NhcGFiaWxpdGllcyI6WyJORVRfQURNSU4iLCJTWVNfQURNSU4iXX0sIm5hbWVzcGFjZV9vcHRpb25zIjp7InBpZCI6MX0sInJ1bl9hc191c2VyIjp7fSwibWFza2VkX3BhdGhzIjpbIi9wcm9jL2FjcGkiLCIvcHJvYy9rY29yZSIsIi9wcm9jL2tleXMiLCIvcHJvYy9sYXRlbmN5X3N0YXRzIiwiL3Byb2MvdGltZXJfbGlzdCIsIi9wcm9jL3RpbWVyX3N0YXRzIiwiL3Byb2Mvc2NoZWRfZGVidWciLCIvcHJvYy9zY3NpIiwiL3N5cy9maXJtd2FyZSJdLCJyZWFkb25seV9wYXRocyI6WyIvcHJvYy9hc291bmQiLCIvcHJvYy9idXMiLCIvcHJvYy9mcyIsIi9wcm9jL2lycSIsIi9wcm9jL3N5cyIsIi9wcm9jL3N5c3JxLXRyaWdnZXIiXSwic2VjY29tcCI6e30sInNlY2NvbXBfcHJvZmlsZV9wYXRoIjoicnVudGltZS9kZWZhdWx0In19fSwiSW1hZ2VSZWYiOiJzaGEyNTY6N2NhNGNkNGYwYjBiNWQwYzc4MjRkOTI2NzdjN2ZmMjQxMDY2YTI0ZjJiYzA3YzA0ZWRlODJkZDVkYzkzMGJjMSIsIkxvZ1BhdGgiOiIvdmFyL2xvZy9wb2RzL3Nob290LS1sb2NhbC0tZTJlLWRlZmF1bHRfbWFjaGluZS1zaG9vdC0tbG9jYWwtLWUyZS1kZWZhdWx0LWRhbmllbF8xZTMzN2Q0Zi1kZWM3LTRkZTAtOWMxMS03OWZiOTY4MDIwNWEvbm9kZS81LmxvZyIsIlN0b3BTaWduYWwiOiJTSUdSVE1JTiszIiwiUHJvY2Vzc0xhYmVsIjoiIn19"
+          }
+        },
+        "SandboxID": "",
+        "Spec": {
+          "ociVersion": "1.0.2-dev",
+          "process": {
+            "user": {
+              "uid": 0,
+              "gid": 0
+            },
+            "args": [
+              "/usr/local/bin/entrypoint",
+              "/sbin/init"
+            ],
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOSTNAME=machine-shoot--local--e2e-default-daniel",
+              "container=docker",
+              "NODE_NAME=machine-shoot--local--e2e-default-daniel",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_BACKUPRESTORE=8080",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_PORT=8081",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_ADDR=10.2.135.69",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_ADDR=10.2.173.245",
+              "KUBE_APISERVER_PORT_443_TCP_PROTO=tcp",
+              "LOKI_PORT_9273_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_HOST=10.2.135.69",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_PROTO=tcp",
+              "KUBE_APISERVER_PORT_443_TCP_PORT=443",
+              "GRAFANA_PORT=tcp://10.2.154.33:3000",
+              "LOKI_PORT_9273_TCP=tcp://10.2.213.43:9273",
+              "LOKI_PORT_9273_TCP_PORT=9273",
+              "ETCD_EVENTS_CLIENT_SERVICE_HOST=10.2.14.144",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_CLIENT=2379",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_PORT=2380",
+              "VPA_WEBHOOK_PORT_443_TCP=tcp://10.2.162.25:443",
+              "VPN_SEED_SERVER_PORT_1194_TCP_ADDR=10.2.253.189",
+              "VPN_SEED_SERVER_PORT_9443_TCP=tcp://10.2.253.189:9443",
+              "LOKI_SERVICE_HOST=10.2.213.43",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP=tcp://10.2.173.245:8080",
+              "KUBE_SCHEDULER_PORT_10259_TCP_PROTO=tcp",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_CLIENT=2379",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT=2379",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_ADDR=10.2.14.144",
+              "KUBERNETES_PORT_443_TCP_PORT=443",
+              "GRAFANA_PORT_3000_TCP_PORT=3000",
+              "VPN_SEED_SERVER_SERVICE_PORT=1194",
+              "VPN_SEED_SERVER_SERVICE_PORT_HTTP_PROXY=9443",
+              "VPN_SEED_SERVER_PORT_15000_TCP=tcp://10.2.253.189:15000",
+              "VPN_SEED_SERVER_PORT_1194_TCP=tcp://10.2.253.189:1194",
+              "VPN_SEED_SERVER_PORT_15000_TCP_PORT=15000",
+              "LOKI_PORT_8080_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_PORT=2379",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_PORT=8080",
+              "KUBERNETES_PORT=tcp://10.2.0.1:443",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_HEALTH=8081",
+              "LOKI_PORT_8080_TCP=tcp://10.2.213.43:8080",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_BACKUPRESTORE=8080",
+              "LOKI_SERVICE_PORT_EXTERNAL=8080",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP=tcp://10.2.14.144:8080",
+              "ETCD_MAIN_CLIENT_PORT=tcp://10.2.173.245:2379",
+              "VPA_WEBHOOK_SERVICE_PORT=443",
+              "VPA_WEBHOOK_PORT_443_TCP_PROTO=tcp",
+              "KUBE_APISERVER_SERVICE_HOST=10.2.16.227",
+              "LOKI_PORT_3100_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP=tcp://10.2.135.69:8080",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP=tcp://10.2.135.69:8081",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_ADDR=10.2.135.69",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT_SERVER=2380",
+              "KUBE_APISERVER_SERVICE_PORT=443",
+              "LOKI_PORT_8080_TCP_PORT=8080",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP=tcp://10.2.14.144:2379",
+              "KUBERNETES_PORT_443_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_METRICS=8080",
+              "VPA_WEBHOOK_SERVICE_HOST=10.2.162.25",
+              "GRAFANA_PORT_3000_TCP_ADDR=10.2.154.33",
+              "VPN_SEED_SERVER_PORT_15000_TCP_ADDR=10.2.253.189",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP=tcp://10.2.14.144:2380",
+              "ETCD_EVENTS_CLIENT_PORT_8080_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_SERVICE_HOST=10.2.253.189",
+              "KUBERNETES_SERVICE_PORT=443",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_SERVICE_PORT_METRICS=15000",
+              "VPN_SEED_SERVER_PORT_9443_TCP_ADDR=10.2.253.189",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_ADDR=10.2.14.144",
+              "KUBERNETES_SERVICE_PORT_HTTPS=443",
+              "GARDENER_RESOURCE_MANAGER_PORT_8081_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT_SERVER=443",
+              "LOKI_PORT_3100_TCP_ADDR=10.2.213.43",
+              "KUBERNETES_PORT_443_TCP_ADDR=10.2.0.1",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP_PORT=443",
+              "ETCD_MAIN_CLIENT_SERVICE_HOST=10.2.173.245",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_PORT=8080",
+              "KUBE_SCHEDULER_PORT=tcp://10.2.109.223:10259",
+              "VPN_SEED_SERVER_PORT_1194_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_PORT_443_TCP=tcp://10.2.135.69:443",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_PORT=2379",
+              "KUBE_SCHEDULER_SERVICE_PORT_METRICS=10259",
+              "GRAFANA_SERVICE_HOST=10.2.154.33",
+              "VPN_SEED_SERVER_PORT_9443_TCP_PORT=9443",
+              "KUBE_SCHEDULER_PORT_10259_TCP_PORT=10259",
+              "KUBE_APISERVER_PORT=tcp://10.2.16.227:443",
+              "GRAFANA_SERVICE_PORT=3000",
+              "VPN_SEED_SERVER_PORT_1194_TCP_PORT=1194",
+              "LOKI_PORT_3100_TCP=tcp://10.2.213.43:3100",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP=tcp://10.2.173.245:2379",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_PROTO=tcp",
+              "KUBE_SCHEDULER_PORT_10259_TCP=tcp://10.2.109.223:10259",
+              "VPA_WEBHOOK_PORT_443_TCP_PORT=443",
+              "GRAFANA_SERVICE_PORT_WEB=3000",
+              "VPN_SEED_SERVER_SERVICE_PORT_VPN_SEED_SERVER=1194",
+              "VPN_SEED_SERVER_PORT_9443_TCP_PROTO=tcp",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_ADDR=10.2.135.69",
+              "VPA_WEBHOOK_PORT_443_TCP_ADDR=10.2.162.25",
+              "GRAFANA_PORT_3000_TCP=tcp://10.2.154.33:3000",
+              "KUBERNETES_PORT_443_TCP=tcp://10.2.0.1:443",
+              "ETCD_MAIN_CLIENT_SERVICE_PORT=2379",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_ADDR=10.2.173.245",
+              "ETCD_MAIN_CLIENT_PORT_2379_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_PORT_15000_TCP_PROTO=tcp",
+              "ETCD_EVENTS_CLIENT_PORT_2379_TCP_ADDR=10.2.14.144",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP=tcp://10.2.173.245:2380",
+              "ETCD_MAIN_CLIENT_PORT_2380_TCP_PORT=2380",
+              "VPA_WEBHOOK_PORT=tcp://10.2.162.25:443",
+              "GRAFANA_PORT_3000_TCP_PROTO=tcp",
+              "LOKI_PORT=tcp://10.2.213.43:3100",
+              "KUBERNETES_SERVICE_HOST=10.2.0.1",
+              "GARDENER_RESOURCE_MANAGER_PORT_8080_TCP_PORT=8080",
+              "LOKI_SERVICE_PORT_METRICS=3100",
+              "LOKI_SERVICE_PORT_TELEGRAF=9273",
+              "LOKI_PORT_8080_TCP_ADDR=10.2.213.43",
+              "ETCD_EVENTS_CLIENT_SERVICE_PORT_SERVER=2380",
+              "ETCD_EVENTS_CLIENT_PORT_2380_TCP_PROTO=tcp",
+              "VPN_SEED_SERVER_PORT=tcp://10.2.253.189:1194",
+              "GARDENER_RESOURCE_MANAGER_SERVICE_PORT=8080",
+              "GARDENER_RESOURCE_MANAGER_PORT=tcp://10.2.135.69:8080",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_PROTO=tcp",
+              "KUBE_SCHEDULER_SERVICE_HOST=10.2.109.223",
+              "KUBE_APISERVER_SERVICE_PORT_KUBE_APISERVER=443",
+              "LOKI_SERVICE_PORT=3100",
+              "KUBE_SCHEDULER_SERVICE_PORT=10259",
+              "LOKI_PORT_3100_TCP_PORT=3100",
+              "ETCD_EVENTS_CLIENT_PORT=tcp://10.2.14.144:2379",
+              "ETCD_MAIN_CLIENT_PORT_8080_TCP_ADDR=10.2.173.245",
+              "KUBE_SCHEDULER_PORT_10259_TCP_ADDR=10.2.109.223",
+              "KUBE_APISERVER_PORT_443_TCP=tcp://10.2.16.227:443",
+              "KUBE_APISERVER_PORT_443_TCP_ADDR=10.2.16.227",
+              "LOKI_PORT_9273_TCP_ADDR=10.2.213.43"
+            ],
+            "cwd": "/",
+            "capabilities": {
+              "bounding": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_FSETID",
+                "CAP_FOWNER",
+                "CAP_MKNOD",
+                "CAP_NET_RAW",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETFCAP",
+                "CAP_SETPCAP",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_SYS_CHROOT",
+                "CAP_KILL",
+                "CAP_AUDIT_WRITE",
+                "CAP_NET_ADMIN",
+                "CAP_SYS_ADMIN"
+              ],
+              "effective": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_FSETID",
+                "CAP_FOWNER",
+                "CAP_MKNOD",
+                "CAP_NET_RAW",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETFCAP",
+                "CAP_SETPCAP",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_SYS_CHROOT",
+                "CAP_KILL",
+                "CAP_AUDIT_WRITE",
+                "CAP_NET_ADMIN",
+                "CAP_SYS_ADMIN"
+              ],
+              "permitted": [
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_FSETID",
+                "CAP_FOWNER",
+                "CAP_MKNOD",
+                "CAP_NET_RAW",
+                "CAP_SETGID",
+                "CAP_SETUID",
+                "CAP_SETFCAP",
+                "CAP_SETPCAP",
+                "CAP_NET_BIND_SERVICE",
+                "CAP_SYS_CHROOT",
+                "CAP_KILL",
+                "CAP_AUDIT_WRITE",
+                "CAP_NET_ADMIN",
+                "CAP_SYS_ADMIN"
+              ]
+            },
+            "oomScoreAdj": 1000
+          },
+          "root": {
+            "path": "rootfs"
+          },
+          "mounts": [
+            {
+              "destination": "/proc",
+              "type": "proc",
+              "source": "proc",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev"
+              ]
+            },
+            {
+              "destination": "/dev",
+              "type": "tmpfs",
+              "source": "tmpfs",
+              "options": [
+                "nosuid",
+                "strictatime",
+                "mode=755",
+                "size=65536k"
+              ]
+            },
+            {
+              "destination": "/dev/pts",
+              "type": "devpts",
+              "source": "devpts",
+              "options": [
+                "nosuid",
+                "noexec",
+                "newinstance",
+                "ptmxmode=0666",
+                "mode=0620",
+                "gid=5"
+              ]
+            },
+            {
+              "destination": "/dev/mqueue",
+              "type": "mqueue",
+              "source": "mqueue",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev"
+              ]
+            },
+            {
+              "destination": "/sys",
+              "type": "sysfs",
+              "source": "sysfs",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/sys/fs/cgroup",
+              "type": "cgroup",
+              "source": "cgroup",
+              "options": [
+                "nosuid",
+                "noexec",
+                "nodev",
+                "relatime",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/etc/machine",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/1e337d4f-dec7-4de0-9c11-79fb9680205a/volumes/kubernetes.io~secret/userdata",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/etc/resolv.conf",
+              "type": "bind",
+              "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/e05694fe72d465de9c3796ae78ea9de10d01e4b19e0c46aaf069ecbd391f0377/resolv.conf",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/lib/modules",
+              "type": "bind",
+              "source": "/lib/modules",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            },
+            {
+              "destination": "/etc/hosts",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/1e337d4f-dec7-4de0-9c11-79fb9680205a/etc-hosts",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/dev/termination-log",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/1e337d4f-dec7-4de0-9c11-79fb9680205a/containers/node/533e92b4",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/etc/hostname",
+              "type": "bind",
+              "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/e05694fe72d465de9c3796ae78ea9de10d01e4b19e0c46aaf069ecbd391f0377/hostname",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/dev/shm",
+              "type": "bind",
+              "source": "/run/containerd/io.containerd.grpc.v1.cri/sandboxes/e05694fe72d465de9c3796ae78ea9de10d01e4b19e0c46aaf069ecbd391f0377/shm",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/var/lib/containerd",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/1e337d4f-dec7-4de0-9c11-79fb9680205a/volumes/kubernetes.io~empty-dir/containerd",
+              "options": [
+                "rbind",
+                "rprivate",
+                "rw"
+              ]
+            },
+            {
+              "destination": "/var/run/secrets/kubernetes.io/serviceaccount",
+              "type": "bind",
+              "source": "/var/lib/kubelet/pods/1e337d4f-dec7-4de0-9c11-79fb9680205a/volumes/kubernetes.io~projected/kube-api-access-pt8tv",
+              "options": [
+                "rbind",
+                "rprivate",
+                "ro"
+              ]
+            }
+          ],
+          "hooks": {
+            "createContainer": [
+              {
+                "path": "/usr/local/bin/mount-product-files"
+              }
+            ]
+          },
+          "annotations": {
+            "io.kubernetes.cri.container-name": "node",
+            "io.kubernetes.cri.container-type": "container",
+            "io.kubernetes.cri.image-name": "docker.io/danielfoehrkn/machine-controller-manager-provider-local-node:0.14.0",
+            "io.kubernetes.cri.sandbox-id": "e05694fe72d465de9c3796ae78ea9de10d01e4b19e0c46aaf069ecbd391f0377",
+            "io.kubernetes.cri.sandbox-name": "machine-shoot--local--e2e-default-daniel",
+            "io.kubernetes.cri.sandbox-namespace": "shoot--local--e2e-default"
+          },
+          "linux": {
+            "resources": {
+              "devices": [
+                {
+                  "allow": false,
+                  "access": "rwm"
+                }
+              ],
+              "memory": {},
+              "cpu": {
+                "shares": 2,
+                "period": 100000
+              }
+            },
+            "cgroupsPath": "kubelet-kubepods-besteffort-pod1e337d4f_dec7_4de0_9c11_79fb9680205a.slice:cri-containerd:401b6d20c8ca6fac9434b4640dec823ee658ad1fca30947495b347469693c56c",
+            "namespaces": [
+              {
+                "type": "pid"
+              },
+              {
+                "type": "ipc",
+                "path": "/proc/227536/ns/ipc"
+              },
+              {
+                "type": "uts",
+                "path": "/proc/227536/ns/uts"
+              },
+              {
+                "type": "mount"
+              },
+              {
+                "type": "network",
+                "path": "/proc/227536/ns/net"
+              },
+              {
+                "type": "cgroup"
+              }
+            ],
+            "seccomp": {
+              "defaultAction": "SCMP_ACT_ERRNO",
+              "architectures": [
+                "SCMP_ARCH_X86_64",
+                "SCMP_ARCH_X86",
+                "SCMP_ARCH_X32"
+              ],
+              "syscalls": [
+                {
+                  "names": [
+                    "accept",
+                    "accept4",
+                    "access",
+                    "adjtimex",
+                    "alarm",
+                    "bind",
+                    "brk",
+                    "capget",
+                    "capset",
+                    "chdir",
+                    "chmod",
+                    "chown",
+                    "chown32",
+                    "clock_adjtime",
+                    "clock_adjtime64",
+                    "clock_getres",
+                    "clock_getres_time64",
+                    "clock_gettime",
+                    "clock_gettime64",
+                    "clock_nanosleep",
+                    "clock_nanosleep_time64",
+                    "close",
+                    "close_range",
+                    "connect",
+                    "copy_file_range",
+                    "creat",
+                    "dup",
+                    "dup2",
+                    "dup3",
+                    "epoll_create",
+                    "epoll_create1",
+                    "epoll_ctl",
+                    "epoll_ctl_old",
+                    "epoll_pwait",
+                    "epoll_pwait2",
+                    "epoll_wait",
+                    "epoll_wait_old",
+                    "eventfd",
+                    "eventfd2",
+                    "execve",
+                    "execveat",
+                    "exit",
+                    "exit_group",
+                    "faccessat",
+                    "faccessat2",
+                    "fadvise64",
+                    "fadvise64_64",
+                    "fallocate",
+                    "fanotify_mark",
+                    "fchdir",
+                    "fchmod",
+                    "fchmodat",
+                    "fchown",
+                    "fchown32",
+                    "fchownat",
+                    "fcntl",
+                    "fcntl64",
+                    "fdatasync",
+                    "fgetxattr",
+                    "flistxattr",
+                    "flock",
+                    "fork",
+                    "fremovexattr",
+                    "fsetxattr",
+                    "fstat",
+                    "fstat64",
+                    "fstatat64",
+                    "fstatfs",
+                    "fstatfs64",
+                    "fsync",
+                    "ftruncate",
+                    "ftruncate64",
+                    "futex",
+                    "futex_time64",
+                    "futex_waitv",
+                    "futimesat",
+                    "getcpu",
+                    "getcwd",
+                    "getdents",
+                    "getdents64",
+                    "getegid",
+                    "getegid32",
+                    "geteuid",
+                    "geteuid32",
+                    "getgid",
+                    "getgid32",
+                    "getgroups",
+                    "getgroups32",
+                    "getitimer",
+                    "getpeername",
+                    "getpgid",
+                    "getpgrp",
+                    "getpid",
+                    "getppid",
+                    "getpriority",
+                    "getrandom",
+                    "getresgid",
+                    "getresgid32",
+                    "getresuid",
+                    "getresuid32",
+                    "getrlimit",
+                    "get_robust_list",
+                    "getrusage",
+                    "getsid",
+                    "getsockname",
+                    "getsockopt",
+                    "get_thread_area",
+                    "gettid",
+                    "gettimeofday",
+                    "getuid",
+                    "getuid32",
+                    "getxattr",
+                    "inotify_add_watch",
+                    "inotify_init",
+                    "inotify_init1",
+                    "inotify_rm_watch",
+                    "io_cancel",
+                    "ioctl",
+                    "io_destroy",
+                    "io_getevents",
+                    "io_pgetevents",
+                    "io_pgetevents_time64",
+                    "ioprio_get",
+                    "ioprio_set",
+                    "io_setup",
+                    "io_submit",
+                    "io_uring_enter",
+                    "io_uring_register",
+                    "io_uring_setup",
+                    "ipc",
+                    "kill",
+                    "landlock_add_rule",
+                    "landlock_create_ruleset",
+                    "landlock_restrict_self",
+                    "lchown",
+                    "lchown32",
+                    "lgetxattr",
+                    "link",
+                    "linkat",
+                    "listen",
+                    "listxattr",
+                    "llistxattr",
+                    "_llseek",
+                    "lremovexattr",
+                    "lseek",
+                    "lsetxattr",
+                    "lstat",
+                    "lstat64",
+                    "madvise",
+                    "membarrier",
+                    "memfd_create",
+                    "memfd_secret",
+                    "mincore",
+                    "mkdir",
+                    "mkdirat",
+                    "mknod",
+                    "mknodat",
+                    "mlock",
+                    "mlock2",
+                    "mlockall",
+                    "mmap",
+                    "mmap2",
+                    "mprotect",
+                    "mq_getsetattr",
+                    "mq_notify",
+                    "mq_open",
+                    "mq_timedreceive",
+                    "mq_timedreceive_time64",
+                    "mq_timedsend",
+                    "mq_timedsend_time64",
+                    "mq_unlink",
+                    "mremap",
+                    "msgctl",
+                    "msgget",
+                    "msgrcv",
+                    "msgsnd",
+                    "msync",
+                    "munlock",
+                    "munlockall",
+                    "munmap",
+                    "nanosleep",
+                    "newfstatat",
+                    "_newselect",
+                    "open",
+                    "openat",
+                    "openat2",
+                    "pause",
+                    "pidfd_open",
+                    "pidfd_send_signal",
+                    "pipe",
+                    "pipe2",
+                    "poll",
+                    "ppoll",
+                    "ppoll_time64",
+                    "prctl",
+                    "pread64",
+                    "preadv",
+                    "preadv2",
+                    "prlimit64",
+                    "process_mrelease",
+                    "pselect6",
+                    "pselect6_time64",
+                    "pwrite64",
+                    "pwritev",
+                    "pwritev2",
+                    "read",
+                    "readahead",
+                    "readlink",
+                    "readlinkat",
+                    "readv",
+                    "recv",
+                    "recvfrom",
+                    "recvmmsg",
+                    "recvmmsg_time64",
+                    "recvmsg",
+                    "remap_file_pages",
+                    "removexattr",
+                    "rename",
+                    "renameat",
+                    "renameat2",
+                    "restart_syscall",
+                    "rmdir",
+                    "rseq",
+                    "rt_sigaction",
+                    "rt_sigpending",
+                    "rt_sigprocmask",
+                    "rt_sigqueueinfo",
+                    "rt_sigreturn",
+                    "rt_sigsuspend",
+                    "rt_sigtimedwait",
+                    "rt_sigtimedwait_time64",
+                    "rt_tgsigqueueinfo",
+                    "sched_getaffinity",
+                    "sched_getattr",
+                    "sched_getparam",
+                    "sched_get_priority_max",
+                    "sched_get_priority_min",
+                    "sched_getscheduler",
+                    "sched_rr_get_interval",
+                    "sched_rr_get_interval_time64",
+                    "sched_setaffinity",
+                    "sched_setattr",
+                    "sched_setparam",
+                    "sched_setscheduler",
+                    "sched_yield",
+                    "seccomp",
+                    "select",
+                    "semctl",
+                    "semget",
+                    "semop",
+                    "semtimedop",
+                    "semtimedop_time64",
+                    "send",
+                    "sendfile",
+                    "sendfile64",
+                    "sendmmsg",
+                    "sendmsg",
+                    "sendto",
+                    "setfsgid",
+                    "setfsgid32",
+                    "setfsuid",
+                    "setfsuid32",
+                    "setgid",
+                    "setgid32",
+                    "setgroups",
+                    "setgroups32",
+                    "setitimer",
+                    "setpgid",
+                    "setpriority",
+                    "setregid",
+                    "setregid32",
+                    "setresgid",
+                    "setresgid32",
+                    "setresuid",
+                    "setresuid32",
+                    "setreuid",
+                    "setreuid32",
+                    "setrlimit",
+                    "set_robust_list",
+                    "setsid",
+                    "setsockopt",
+                    "set_thread_area",
+                    "set_tid_address",
+                    "setuid",
+                    "setuid32",
+                    "setxattr",
+                    "shmat",
+                    "shmctl",
+                    "shmdt",
+                    "shmget",
+                    "shutdown",
+                    "sigaltstack",
+                    "signalfd",
+                    "signalfd4",
+                    "sigprocmask",
+                    "sigreturn",
+                    "socket",
+                    "socketcall",
+                    "socketpair",
+                    "splice",
+                    "stat",
+                    "stat64",
+                    "statfs",
+                    "statfs64",
+                    "statx",
+                    "symlink",
+                    "symlinkat",
+                    "sync",
+                    "sync_file_range",
+                    "syncfs",
+                    "sysinfo",
+                    "tee",
+                    "tgkill",
+                    "time",
+                    "timer_create",
+                    "timer_delete",
+                    "timer_getoverrun",
+                    "timer_gettime",
+                    "timer_gettime64",
+                    "timer_settime",
+                    "timer_settime64",
+                    "timerfd_create",
+                    "timerfd_gettime",
+                    "timerfd_gettime64",
+                    "timerfd_settime",
+                    "timerfd_settime64",
+                    "times",
+                    "tkill",
+                    "truncate",
+                    "truncate64",
+                    "ugetrlimit",
+                    "umask",
+                    "uname",
+                    "unlink",
+                    "unlinkat",
+                    "utime",
+                    "utimensat",
+                    "utimensat_time64",
+                    "utimes",
+                    "vfork",
+                    "vmsplice",
+                    "wait4",
+                    "waitid",
+                    "waitpid",
+                    "write",
+                    "writev"
+                  ],
+                  "action": "SCMP_ACT_ALLOW"
+                },
+                {
+                  "names": [
+                    "personality"
+                  ],
+                  "action": "SCMP_ACT_ALLOW",
+                  "args": [
+                    {
+                      "index": 0,
+                      "value": 0,
+                      "op": "SCMP_CMP_EQ"
+                    }
+                  ]
+                },
+                {
+                  "names": [
+                    "personality"
+                  ],
+                  "action": "SCMP_ACT_ALLOW",
+                  "args": [
+                    {
+                      "index": 0,
+                      "value": 8,
+                      "op": "SCMP_CMP_EQ"
+                    }
+                  ]
+                },
+                {
+                  "names": [
+                    "personality"
+                  ],
+                  "action": "SCMP_ACT_ALLOW",
+                  "args": [
+                    {
+                      "index": 0,
+                      "value": 131072,
+                      "op": "SCMP_CMP_EQ"
+                    }
+                  ]
+                },
+                {
+                  "names": [
+                    "personality"
+                  ],
+                  "action": "SCMP_ACT_ALLOW",
+                  "args": [
+                    {
+                      "index": 0,
+                      "value": 131080,
+                      "op": "SCMP_CMP_EQ"
+                    }
+                  ]
+                },
+                {
+                  "names": [
+                    "personality"
+                  ],
+                  "action": "SCMP_ACT_ALLOW",
+                  "args": [
+                    {
+                      "index": 0,
+                      "value": 4294967295,
+                      "op": "SCMP_CMP_EQ"
+                    }
+                  ]
+                },
+                {
+                  "names": [
+                    "ptrace"
+                  ],
+                  "action": "SCMP_ACT_ALLOW"
+                },
+                {
+                  "names": [
+                    "arch_prctl",
+                    "modify_ldt"
+                  ],
+                  "action": "SCMP_ACT_ALLOW"
+                },
+                {
+                  "names": [
+                    "chroot"
+                  ],
+                  "action": "SCMP_ACT_ALLOW"
+                },
+                {
+                  "names": [
+                    "bpf",
+                    "clone",
+                    "clone3",
+                    "fanotify_init",
+                    "fsconfig",
+                    "fsmount",
+                    "fsopen",
+                    "fspick",
+                    "lookup_dcookie",
+                    "mount",
+                    "mount_setattr",
+                    "move_mount",
+                    "name_to_handle_at",
+                    "open_tree",
+                    "perf_event_open",
+                    "quotactl",
+                    "quotactl_fd",
+                    "setdomainname",
+                    "sethostname",
+                    "setns",
+                    "syslog",
+                    "umount",
+                    "umount2",
+                    "unshare"
+                  ],
+                  "action": "SCMP_ACT_ALLOW"
+                }
+              ]
+            },
+            "maskedPaths": [
+              "/proc/acpi",
+              "/proc/kcore",
+              "/proc/keys",
+              "/proc/latency_stats",
+              "/proc/timer_list",
+              "/proc/timer_stats",
+              "/proc/sched_debug",
+              "/proc/scsi",
+              "/sys/firmware"
+            ],
+            "readonlyPaths": [
+              "/proc/asound",
+              "/proc/bus",
+              "/proc/fs",
+              "/proc/irq",
+              "/proc/sys",
+              "/proc/sysrq-trigger"
+            ]
+          }
+        }
+      }
+    ]
