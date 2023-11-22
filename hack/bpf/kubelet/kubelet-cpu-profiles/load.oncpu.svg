@@ -1,0 +1,1497 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="374" onload="init(evt)" viewBox="0 0 1200 374" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#e0e0ff" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl < w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x > 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="374.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="357" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="357" > </text>
+<g id="frames">
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="744.6" y="85" width="7.8" height="15.0" fill="rgb(121,121,200)" rx="2" ry="2" />
+<text  x="747.57" y="95.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1166.6" y="149" width="7.8" height="15.0" fill="rgb(138,138,205)" rx="2" ry="2" />
+<text  x="1169.56" y="159.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="236.6" y="117" width="7.8" height="15.0" fill="rgb(120,120,215)" rx="2" ry="2" />
+<text  x="239.62" y="127.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="635.2" y="165" width="23.4" height="15.0" fill="rgb(115,115,223)" rx="2" ry="2" />
+<text  x="638.17" y="175.5" >_..</text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="963.4" y="165" width="23.4" height="15.0" fill="rgb(104,104,231)" rx="2" ry="2" />
+<text  x="966.38" y="175.5" >k..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="353.8" y="117" width="23.5" height="15.0" fill="rgb(135,135,222)" rx="2" ry="2" />
+<text  x="356.84" y="127.5" >_..</text>
+</g>
+<g >
+<title>mntput (0 ms, 0.00%)</title><rect x="596.1" y="165" width="7.8" height="15.0" fill="rgb(89,89,241)" rx="2" ry="2" />
+<text  x="599.09" y="175.5" ></text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="1143.1" y="149" width="7.8" height="15.0" fill="rgb(96,96,232)" rx="2" ry="2" />
+<text  x="1146.11" y="159.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="377.3" y="69" width="70.3" height="15.0" fill="rgb(133,133,200)" rx="2" ry="2" />
+<text  x="380.28" y="79.5" >_raw_sp..</text>
+</g>
+<g >
+<title>sched_group_set_shares (0 ms, 0.00%)</title><rect x="1127.5" y="181" width="7.8" height="15.0" fill="rgb(110,110,243)" rx="2" ry="2" />
+<text  x="1130.48" y="191.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="1002.5" y="133" width="7.8" height="15.0" fill="rgb(80,80,237)" rx="2" ry="2" />
+<text  x="1005.45" y="143.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="236.6" y="133" width="117.2" height="15.0" fill="rgb(100,100,219)" rx="2" ry="2" />
+<text  x="239.62" y="143.5" >rwsem_down_rea..</text>
+</g>
+<g >
+<title>do_nanosleep (0 ms, 0.00%)</title><rect x="658.6" y="229" width="86.0" height="15.0" fill="rgb(134,134,241)" rx="2" ry="2" />
+<text  x="661.61" y="239.5" >do_nanosleep</text>
+</g>
+<g >
+<title>proc_single_show (0 ms, 0.00%)</title><rect x="1119.7" y="197" width="7.8" height="15.0" fill="rgb(115,115,235)" rx="2" ry="2" />
+<text  x="1122.67" y="207.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="181.9" y="245" width="7.8" height="15.0" fill="rgb(85,85,210)" rx="2" ry="2" />
+<text  x="184.92" y="255.5" ></text>
+</g>
+<g >
+<title>ksys_read (0 ms, 0.00%)</title><rect x="1049.3" y="261" width="78.2" height="15.0" fill="rgb(113,113,191)" rx="2" ry="2" />
+<text  x="1052.34" y="271.5" >ksys_read</text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="603.9" y="181" width="15.6" height="15.0" fill="rgb(102,102,209)" rx="2" ry="2" />
+<text  x="606.91" y="191.5" ></text>
+</g>
+<g >
+<title>hrtimer_nanosleep (0 ms, 0.00%)</title><rect x="658.6" y="245" width="86.0" height="15.0" fill="rgb(112,112,244)" rx="2" ry="2" />
+<text  x="661.61" y="255.5" >hrtimer_na..</text>
+</g>
+<g >
+<title>entry_SYSCALL_64_after_hwframe (0 ms, 0.00%)</title><rect x="189.7" y="293" width="1000.3" height="15.0" fill="rgb(106,106,242)" rx="2" ry="2" />
+<text  x="192.74" y="303.5" >entry_SYSCALL_64_after_hwframe</text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="635.2" y="213" width="23.4" height="15.0" fill="rgb(114,114,205)" rx="2" ry="2" />
+<text  x="638.17" y="223.5" >r..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="189.7" y="213" width="23.5" height="15.0" fill="rgb(111,111,231)" rx="2" ry="2" />
+<text  x="192.74" y="223.5" >r..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="1025.9" y="133" width="7.8" height="15.0" fill="rgb(112,112,230)" rx="2" ry="2" />
+<text  x="1028.89" y="143.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1143.1" y="133" width="7.8" height="15.0" fill="rgb(84,84,227)" rx="2" ry="2" />
+<text  x="1146.11" y="143.5" ></text>
+</g>
+<g >
+<title>__alloc_skb (0 ms, 0.00%)</title><rect x="1135.3" y="133" width="7.8" height="15.0" fill="rgb(123,123,207)" rx="2" ry="2" />
+<text  x="1138.30" y="143.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="611.7" y="117" width="7.8" height="15.0" fill="rgb(133,133,217)" rx="2" ry="2" />
+<text  x="614.72" y="127.5" ></text>
+</g>
+<g >
+<title>sock_sendmsg (0 ms, 0.00%)</title><rect x="1135.3" y="197" width="15.6" height="15.0" fill="rgb(113,113,236)" rx="2" ry="2" />
+<text  x="1138.30" y="207.5" ></text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="1049.3" y="213" width="70.4" height="15.0" fill="rgb(92,92,206)" rx="2" ry="2" />
+<text  x="1052.34" y="223.5" >seq_rea..</text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="955.6" y="149" width="7.8" height="15.0" fill="rgb(100,100,219)" rx="2" ry="2" />
+<text  x="958.56" y="159.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="213.2" y="165" width="7.8" height="15.0" fill="rgb(103,103,205)" rx="2" ry="2" />
+<text  x="216.18" y="175.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="924.3" y="69" width="23.4" height="15.0" fill="rgb(113,113,203)" rx="2" ry="2" />
+<text  x="927.30" y="79.5" >_..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="1025.9" y="117" width="7.8" height="15.0" fill="rgb(126,126,220)" rx="2" ry="2" />
+<text  x="1028.89" y="127.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="447.6" y="117" width="62.5" height="15.0" fill="rgb(131,131,233)" rx="2" ry="2" />
+<text  x="450.62" y="127.5" >rwsem_..</text>
+</g>
+<g >
+<title>kernfs_fop_write_iter (0 ms, 0.00%)</title><rect x="1127.5" y="213" width="7.8" height="15.0" fill="rgb(128,128,219)" rx="2" ry="2" />
+<text  x="1130.48" y="223.5" ></text>
+</g>
+<g >
+<title>seq_read (0 ms, 0.00%)</title><rect x="1119.7" y="229" width="7.8" height="15.0" fill="rgb(110,110,208)" rx="2" ry="2" />
+<text  x="1122.67" y="239.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="689.9" y="197" width="54.7" height="15.0" fill="rgb(89,89,226)" rx="2" ry="2" />
+<text  x="692.87" y="207.5" >__sch..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="603.9" y="133" width="7.8" height="15.0" fill="rgb(103,103,205)" rx="2" ry="2" />
+<text  x="606.91" y="143.5" ></text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="1049.3" y="117" width="7.9" height="15.0" fill="rgb(112,112,210)" rx="2" ry="2" />
+<text  x="1052.34" y="127.5" ></text>
+</g>
+<g >
+<title>kfree (0 ms, 0.00%)</title><rect x="1174.4" y="197" width="7.8" height="15.0" fill="rgb(114,114,218)" rx="2" ry="2" />
+<text  x="1177.37" y="207.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="205.4" y="149" width="7.8" height="15.0" fill="rgb(102,102,218)" rx="2" ry="2" />
+<text  x="208.36" y="159.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="189.7" y="197" width="15.7" height="15.0" fill="rgb(115,115,236)" rx="2" ry="2" />
+<text  x="192.74" y="207.5" ></text>
+</g>
+<g >
+<title>seq_release (0 ms, 0.00%)</title><rect x="1166.6" y="181" width="7.8" height="15.0" fill="rgb(135,135,229)" rx="2" ry="2" />
+<text  x="1169.56" y="191.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="689.9" y="181" width="54.7" height="15.0" fill="rgb(123,123,217)" rx="2" ry="2" />
+<text  x="692.87" y="191.5" >finis..</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="752.4" y="85" width="39.1" height="15.0" fill="rgb(87,87,227)" rx="2" ry="2" />
+<text  x="755.38" y="95.5" >fin..</text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="1025.9" y="181" width="7.8" height="15.0" fill="rgb(134,134,234)" rx="2" ry="2" />
+<text  x="1028.89" y="191.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="221.0" y="165" width="226.6" height="15.0" fill="rgb(122,122,216)" rx="2" ry="2" />
+<text  x="223.99" y="175.5" >inode_permission</text>
+</g>
+<g >
+<title>vfs_read (0 ms, 0.00%)</title><rect x="1049.3" y="245" width="78.2" height="15.0" fill="rgb(106,106,244)" rx="2" ry="2" />
+<text  x="1052.34" y="255.5" >vfs_read</text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="228.8" y="117" width="7.8" height="15.0" fill="rgb(137,137,240)" rx="2" ry="2" />
+<text  x="231.81" y="127.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="1010.3" y="133" width="15.6" height="15.0" fill="rgb(90,90,197)" rx="2" ry="2" />
+<text  x="1013.26" y="143.5" ></text>
+</g>
+<g >
+<title>syscall_exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="1174.4" y="245" width="7.8" height="15.0" fill="rgb(130,130,229)" rx="2" ry="2" />
+<text  x="1177.37" y="255.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="205.4" y="165" width="7.8" height="15.0" fill="rgb(114,114,205)" rx="2" ry="2" />
+<text  x="208.36" y="175.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="979.0" y="101" width="7.8" height="15.0" fill="rgb(126,126,238)" rx="2" ry="2" />
+<text  x="982.01" y="111.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="213.2" y="149" width="7.8" height="15.0" fill="rgb(99,99,234)" rx="2" ry="2" />
+<text  x="216.18" y="159.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="947.7" y="181" width="15.7" height="15.0" fill="rgb(115,115,202)" rx="2" ry="2" />
+<text  x="950.75" y="191.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="869.6" y="149" width="78.1" height="15.0" fill="rgb(84,84,234)" rx="2" ry="2" />
+<text  x="872.60" y="159.5" >kernfs_do..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="994.6" y="133" width="7.9" height="15.0" fill="rgb(114,114,199)" rx="2" ry="2" />
+<text  x="997.64" y="143.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="689.9" y="165" width="54.7" height="15.0" fill="rgb(99,99,199)" rx="2" ry="2" />
+<text  x="692.87" y="175.5" >finis..</text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="455.4" y="101" width="54.7" height="15.0" fill="rgb(126,126,209)" rx="2" ry="2" />
+<text  x="458.43" y="111.5" >sched..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1143.1" y="117" width="7.8" height="15.0" fill="rgb(98,98,222)" rx="2" ry="2" />
+<text  x="1146.11" y="127.5" ></text>
+</g>
+<g >
+<title>try_charge_memcg (0 ms, 0.00%)</title><rect x="1135.3" y="69" width="7.8" height="15.0" fill="rgb(127,127,243)" rx="2" ry="2" />
+<text  x="1138.30" y="79.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="353.8" y="101" width="23.5" height="15.0" fill="rgb(120,120,237)" rx="2" ry="2" />
+<text  x="356.84" y="111.5" >_..</text>
+</g>
+<g >
+<title>futex_wake (0 ms, 0.00%)</title><rect x="619.5" y="229" width="15.7" height="15.0" fill="rgb(121,121,218)" rx="2" ry="2" />
+<text  x="622.54" y="239.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="244.4" y="101" width="101.6" height="15.0" fill="rgb(136,136,191)" rx="2" ry="2" />
+<text  x="247.44" y="111.5" >__schedule</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="869.6" y="69" width="54.7" height="15.0" fill="rgb(113,113,237)" rx="2" ry="2" />
+<text  x="872.60" y="79.5" >finis..</text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="221.0" y="181" width="375.1" height="15.0" fill="rgb(85,85,223)" rx="2" ry="2" />
+<text  x="223.99" y="191.5" >link_path_walk.part.0.constprop.0</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="1002.5" y="85" width="7.8" height="15.0" fill="rgb(81,81,205)" rx="2" ry="2" />
+<text  x="1005.45" y="95.5" ></text>
+</g>
+<g >
+<title>__x64_sys_futex (0 ms, 0.00%)</title><rect x="619.5" y="261" width="15.7" height="15.0" fill="rgb(129,129,222)" rx="2" ry="2" />
+<text  x="622.54" y="271.5" ></text>
+</g>
+<g >
+<title>obj_cgroup_charge (0 ms, 0.00%)</title><rect x="744.6" y="133" width="7.8" height="15.0" fill="rgb(98,98,226)" rx="2" ry="2" />
+<text  x="747.57" y="143.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="752.4" y="133" width="39.1" height="15.0" fill="rgb(87,87,224)" rx="2" ry="2" />
+<text  x="755.38" y="143.5" >sch..</text>
+</g>
+<g >
+<title>xen_vcpu_stolen (0 ms, 0.00%)</title><rect x="1119.7" y="101" width="7.8" height="15.0" fill="rgb(86,86,228)" rx="2" ry="2" />
+<text  x="1122.67" y="111.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1166.6" y="165" width="7.8" height="15.0" fill="rgb(93,93,230)" rx="2" ry="2" />
+<text  x="1169.56" y="175.5" ></text>
+</g>
+<g >
+<title>memory_stat_show (0 ms, 0.00%)</title><rect x="1072.8" y="197" width="46.9" height="15.0" fill="rgb(139,139,201)" rx="2" ry="2" />
+<text  x="1075.78" y="207.5" >memo..</text>
+</g>
+<g >
+<title>kmem_cache_alloc_node (0 ms, 0.00%)</title><rect x="1135.3" y="117" width="7.8" height="15.0" fill="rgb(135,135,230)" rx="2" ry="2" />
+<text  x="1138.30" y="127.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_open (0 ms, 0.00%)</title><rect x="744.6" y="181" width="7.8" height="15.0" fill="rgb(122,122,196)" rx="2" ry="2" />
+<text  x="747.57" y="191.5" ></text>
+</g>
+<g >
+<title>iterate_dir (0 ms, 0.00%)</title><rect x="635.2" y="245" width="23.4" height="15.0" fill="rgb(97,97,203)" rx="2" ry="2" />
+<text  x="638.17" y="255.5" >i..</text>
+</g>
+<g >
+<title>new_sync_write (0 ms, 0.00%)</title><rect x="1127.5" y="229" width="23.4" height="15.0" fill="rgb(119,119,224)" rx="2" ry="2" />
+<text  x="1130.48" y="239.5" >n..</text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="752.4" y="165" width="117.2" height="15.0" fill="rgb(99,99,222)" rx="2" ry="2" />
+<text  x="755.38" y="175.5" >kernfs_iop_per..</text>
+</g>
+<g >
+<title>__audit_syscall_exit (0 ms, 0.00%)</title><rect x="1174.4" y="229" width="7.8" height="15.0" fill="rgb(125,125,216)" rx="2" ry="2" />
+<text  x="1177.37" y="239.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="791.5" y="117" width="78.1" height="15.0" fill="rgb(122,122,227)" rx="2" ry="2" />
+<text  x="794.46" y="127.5" >try_to_wa..</text>
+</g>
+<g >
+<title>do_tkill (0 ms, 0.00%)</title><rect x="1033.7" y="245" width="15.6" height="15.0" fill="rgb(117,117,228)" rx="2" ry="2" />
+<text  x="1036.71" y="255.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="603.9" y="149" width="15.6" height="15.0" fill="rgb(107,107,220)" rx="2" ry="2" />
+<text  x="606.91" y="159.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="244.4" y="85" width="101.6" height="15.0" fill="rgb(106,106,216)" rx="2" ry="2" />
+<text  x="247.44" y="95.5" >finish_task_..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="635.2" y="149" width="23.4" height="15.0" fill="rgb(85,85,200)" rx="2" ry="2" />
+<text  x="638.17" y="159.5" >_..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="377.3" y="85" width="70.3" height="15.0" fill="rgb(130,130,219)" rx="2" ry="2" />
+<text  x="380.28" y="95.5" >_raw_sp..</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="346.0" y="101" width="7.8" height="15.0" fill="rgb(92,92,211)" rx="2" ry="2" />
+<text  x="349.03" y="111.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="635.2" y="197" width="23.4" height="15.0" fill="rgb(129,129,228)" rx="2" ry="2" />
+<text  x="638.17" y="207.5" >w..</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="619.5" y="197" width="15.7" height="15.0" fill="rgb(86,86,216)" rx="2" ry="2" />
+<text  x="622.54" y="207.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="455.4" y="53" width="54.7" height="15.0" fill="rgb(89,89,191)" rx="2" ry="2" />
+<text  x="458.43" y="63.5" >finis..</text>
+</g>
+<g >
+<title>obj_cgroup_charge (0 ms, 0.00%)</title><rect x="1049.3" y="181" width="7.9" height="15.0" fill="rgb(112,112,236)" rx="2" ry="2" />
+<text  x="1052.34" y="191.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="963.4" y="101" width="15.6" height="15.0" fill="rgb(137,137,225)" rx="2" ry="2" />
+<text  x="966.38" y="111.5" ></text>
+</g>
+<g >
+<title>__do_sys_newfstatat (0 ms, 0.00%)</title><rect x="189.7" y="261" width="429.8" height="15.0" fill="rgb(80,80,198)" rx="2" ry="2" />
+<text  x="192.74" y="271.5" >__do_sys_newfstatat</text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="346.0" y="117" width="7.8" height="15.0" fill="rgb(114,114,232)" rx="2" ry="2" />
+<text  x="349.03" y="127.5" ></text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="611.7" y="133" width="7.8" height="15.0" fill="rgb(97,97,191)" rx="2" ry="2" />
+<text  x="614.72" y="143.5" ></text>
+</g>
+<g >
+<title>refill_obj_stock (0 ms, 0.00%)</title><rect x="1049.3" y="165" width="7.9" height="15.0" fill="rgb(101,101,195)" rx="2" ry="2" />
+<text  x="1052.34" y="175.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="181.9" y="261" width="7.8" height="15.0" fill="rgb(122,122,206)" rx="2" ry="2" />
+<text  x="184.92" y="271.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="986.8" y="213" width="7.8" height="15.0" fill="rgb(85,85,218)" rx="2" ry="2" />
+<text  x="989.82" y="223.5" ></text>
+</g>
+<g >
+<title>user_path_at_empty (0 ms, 0.00%)</title><rect x="221.0" y="229" width="398.5" height="15.0" fill="rgb(82,82,229)" rx="2" ry="2" />
+<text  x="223.99" y="239.5" >user_path_at_empty</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1072.8" y="149" width="46.9" height="15.0" fill="rgb(126,126,222)" rx="2" ry="2" />
+<text  x="1075.78" y="159.5" >_raw..</text>
+</g>
+<g >
+<title>__raw_callee_save_xen_vcpu_stolen (0 ms, 0.00%)</title><rect x="1119.7" y="133" width="7.8" height="15.0" fill="rgb(129,129,228)" rx="2" ry="2" />
+<text  x="1122.67" y="143.5" ></text>
+</g>
+<g >
+<title>obj_cgroup_charge_pages (0 ms, 0.00%)</title><rect x="1135.3" y="85" width="7.8" height="15.0" fill="rgb(111,111,203)" rx="2" ry="2" />
+<text  x="1138.30" y="95.5" ></text>
+</g>
+<g >
+<title>syscall_enter_from_user_mode (0 ms, 0.00%)</title><rect x="1150.9" y="261" width="7.8" height="15.0" fill="rgb(101,101,210)" rx="2" ry="2" />
+<text  x="1153.93" y="271.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="1002.5" y="101" width="7.8" height="15.0" fill="rgb(97,97,229)" rx="2" ry="2" />
+<text  x="1005.45" y="111.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="603.9" y="85" width="7.8" height="15.0" fill="rgb(102,102,243)" rx="2" ry="2" />
+<text  x="606.91" y="95.5" ></text>
+</g>
+<g >
+<title>sock_write_iter (0 ms, 0.00%)</title><rect x="1135.3" y="213" width="15.6" height="15.0" fill="rgb(128,128,210)" rx="2" ry="2" />
+<text  x="1138.30" y="223.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="244.4" y="117" width="101.6" height="15.0" fill="rgb(130,130,219)" rx="2" ry="2" />
+<text  x="247.44" y="127.5" >schedule</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="213.2" y="181" width="7.8" height="15.0" fill="rgb(102,102,190)" rx="2" ry="2" />
+<text  x="216.18" y="191.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="619.5" y="165" width="15.7" height="15.0" fill="rgb(124,124,236)" rx="2" ry="2" />
+<text  x="622.54" y="175.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="603.9" y="101" width="7.8" height="15.0" fill="rgb(113,113,229)" rx="2" ry="2" />
+<text  x="606.91" y="111.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="869.6" y="117" width="54.7" height="15.0" fill="rgb(126,126,239)" rx="2" ry="2" />
+<text  x="872.60" y="127.5" >sched..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="791.5" y="85" width="78.1" height="15.0" fill="rgb(132,132,204)" rx="2" ry="2" />
+<text  x="794.46" y="95.5" >_raw_spin..</text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="963.4" y="181" width="23.4" height="15.0" fill="rgb(90,90,218)" rx="2" ry="2" />
+<text  x="966.38" y="191.5" >i..</text>
+</g>
+<g >
+<title>task_work_run (0 ms, 0.00%)</title><rect x="1166.6" y="229" width="7.8" height="15.0" fill="rgb(119,119,236)" rx="2" ry="2" />
+<text  x="1169.56" y="239.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="994.6" y="197" width="39.1" height="15.0" fill="rgb(107,107,237)" rx="2" ry="2" />
+<text  x="997.64" y="207.5" >lin..</text>
+</g>
+<g >
+<title>mntput (0 ms, 0.00%)</title><rect x="596.1" y="149" width="7.8" height="15.0" fill="rgb(80,80,237)" rx="2" ry="2" />
+<text  x="599.09" y="159.5" ></text>
+</g>
+<g >
+<title>drain_obj_stock (0 ms, 0.00%)</title><rect x="1049.3" y="149" width="7.9" height="15.0" fill="rgb(112,112,196)" rx="2" ry="2" />
+<text  x="1052.34" y="159.5" ></text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="924.3" y="133" width="23.4" height="15.0" fill="rgb(117,117,195)" rx="2" ry="2" />
+<text  x="927.30" y="143.5" >r..</text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="447.6" y="149" width="148.5" height="15.0" fill="rgb(113,113,196)" rx="2" ry="2" />
+<text  x="450.62" y="159.5" >lookup_fast</text>
+</g>
+<g >
+<title>__x64_sys_openat (0 ms, 0.00%)</title><rect x="994.6" y="261" width="39.1" height="15.0" fill="rgb(100,100,240)" rx="2" ry="2" />
+<text  x="997.64" y="271.5" >__x..</text>
+</g>
+<g >
+<title>kernfs_fop_readdir (0 ms, 0.00%)</title><rect x="635.2" y="229" width="23.4" height="15.0" fill="rgb(86,86,228)" rx="2" ry="2" />
+<text  x="638.17" y="239.5" >k..</text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="1025.9" y="165" width="7.8" height="15.0" fill="rgb(109,109,215)" rx="2" ry="2" />
+<text  x="1028.89" y="175.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="963.4" y="133" width="15.6" height="15.0" fill="rgb(91,91,231)" rx="2" ry="2" />
+<text  x="966.38" y="143.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="744.6" y="149" width="7.8" height="15.0" fill="rgb(136,136,223)" rx="2" ry="2" />
+<text  x="747.57" y="159.5" ></text>
+</g>
+<g >
+<title>getname_flags.part.0 (0 ms, 0.00%)</title><rect x="986.8" y="229" width="7.8" height="15.0" fill="rgb(129,129,204)" rx="2" ry="2" />
+<text  x="989.82" y="239.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="689.9" y="213" width="54.7" height="15.0" fill="rgb(131,131,224)" rx="2" ry="2" />
+<text  x="692.87" y="223.5" >sched..</text>
+</g>
+<g >
+<title>kfree (0 ms, 0.00%)</title><rect x="1174.4" y="213" width="7.8" height="15.0" fill="rgb(82,82,198)" rx="2" ry="2" />
+<text  x="1177.37" y="223.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="947.7" y="197" width="15.7" height="15.0" fill="rgb(105,105,200)" rx="2" ry="2" />
+<text  x="950.75" y="207.5" ></text>
+</g>
+<g >
+<title>__audit_syscall_entry (0 ms, 0.00%)</title><rect x="1182.2" y="245" width="7.8" height="15.0" fill="rgb(102,102,226)" rx="2" ry="2" />
+<text  x="1185.19" y="255.5" ></text>
+</g>
+<g >
+<title>sock_alloc_send_pskb (0 ms, 0.00%)</title><rect x="1135.3" y="165" width="7.8" height="15.0" fill="rgb(84,84,226)" rx="2" ry="2" />
+<text  x="1138.30" y="175.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="619.5" y="181" width="15.7" height="15.0" fill="rgb(138,138,192)" rx="2" ry="2" />
+<text  x="622.54" y="191.5" ></text>
+</g>
+<g >
+<title>do_send_sig_info (0 ms, 0.00%)</title><rect x="1033.7" y="213" width="15.6" height="15.0" fill="rgb(94,94,218)" rx="2" ry="2" />
+<text  x="1036.71" y="223.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="979.0" y="133" width="7.8" height="15.0" fill="rgb(103,103,209)" rx="2" ry="2" />
+<text  x="982.01" y="143.5" ></text>
+</g>
+<g >
+<title>__x64_sys_nanosleep (0 ms, 0.00%)</title><rect x="658.6" y="261" width="86.0" height="15.0" fill="rgb(99,99,206)" rx="2" ry="2" />
+<text  x="661.61" y="271.5" >__x64_sys_..</text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="994.6" y="181" width="31.3" height="15.0" fill="rgb(92,92,191)" rx="2" ry="2" />
+<text  x="997.64" y="191.5" >in..</text>
+</g>
+<g >
+<title>arch_do_signal_or_restart (0 ms, 0.00%)</title><rect x="1158.7" y="213" width="7.9" height="15.0" fill="rgb(99,99,232)" rx="2" ry="2" />
+<text  x="1161.74" y="223.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="603.9" y="117" width="7.8" height="15.0" fill="rgb(104,104,227)" rx="2" ry="2" />
+<text  x="606.91" y="127.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="1018.1" y="117" width="7.8" height="15.0" fill="rgb(87,87,244)" rx="2" ry="2" />
+<text  x="1021.08" y="127.5" ></text>
+</g>
+<g >
+<title>cgroup_rstat_flush_locked (0 ms, 0.00%)</title><rect x="1065.0" y="165" width="7.8" height="15.0" fill="rgb(119,119,244)" rx="2" ry="2" />
+<text  x="1067.97" y="175.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="603.9" y="165" width="15.6" height="15.0" fill="rgb(102,102,202)" rx="2" ry="2" />
+<text  x="606.91" y="175.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="752.4" y="149" width="39.1" height="15.0" fill="rgb(112,112,243)" rx="2" ry="2" />
+<text  x="755.38" y="159.5" >rws..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="869.6" y="133" width="54.7" height="15.0" fill="rgb(128,128,238)" rx="2" ry="2" />
+<text  x="872.60" y="143.5" >rwsem..</text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="1049.3" y="133" width="7.9" height="15.0" fill="rgb(89,89,197)" rx="2" ry="2" />
+<text  x="1052.34" y="143.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="986.8" y="197" width="7.8" height="15.0" fill="rgb(104,104,244)" rx="2" ry="2" />
+<text  x="989.82" y="207.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="924.3" y="85" width="23.4" height="15.0" fill="rgb(89,89,207)" rx="2" ry="2" />
+<text  x="927.30" y="95.5" >_..</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="963.4" y="85" width="15.6" height="15.0" fill="rgb(87,87,232)" rx="2" ry="2" />
+<text  x="966.38" y="95.5" ></text>
+</g>
+<g >
+<title>cgroup_file_write (0 ms, 0.00%)</title><rect x="1127.5" y="197" width="7.8" height="15.0" fill="rgb(132,132,205)" rx="2" ry="2" />
+<text  x="1130.48" y="207.5" ></text>
+</g>
+<g >
+<title>kubelet (0 ms, 0.00%)</title><rect x="10.0" y="309" width="1180.0" height="15.0" fill="rgb(90,90,210)" rx="2" ry="2" />
+<text  x="13.00" y="319.5" >kubelet</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="1010.3" y="117" width="7.8" height="15.0" fill="rgb(123,123,232)" rx="2" ry="2" />
+<text  x="1013.26" y="127.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="447.6" y="165" width="148.5" height="15.0" fill="rgb(126,126,219)" rx="2" ry="2" />
+<text  x="450.62" y="175.5" >walk_component</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="510.1" y="69" width="86.0" height="15.0" fill="rgb(90,90,240)" rx="2" ry="2" />
+<text  x="513.13" y="79.5" >_raw_spin_..</text>
+</g>
+<g >
+<title>cgroup_rstat_flush (0 ms, 0.00%)</title><rect x="1057.2" y="181" width="15.6" height="15.0" fill="rgb(82,82,236)" rx="2" ry="2" />
+<text  x="1060.15" y="191.5" ></text>
+</g>
+<g >
+<title>syscall_trace_enter.constprop.0 (0 ms, 0.00%)</title><rect x="1182.2" y="261" width="7.8" height="15.0" fill="rgb(111,111,192)" rx="2" ry="2" />
+<text  x="1185.19" y="271.5" ></text>
+</g>
+<g >
+<title>__x64_sys_openat2 (0 ms, 0.00%)</title><rect x="744.6" y="261" width="250.0" height="15.0" fill="rgb(127,127,202)" rx="2" ry="2" />
+<text  x="747.57" y="271.5" >__x64_sys_openat2</text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="619.5" y="213" width="15.7" height="15.0" fill="rgb(114,114,206)" rx="2" ry="2" />
+<text  x="622.54" y="223.5" ></text>
+</g>
+<g >
+<title>__sched_group_set_shares (0 ms, 0.00%)</title><rect x="1127.5" y="165" width="7.8" height="15.0" fill="rgb(131,131,223)" rx="2" ry="2" />
+<text  x="1130.48" y="175.5" ></text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="1119.7" y="213" width="7.8" height="15.0" fill="rgb(86,86,197)" rx="2" ry="2" />
+<text  x="1122.67" y="223.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="869.6" y="181" width="78.1" height="15.0" fill="rgb(104,104,220)" rx="2" ry="2" />
+<text  x="872.60" y="191.5" >walk_comp..</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="377.3" y="101" width="70.3" height="15.0" fill="rgb(135,135,239)" rx="2" ry="2" />
+<text  x="380.28" y="111.5" >try_to_..</text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="510.1" y="85" width="86.0" height="15.0" fill="rgb(87,87,242)" rx="2" ry="2" />
+<text  x="513.13" y="95.5" >try_to_wak..</text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="752.4" y="181" width="117.2" height="15.0" fill="rgb(127,127,225)" rx="2" ry="2" />
+<text  x="755.38" y="191.5" >inode_permission</text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="213.2" y="213" width="7.8" height="15.0" fill="rgb(139,139,212)" rx="2" ry="2" />
+<text  x="216.18" y="223.5" ></text>
+</g>
+<g >
+<title>do_nanosleep (0 ms, 0.00%)</title><rect x="682.1" y="213" width="7.8" height="15.0" fill="rgb(114,114,232)" rx="2" ry="2" />
+<text  x="685.05" y="223.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="924.3" y="101" width="23.4" height="15.0" fill="rgb(91,91,217)" rx="2" ry="2" />
+<text  x="927.30" y="111.5" >t..</text>
+</g>
+<g >
+<title>vfs_write (0 ms, 0.00%)</title><rect x="1127.5" y="245" width="23.4" height="15.0" fill="rgb(101,101,198)" rx="2" ry="2" />
+<text  x="1130.48" y="255.5" >v..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="346.0" y="69" width="7.8" height="15.0" fill="rgb(111,111,224)" rx="2" ry="2" />
+<text  x="349.03" y="79.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="955.6" y="133" width="7.8" height="15.0" fill="rgb(89,89,196)" rx="2" ry="2" />
+<text  x="958.56" y="143.5" ></text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="510.1" y="117" width="86.0" height="15.0" fill="rgb(111,111,213)" rx="2" ry="2" />
+<text  x="513.13" y="127.5" >rwsem_wake..</text>
+</g>
+<g >
+<title>irqentry_exit_to_user_mode (0 ms, 0.00%)</title><rect x="181.9" y="277" width="7.8" height="15.0" fill="rgb(119,119,232)" rx="2" ry="2" />
+<text  x="184.92" y="287.5" ></text>
+</g>
+<g >
+<title>filename_lookup (0 ms, 0.00%)</title><rect x="221.0" y="213" width="398.5" height="15.0" fill="rgb(136,136,209)" rx="2" ry="2" />
+<text  x="223.99" y="223.5" >filename_lookup</text>
+</g>
+<g >
+<title>cgroup_rstat_flush_locked (0 ms, 0.00%)</title><rect x="1065.0" y="149" width="7.8" height="15.0" fill="rgb(82,82,238)" rx="2" ry="2" />
+<text  x="1067.97" y="159.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="752.4" y="117" width="39.1" height="15.0" fill="rgb(123,123,228)" rx="2" ry="2" />
+<text  x="755.38" y="127.5" >__s..</text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="205.4" y="181" width="7.8" height="15.0" fill="rgb(96,96,236)" rx="2" ry="2" />
+<text  x="208.36" y="191.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="752.4" y="101" width="39.1" height="15.0" fill="rgb(116,116,234)" rx="2" ry="2" />
+<text  x="755.38" y="111.5" >fin..</text>
+</g>
+<g >
+<title>xen_vcpu_stolen (0 ms, 0.00%)</title><rect x="1119.7" y="117" width="7.8" height="15.0" fill="rgb(111,111,198)" rx="2" ry="2" />
+<text  x="1122.67" y="127.5" ></text>
+</g>
+<g >
+<title>path_openat (0 ms, 0.00%)</title><rect x="744.6" y="213" width="242.2" height="15.0" fill="rgb(110,110,197)" rx="2" ry="2" />
+<text  x="747.57" y="223.5" >path_openat</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="955.6" y="165" width="7.8" height="15.0" fill="rgb(125,125,212)" rx="2" ry="2" />
+<text  x="958.56" y="175.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_getattr (0 ms, 0.00%)</title><rect x="189.7" y="229" width="31.3" height="15.0" fill="rgb(135,135,228)" rx="2" ry="2" />
+<text  x="192.74" y="239.5" >ke..</text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="228.8" y="149" width="218.8" height="15.0" fill="rgb(128,128,192)" rx="2" ry="2" />
+<text  x="231.81" y="159.5" >kernfs_iop_permission</text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="228.8" y="133" width="7.8" height="15.0" fill="rgb(104,104,219)" rx="2" ry="2" />
+<text  x="231.81" y="143.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1033.7" y="197" width="15.6" height="15.0" fill="rgb(81,81,221)" rx="2" ry="2" />
+<text  x="1036.71" y="207.5" ></text>
+</g>
+<g >
+<title>seq_open (0 ms, 0.00%)</title><rect x="744.6" y="165" width="7.8" height="15.0" fill="rgb(107,107,191)" rx="2" ry="2" />
+<text  x="747.57" y="175.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="994.6" y="149" width="15.7" height="15.0" fill="rgb(104,104,220)" rx="2" ry="2" />
+<text  x="997.64" y="159.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="869.6" y="101" width="54.7" height="15.0" fill="rgb(104,104,196)" rx="2" ry="2" />
+<text  x="872.60" y="111.5" >__sch..</text>
+</g>
+<g >
+<title>do_send_specific (0 ms, 0.00%)</title><rect x="1033.7" y="229" width="15.6" height="15.0" fill="rgb(101,101,190)" rx="2" ry="2" />
+<text  x="1036.71" y="239.5" ></text>
+</g>
+<g >
+<title>refill_obj_stock (0 ms, 0.00%)</title><rect x="744.6" y="117" width="7.8" height="15.0" fill="rgb(110,110,225)" rx="2" ry="2" />
+<text  x="747.57" y="127.5" ></text>
+</g>
+<g >
+<title>do_sys_openat2 (0 ms, 0.00%)</title><rect x="744.6" y="245" width="250.0" height="15.0" fill="rgb(117,117,220)" rx="2" ry="2" />
+<text  x="747.57" y="255.5" >do_sys_openat2</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1010.3" y="85" width="7.8" height="15.0" fill="rgb(121,121,212)" rx="2" ry="2" />
+<text  x="1013.26" y="95.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="963.4" y="117" width="15.6" height="15.0" fill="rgb(115,115,210)" rx="2" ry="2" />
+<text  x="966.38" y="127.5" ></text>
+</g>
+<g >
+<title>path_openat (0 ms, 0.00%)</title><rect x="994.6" y="213" width="39.1" height="15.0" fill="rgb(125,125,200)" rx="2" ry="2" />
+<text  x="997.64" y="223.5" >pat..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="979.0" y="85" width="7.8" height="15.0" fill="rgb(138,138,223)" rx="2" ry="2" />
+<text  x="982.01" y="95.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="603.9" y="69" width="7.8" height="15.0" fill="rgb(135,135,224)" rx="2" ry="2" />
+<text  x="606.91" y="79.5" ></text>
+</g>
+<g >
+<title>do_dentry_open (0 ms, 0.00%)</title><rect x="744.6" y="197" width="7.8" height="15.0" fill="rgb(101,101,222)" rx="2" ry="2" />
+<text  x="747.57" y="207.5" ></text>
+</g>
+<g >
+<title>refill_stock (0 ms, 0.00%)</title><rect x="1135.3" y="37" width="7.8" height="15.0" fill="rgb(101,101,208)" rx="2" ry="2" />
+<text  x="1138.30" y="47.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="869.6" y="85" width="54.7" height="15.0" fill="rgb(98,98,213)" rx="2" ry="2" />
+<text  x="872.60" y="95.5" >finis..</text>
+</g>
+<g >
+<title>__x64_sys_tgkill (0 ms, 0.00%)</title><rect x="1033.7" y="261" width="15.6" height="15.0" fill="rgb(127,127,208)" rx="2" ry="2" />
+<text  x="1036.71" y="271.5" ></text>
+</g>
+<g >
+<title>drain_obj_stock (0 ms, 0.00%)</title><rect x="744.6" y="101" width="7.8" height="15.0" fill="rgb(102,102,204)" rx="2" ry="2" />
+<text  x="747.57" y="111.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="1002.5" y="117" width="7.8" height="15.0" fill="rgb(119,119,217)" rx="2" ry="2" />
+<text  x="1005.45" y="127.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="377.3" y="117" width="70.3" height="15.0" fill="rgb(129,129,240)" rx="2" ry="2" />
+<text  x="380.28" y="127.5" >wake_up_q</text>
+</g>
+<g >
+<title>do_futex (0 ms, 0.00%)</title><rect x="619.5" y="245" width="15.7" height="15.0" fill="rgb(105,105,237)" rx="2" ry="2" />
+<text  x="622.54" y="255.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="658.6" y="197" width="23.5" height="15.0" fill="rgb(123,123,211)" rx="2" ry="2" />
+<text  x="661.61" y="207.5" >_..</text>
+</g>
+<g >
+<title>kernfs_fop_release (0 ms, 0.00%)</title><rect x="1166.6" y="197" width="7.8" height="15.0" fill="rgb(134,134,240)" rx="2" ry="2" />
+<text  x="1169.56" y="207.5" ></text>
+</g>
+<g >
+<title>blkcg_print_stat (0 ms, 0.00%)</title><rect x="1057.2" y="197" width="15.6" height="15.0" fill="rgb(88,88,197)" rx="2" ry="2" />
+<text  x="1060.15" y="207.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="924.3" y="117" width="23.4" height="15.0" fill="rgb(135,135,220)" rx="2" ry="2" />
+<text  x="927.30" y="127.5" >w..</text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="1010.3" y="149" width="15.6" height="15.0" fill="rgb(89,89,221)" rx="2" ry="2" />
+<text  x="1013.26" y="159.5" ></text>
+</g>
+<g >
+<title>obj_cgroup_charge (0 ms, 0.00%)</title><rect x="1135.3" y="101" width="7.8" height="15.0" fill="rgb(117,117,207)" rx="2" ry="2" />
+<text  x="1138.30" y="111.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="510.1" y="101" width="86.0" height="15.0" fill="rgb(126,126,223)" rx="2" ry="2" />
+<text  x="513.13" y="111.5" >wake_up_q</text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="213.2" y="197" width="7.8" height="15.0" fill="rgb(121,121,230)" rx="2" ry="2" />
+<text  x="216.18" y="207.5" ></text>
+</g>
+<g >
+<title>path_lookupat (0 ms, 0.00%)</title><rect x="221.0" y="197" width="398.5" height="15.0" fill="rgb(104,104,244)" rx="2" ry="2" />
+<text  x="223.99" y="207.5" >path_lookupat</text>
+</g>
+<g >
+<title>refill_stock (0 ms, 0.00%)</title><rect x="1135.3" y="53" width="7.8" height="15.0" fill="rgb(131,131,220)" rx="2" ry="2" />
+<text  x="1138.30" y="63.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="447.6" y="133" width="148.5" height="15.0" fill="rgb(88,88,243)" rx="2" ry="2" />
+<text  x="450.62" y="143.5" >kernfs_dop_revalid..</text>
+</g>
+<g >
+<title>ksys_write (0 ms, 0.00%)</title><rect x="1127.5" y="261" width="23.4" height="15.0" fill="rgb(112,112,235)" rx="2" ry="2" />
+<text  x="1130.48" y="271.5" >k..</text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="979.0" y="149" width="7.8" height="15.0" fill="rgb(95,95,211)" rx="2" ry="2" />
+<text  x="982.01" y="159.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="752.4" y="197" width="195.3" height="15.0" fill="rgb(84,84,198)" rx="2" ry="2" />
+<text  x="755.38" y="207.5" >link_path_walk.part.0.con..</text>
+</g>
+<g >
+<title>arch_do_signal_or_restart (0 ms, 0.00%)</title><rect x="1158.7" y="229" width="7.9" height="15.0" fill="rgb(134,134,239)" rx="2" ry="2" />
+<text  x="1161.74" y="239.5" ></text>
+</g>
+<g >
+<title>terminate_walk (0 ms, 0.00%)</title><rect x="596.1" y="181" width="7.8" height="15.0" fill="rgb(89,89,227)" rx="2" ry="2" />
+<text  x="599.09" y="191.5" ></text>
+</g>
+<g >
+<title>may_open (0 ms, 0.00%)</title><rect x="963.4" y="197" width="23.4" height="15.0" fill="rgb(105,105,215)" rx="2" ry="2" />
+<text  x="966.38" y="207.5" >m..</text>
+</g>
+<g >
+<title>__audit_syscall_entry (0 ms, 0.00%)</title><rect x="1182.2" y="229" width="7.8" height="15.0" fill="rgb(118,118,227)" rx="2" ry="2" />
+<text  x="1185.19" y="239.5" ></text>
+</g>
+<g >
+<title>alloc_skb_with_frags (0 ms, 0.00%)</title><rect x="1135.3" y="149" width="7.8" height="15.0" fill="rgb(100,100,204)" rx="2" ry="2" />
+<text  x="1138.30" y="159.5" ></text>
+</g>
+<g >
+<title>cgroup_rstat_flush (0 ms, 0.00%)</title><rect x="1057.2" y="165" width="7.8" height="15.0" fill="rgb(139,139,208)" rx="2" ry="2" />
+<text  x="1060.15" y="175.5" ></text>
+</g>
+<g >
+<title>__kmalloc_node (0 ms, 0.00%)</title><rect x="1049.3" y="197" width="7.9" height="15.0" fill="rgb(112,112,214)" rx="2" ry="2" />
+<text  x="1052.34" y="207.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="869.6" y="165" width="78.1" height="15.0" fill="rgb(87,87,200)" rx="2" ry="2" />
+<text  x="872.60" y="175.5" >lookup_fast</text>
+</g>
+<g >
+<title>asm_sysvec_xen_hvm_callback (0 ms, 0.00%)</title><rect x="181.9" y="293" width="7.8" height="15.0" fill="rgb(83,83,226)" rx="2" ry="2" />
+<text  x="184.92" y="303.5" ></text>
+</g>
+<g >
+<title>do_filp_open (0 ms, 0.00%)</title><rect x="994.6" y="229" width="39.1" height="15.0" fill="rgb(110,110,201)" rx="2" ry="2" />
+<text  x="997.64" y="239.5" >do_..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1010.3" y="101" width="7.8" height="15.0" fill="rgb(102,102,213)" rx="2" ry="2" />
+<text  x="1013.26" y="111.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="955.6" y="101" width="7.8" height="15.0" fill="rgb(116,116,205)" rx="2" ry="2" />
+<text  x="958.56" y="111.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="221.0" y="149" width="7.8" height="15.0" fill="rgb(101,101,230)" rx="2" ry="2" />
+<text  x="223.99" y="159.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="205.4" y="197" width="7.8" height="15.0" fill="rgb(137,137,224)" rx="2" ry="2" />
+<text  x="208.36" y="207.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="611.7" y="101" width="7.8" height="15.0" fill="rgb(95,95,205)" rx="2" ry="2" />
+<text  x="614.72" y="111.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="455.4" y="69" width="54.7" height="15.0" fill="rgb(128,128,234)" rx="2" ry="2" />
+<text  x="458.43" y="79.5" >finis..</text>
+</g>
+<g >
+<title>__fput (0 ms, 0.00%)</title><rect x="1166.6" y="213" width="7.8" height="15.0" fill="rgb(85,85,191)" rx="2" ry="2" />
+<text  x="1169.56" y="223.5" ></text>
+</g>
+<g >
+<title>proc_cgroup_show (0 ms, 0.00%)</title><rect x="1119.7" y="181" width="7.8" height="15.0" fill="rgb(86,86,201)" rx="2" ry="2" />
+<text  x="1122.67" y="191.5" ></text>
+</g>
+<g >
+<title>do_filp_open (0 ms, 0.00%)</title><rect x="744.6" y="229" width="242.2" height="15.0" fill="rgb(98,98,223)" rx="2" ry="2" />
+<text  x="747.57" y="239.5" >do_filp_open</text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="744.6" y="69" width="7.8" height="15.0" fill="rgb(82,82,232)" rx="2" ry="2" />
+<text  x="747.57" y="79.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="1158.7" y="245" width="15.7" height="15.0" fill="rgb(125,125,214)" rx="2" ry="2" />
+<text  x="1161.74" y="255.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1072.8" y="165" width="46.9" height="15.0" fill="rgb(106,106,226)" rx="2" ry="2" />
+<text  x="1075.78" y="175.5" >_raw..</text>
+</g>
+<g >
+<title>unix_stream_sendmsg (0 ms, 0.00%)</title><rect x="1135.3" y="181" width="15.6" height="15.0" fill="rgb(92,92,221)" rx="2" ry="2" />
+<text  x="1138.30" y="191.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="455.4" y="85" width="54.7" height="15.0" fill="rgb(108,108,206)" rx="2" ry="2" />
+<text  x="458.43" y="95.5" >__sch..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="791.5" y="101" width="78.1" height="15.0" fill="rgb(85,85,244)" rx="2" ry="2" />
+<text  x="794.46" y="111.5" >_raw_spin..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="346.0" y="85" width="7.8" height="15.0" fill="rgb(93,93,234)" rx="2" ry="2" />
+<text  x="349.03" y="95.5" ></text>
+</g>
+<g >
+<title>syscall_exit_to_user_mode (0 ms, 0.00%)</title><rect x="1158.7" y="261" width="23.5" height="15.0" fill="rgb(113,113,196)" rx="2" ry="2" />
+<text  x="1161.74" y="271.5" >s..</text>
+</g>
+<g >
+<title>__sched_group_set_shares (0 ms, 0.00%)</title><rect x="1127.5" y="149" width="7.8" height="15.0" fill="rgb(94,94,191)" rx="2" ry="2" />
+<text  x="1130.48" y="159.5" ></text>
+</g>
+<g >
+<title>__x64_sys_getdents64 (0 ms, 0.00%)</title><rect x="635.2" y="261" width="23.4" height="15.0" fill="rgb(113,113,229)" rx="2" ry="2" />
+<text  x="638.17" y="271.5" >_..</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="955.6" y="117" width="7.8" height="15.0" fill="rgb(125,125,228)" rx="2" ry="2" />
+<text  x="958.56" y="127.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="986.8" y="181" width="7.8" height="15.0" fill="rgb(127,127,220)" rx="2" ry="2" />
+<text  x="989.82" y="191.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="658.6" y="213" width="23.5" height="15.0" fill="rgb(96,96,206)" rx="2" ry="2" />
+<text  x="661.61" y="223.5" >_..</text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="244.4" y="69" width="101.6" height="15.0" fill="rgb(107,107,228)" rx="2" ry="2" />
+<text  x="247.44" y="79.5" >finish_task_..</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1033.7" y="181" width="15.6" height="15.0" fill="rgb(133,133,193)" rx="2" ry="2" />
+<text  x="1036.71" y="191.5" ></text>
+</g>
+<g >
+<title>syscall_enter_from_user_mode (0 ms, 0.00%)</title><rect x="1150.9" y="245" width="7.8" height="15.0" fill="rgb(90,90,208)" rx="2" ry="2" />
+<text  x="1153.93" y="255.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="791.5" y="133" width="78.1" height="15.0" fill="rgb(113,113,203)" rx="2" ry="2" />
+<text  x="794.46" y="143.5" >wake_up_q</text>
+</g>
+<g >
+<title>memory_stat_format (0 ms, 0.00%)</title><rect x="1072.8" y="181" width="46.9" height="15.0" fill="rgb(86,86,201)" rx="2" ry="2" />
+<text  x="1075.78" y="191.5" >memo..</text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="963.4" y="149" width="15.6" height="15.0" fill="rgb(125,125,232)" rx="2" ry="2" />
+<text  x="966.38" y="159.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="635.2" y="181" width="23.4" height="15.0" fill="rgb(104,104,243)" rx="2" ry="2" />
+<text  x="638.17" y="191.5" >t..</text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="947.7" y="165" width="7.9" height="15.0" fill="rgb(112,112,201)" rx="2" ry="2" />
+<text  x="950.75" y="175.5" ></text>
+</g>
+<g >
+<title>do_syscall_64 (0 ms, 0.00%)</title><rect x="189.7" y="277" width="1000.3" height="15.0" fill="rgb(95,95,204)" rx="2" ry="2" />
+<text  x="192.74" y="287.5" >do_syscall_64</text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="353.8" y="133" width="93.8" height="15.0" fill="rgb(104,104,199)" rx="2" ry="2" />
+<text  x="356.84" y="143.5" >rwsem_wake...</text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="994.6" y="165" width="31.3" height="15.0" fill="rgb(98,98,229)" rx="2" ry="2" />
+<text  x="997.64" y="175.5" >ke..</text>
+</g>
+<g >
+<title>do_sys_openat2 (0 ms, 0.00%)</title><rect x="994.6" y="245" width="39.1" height="15.0" fill="rgb(93,93,241)" rx="2" ry="2" />
+<text  x="997.64" y="255.5" >do_..</text>
+</g>
+<g >
+<title>vfs_statx (0 ms, 0.00%)</title><rect x="189.7" y="245" width="429.8" height="15.0" fill="rgb(134,134,200)" rx="2" ry="2" />
+<text  x="192.74" y="255.5" >vfs_statx</text>
+</g>
+<g >
+<title>mutex_spin_on_owner (0 ms, 0.00%)</title><rect x="1119.7" y="149" width="7.8" height="15.0" fill="rgb(117,117,234)" rx="2" ry="2" />
+<text  x="1122.67" y="159.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="979.0" y="117" width="7.8" height="15.0" fill="rgb(84,84,195)" rx="2" ry="2" />
+<text  x="982.01" y="127.5" ></text>
+</g>
+<g >
+<title>new_sync_read (0 ms, 0.00%)</title><rect x="1049.3" y="229" width="70.4" height="15.0" fill="rgb(122,122,195)" rx="2" ry="2" />
+<text  x="1052.34" y="239.5" >new_syn..</text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="1025.9" y="149" width="7.8" height="15.0" fill="rgb(137,137,206)" rx="2" ry="2" />
+<text  x="1028.89" y="159.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="510.1" y="53" width="86.0" height="15.0" fill="rgb(131,131,198)" rx="2" ry="2" />
+<text  x="513.13" y="63.5" >_raw_spin_..</text>
+</g>
+<g >
+<title>all (0 ms, 100%)</title><rect x="10.0" y="325" width="1180.0" height="15.0" fill="rgb(83,83,207)" rx="2" ry="2" />
+<text  x="13.00" y="335.5" ></text>
+</g>
+<g >
+<title>rwsem_down_read_slowpath (0 ms, 0.00%)</title><rect x="447.6" y="101" width="7.8" height="15.0" fill="rgb(100,100,201)" rx="2" ry="2" />
+<text  x="450.62" y="111.5" ></text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="791.5" y="149" width="78.1" height="15.0" fill="rgb(83,83,214)" rx="2" ry="2" />
+<text  x="794.46" y="159.5" >rwsem_wak..</text>
+</g>
+<g >
+<title>sock_def_readable (0 ms, 0.00%)</title><rect x="1143.1" y="165" width="7.8" height="15.0" fill="rgb(128,128,212)" rx="2" ry="2" />
+<text  x="1146.11" y="175.5" ></text>
+</g>
+<g >
+<title>__mutex_lock.constprop.0 (0 ms, 0.00%)</title><rect x="1119.7" y="165" width="7.8" height="15.0" fill="rgb(124,124,225)" rx="2" ry="2" />
+<text  x="1122.67" y="175.5" ></text>
+</g>
+</g>
+</svg>

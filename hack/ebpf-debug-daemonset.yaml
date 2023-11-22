@@ -1,0 +1,178 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: d060239-ebpf
+  namespace: kube-system
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: d060239
+  template:
+    metadata:
+      labels:
+        name: d060239
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-seed-apiserver: allowed
+    spec:
+      containers:
+        - image: debian:latest
+          imagePullPolicy: IfNotPresent
+          name: root-container
+          resources: {}
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /host
+              name: root-volume
+            - mountPath: /sys/kernel/debug
+              name: kernel-debug
+            - mountPath: /sys/fs/cgroup
+              name: cgroupfs
+            - mountPath: /sys/fs/bpf
+              name: bpf
+          command:
+            - /bin/bash
+            - -c
+            - |
+              #!/bin/bash
+              set -x
+
+              # use a recent debian image (e.g debian:latest) - GL kernel is typically up-to date so you want to match that. Also be able to get recent bcc package.
+              # then fetch the kernel headers for the underlying GL OS. The kernel headers must match the GL host's kernel version
+
+              # check if host runs Gardenlinx
+              if grep -q "GARDENLINUX" /host/etc/os-release
+              then
+              echo "host is using gardenlinux"
+              else
+              # code if not found
+              echo "host is not running gardenlinux. This script is only for GL. For other OS's please install generic headers"
+              exit 0
+              fi
+
+              # runnning GL, try to install via package manager, as Gardenlinux does not use
+              # a stock Kernel from  https://www.kernel.org/pub/linux/kernel/v${major_version}.x/linux-$kernel_version.tar.gz 
+              # - adds drivers and apply Debian Kernel patches from debian
+
+              # CAVEAT: container image where this script is run, must be able to install all dependent packages required by the GL kernel-headers package (check curl -s http://repo.gardenlinux.io/gardenlinux/dists/934.10/main/binary-amd64/Packages)
+              # - if the image is older, than e.g gcc-13 is not available yet, hence headers cannot be installed.
+
+              apt update
+
+              # curl is required to obtain GL apt repository public key
+              apt -y install curl procps tree htop
+
+              # get GL version
+              GL_VERSION=$(cat /host/etc/os-release | grep "GARDENLINUX_VERSION_AT_BUILD" | cut -d "=" -f 2)
+
+              touch /etc/apt/sources.list
+
+              # add unstable because contains newer packages that might be required for the GL Kernel Headers
+              echo "deb http://deb.debian.org/debian/ unstable main contrib" >> /etc/apt/sources.list
+
+              # add the GL apt repository for the GL correct version (not kernel version, but GL apt-repository has the kernel headers for the kernel used in the GL version)
+              echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/gardenlinux.asc] https://repo.gardenlinux.io/gardenlinux $GL_VERSION main" >> /etc/apt/sources.list
+
+              # requires the public key for the apt-repository
+              curl https://raw.githubusercontent.com/gardenlinux/gardenlinux/main/gardenlinux.asc -o /etc/apt/trusted.gpg.d/gardenlinux.asc
+
+              #install required packages
+              apt update
+
+              # install bcc
+              apt-get install -y bpfcc-tools libbpfcc libbpfcc-dev
+
+              # install kernel headers for GL
+              KERNEL_VERSION="${KERNEL_VERSION:-$(uname -r)}"
+              kernel_version="$(echo "${KERNEL_VERSION}" | awk -vFS='[-+]' '{ print $1 }')"
+              echo "Fetching upstream kernel sources for ${kernel_version}."
+
+              # should show the kernel headers for the container image (because sources.list contains the container images default package repository) as well as for the host's GL kernel
+              # - linux-headers-5.15.125-gardenlinux-cloud-amd64/934.10
+              apt search linux-headers- | grep -i "gardenlinux"
+
+              # only works for amd64 architecture at the moment
+              echo "installing Kernel headers for GL $GL_VERSION: linux-headers-$kernel_version-gardenlinux-cloud-amd64"
+
+              apt install -y linux-headers-$kernel_version-gardenlinux-cloud-amd64
+              
+              # measure
+              while :
+              do
+                # only keep the last 10 measurements to not overflow the disk
+                for i in {1..10}
+                do
+                  echo "iteration: $i"
+                  echo "current kubelet processes: "
+                  pgrep kubelet
+                  
+                  array_kubelet_pids=$(pgrep kubelet)
+                  root_kubelet_pid=$(echo $array_kubelet_pids | cut -d " " -f 1)
+                  prefix="0::/"
+                  string=$(cat /proc/$root_kubelet_pid/cgroup)
+                  cgroup=${string#"$prefix"}
+                
+                  echo "root kubelet PID: $root_kubelet_pid with cgroup $cgroup"
+                
+                  # measure off-cpu time foe root kubelet in uninterruptible sleep state for 60 seconds
+                  # - only measures time spend in kernel, not userspace (kernel stacks only)
+                  /usr/sbin/offcputime-bpfcc --stack-storage-size 30000 -K --pid $root_kubelet_pid --state 2 -f 60 > kubelet.offcpu_kernel.stacks.$i &
+                  /usr/sbin/offcputime-bpfcc --stack-storage-size 30000 -U --pid $root_kubelet_pid --state 2 -f 60 > kubelet.offcpu_userspace.stacks.$i &
+                  /usr/sbin/profile-bpfcc --stack-storage-size 30000 -K --pid $root_kubelet_pid -f 60 > kubelet.oncpu_kernel.stacks.$i &
+                  /usr/sbin/profile-bpfcc --stack-storage-size 30000 -U --pid $root_kubelet_pid -f 60 > kubelet.oncpu_userspace.stacks.$i &
+                  
+                  time cat /sys/fs/cgroup/memory.pressure > dev/null
+                  
+                  echo "measuring..."
+                  sleep 60
+                done
+              done
+              #sleep 365d
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 2
+      tolerations:
+        - operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: pool.worker.gardener.cloud/dedicated-for
+          operator: Equal
+          value: etcd
+      volumes:
+        - hostPath:
+            path: /
+            type: ""
+          name: root-volume
+        - hostPath:
+            path: /sys/kernel/debug
+            type: ""
+          name: kernel-debug
+        - hostPath:
+            path: /sys/fs/cgroup
+            type: ""
+          name: cgroupfs
+        - hostPath:
+            path: /sys/fs/bpf
+            type: ""
+          name: bpf
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

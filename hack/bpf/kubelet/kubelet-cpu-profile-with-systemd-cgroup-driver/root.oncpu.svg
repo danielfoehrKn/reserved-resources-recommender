@@ -1,0 +1,3145 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="598" onload="init(evt)" viewBox="0 0 1200 598" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#e0e0ff" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl < w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x > 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="598.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="581" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="581" > </text>
+<g id="frames">
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="903.5" y="357" width="1.5" height="15.0" fill="rgb(121,121,213)" rx="2" ry="2" />
+<text  x="906.49" y="367.5" ></text>
+</g>
+<g >
+<title>kfree (0 ms, 0.00%)</title><rect x="1172.3" y="389" width="1.5" height="15.0" fill="rgb(125,125,212)" rx="2" ry="2" />
+<text  x="1175.28" y="399.5" ></text>
+</g>
+<g >
+<title>dev_lstats_read (0 ms, 0.00%)</title><rect x="1123.5" y="325" width="17.8" height="15.0" fill="rgb(81,81,210)" rx="2" ry="2" />
+<text  x="1126.54" y="335.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save___pv_queued_spin_unlock (0 ms, 0.00%)</title><rect x="702.6" y="341" width="4.5" height="15.0" fill="rgb(84,84,239)" rx="2" ry="2" />
+<text  x="705.64" y="351.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="684.9" y="389" width="1.5" height="15.0" fill="rgb(115,115,237)" rx="2" ry="2" />
+<text  x="687.92" y="399.5" ></text>
+</g>
+<g >
+<title>snmp_get_cpu_field (0 ms, 0.00%)</title><rect x="949.3" y="325" width="4.4" height="15.0" fill="rgb(103,103,214)" rx="2" ry="2" />
+<text  x="952.27" y="335.5" ></text>
+</g>
+<g >
+<title>proc_single_show (0 ms, 0.00%)</title><rect x="1145.7" y="421" width="1.5" height="15.0" fill="rgb(113,113,205)" rx="2" ry="2" />
+<text  x="1148.69" y="431.5" ></text>
+</g>
+<g >
+<title>__local_bh_enable_ip (0 ms, 0.00%)</title><rect x="1179.7" y="261" width="1.4" height="15.0" fill="rgb(120,120,229)" rx="2" ry="2" />
+<text  x="1182.66" y="271.5" ></text>
+</g>
+<g >
+<title>path_put (0 ms, 0.00%)</title><rect x="1185.6" y="437" width="1.4" height="15.0" fill="rgb(103,103,232)" rx="2" ry="2" />
+<text  x="1188.57" y="447.5" ></text>
+</g>
+<g >
+<title>generic_fillattr (0 ms, 0.00%)</title><rect x="695.3" y="421" width="1.4" height="15.0" fill="rgb(132,132,216)" rx="2" ry="2" />
+<text  x="698.26" y="431.5" ></text>
+</g>
+<g >
+<title>__kmalloc_node_track_caller (0 ms, 0.00%)</title><rect x="1181.1" y="309" width="1.5" height="15.0" fill="rgb(138,138,196)" rx="2" ry="2" />
+<text  x="1184.14" y="319.5" ></text>
+</g>
+<g >
+<title>__tcp_transmit_skb (0 ms, 0.00%)</title><rect x="1150.1" y="341" width="4.5" height="15.0" fill="rgb(97,97,218)" rx="2" ry="2" />
+<text  x="1153.13" y="351.5" ></text>
+</g>
+<g >
+<title>__x64_sys_tgkill (0 ms, 0.00%)</title><rect x="953.7" y="485" width="1.5" height="15.0" fill="rgb(136,136,200)" rx="2" ry="2" />
+<text  x="956.70" y="495.5" ></text>
+</g>
+<g >
+<title>strcmp (0 ms, 0.00%)</title><rect x="933.0" y="389" width="1.5" height="15.0" fill="rgb(123,123,220)" rx="2" ry="2" />
+<text  x="936.03" y="399.5" ></text>
+</g>
+<g >
+<title>path_init (0 ms, 0.00%)</title><rect x="749.9" y="405" width="1.5" height="15.0" fill="rgb(85,85,222)" rx="2" ry="2" />
+<text  x="752.90" y="415.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_node (0 ms, 0.00%)</title><rect x="1116.2" y="325" width="1.4" height="15.0" fill="rgb(94,94,203)" rx="2" ry="2" />
+<text  x="1119.16" y="335.5" ></text>
+</g>
+<g >
+<title>futex_wait_queue_me (0 ms, 0.00%)</title><rect x="831.1" y="437" width="14.8" height="15.0" fill="rgb(139,139,193)" rx="2" ry="2" />
+<text  x="834.13" y="447.5" ></text>
+</g>
+<g >
+<title>vfs_readlink (0 ms, 0.00%)</title><rect x="947.8" y="453" width="1.5" height="15.0" fill="rgb(135,135,222)" rx="2" ry="2" />
+<text  x="950.80" y="463.5" ></text>
+</g>
+<g >
+<title>do_softirq (0 ms, 0.00%)</title><rect x="1150.1" y="277" width="4.5" height="15.0" fill="rgb(90,90,215)" rx="2" ry="2" />
+<text  x="1153.13" y="287.5" ></text>
+</g>
+<g >
+<title>override_creds (0 ms, 0.00%)</title><rect x="925.6" y="357" width="1.5" height="15.0" fill="rgb(111,111,242)" rx="2" ry="2" />
+<text  x="928.64" y="367.5" ></text>
+</g>
+<g >
+<title>inet6_fill_ifla6_attrs (0 ms, 0.00%)</title><rect x="949.3" y="373" width="4.4" height="15.0" fill="rgb(97,97,232)" rx="2" ry="2" />
+<text  x="952.27" y="383.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="944.8" y="373" width="1.5" height="15.0" fill="rgb(82,82,201)" rx="2" ry="2" />
+<text  x="947.84" y="383.5" ></text>
+</g>
+<g >
+<title>getname_flags.part.0 (0 ms, 0.00%)</title><rect x="946.3" y="437" width="1.5" height="15.0" fill="rgb(139,139,192)" rx="2" ry="2" />
+<text  x="949.32" y="447.5" ></text>
+</g>
+<g >
+<title>ksys_write (0 ms, 0.00%)</title><rect x="1147.2" y="485" width="8.8" height="15.0" fill="rgb(116,116,214)" rx="2" ry="2" />
+<text  x="1150.17" y="495.5" ></text>
+</g>
+<g >
+<title>__x64_sys_fcntl (0 ms, 0.00%)</title><rect x="828.2" y="469" width="1.4" height="15.0" fill="rgb(110,110,194)" rx="2" ry="2" />
+<text  x="831.17" y="479.5" ></text>
+</g>
+<g >
+<title>rcu_do_batch (0 ms, 0.00%)</title><rect x="684.9" y="437" width="1.5" height="15.0" fill="rgb(93,93,191)" rx="2" ry="2" />
+<text  x="687.92" y="447.5" ></text>
+</g>
+<g >
+<title>ipt_do_table (0 ms, 0.00%)</title><rect x="1153.1" y="149" width="1.5" height="15.0" fill="rgb(85,85,231)" rx="2" ry="2" />
+<text  x="1156.08" y="159.5" ></text>
+</g>
+<g >
+<title>alloc_pages_vma (0 ms, 0.00%)</title><rect x="680.5" y="437" width="2.9" height="15.0" fill="rgb(84,84,201)" rx="2" ry="2" />
+<text  x="683.49" y="447.5" ></text>
+</g>
+<g >
+<title>ip_local_deliver_finish (0 ms, 0.00%)</title><rect x="1179.7" y="149" width="1.4" height="15.0" fill="rgb(136,136,212)" rx="2" ry="2" />
+<text  x="1182.66" y="159.5" ></text>
+</g>
+<g >
+<title>futex_wake (0 ms, 0.00%)</title><rect x="845.9" y="453" width="13.3" height="15.0" fill="rgb(134,134,235)" rx="2" ry="2" />
+<text  x="848.89" y="463.5" ></text>
+</g>
+<g >
+<title>fsnotify_find_mark (0 ms, 0.00%)</title><rect x="769.1" y="437" width="1.5" height="15.0" fill="rgb(119,119,221)" rx="2" ry="2" />
+<text  x="772.10" y="447.5" ></text>
+</g>
+<g >
+<title>mutex_spin_on_owner (0 ms, 0.00%)</title><rect x="776.5" y="421" width="1.5" height="15.0" fill="rgb(82,82,241)" rx="2" ry="2" />
+<text  x="779.48" y="431.5" ></text>
+</g>
+<g >
+<title>__release_sock (0 ms, 0.00%)</title><rect x="773.5" y="421" width="3.0" height="15.0" fill="rgb(106,106,208)" rx="2" ry="2" />
+<text  x="776.53" y="431.5" ></text>
+</g>
+<g >
+<title>filename_lookup (0 ms, 0.00%)</title><rect x="944.8" y="437" width="1.5" height="15.0" fill="rgb(129,129,223)" rx="2" ry="2" />
+<text  x="947.84" y="447.5" ></text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="1154.6" y="149" width="1.4" height="15.0" fill="rgb(102,102,228)" rx="2" ry="2" />
+<text  x="1157.56" y="159.5" ></text>
+</g>
+<g >
+<title>tcp_child_process (0 ms, 0.00%)</title><rect x="773.5" y="165" width="1.5" height="15.0" fill="rgb(106,106,199)" rx="2" ry="2" />
+<text  x="776.53" y="175.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="910.9" y="437" width="1.5" height="15.0" fill="rgb(100,100,237)" rx="2" ry="2" />
+<text  x="913.88" y="447.5" ></text>
+</g>
+<g >
+<title>consume_skb (0 ms, 0.00%)</title><rect x="1117.6" y="389" width="3.0" height="15.0" fill="rgb(105,105,197)" rx="2" ry="2" />
+<text  x="1120.63" y="399.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="845.9" y="405" width="11.8" height="15.0" fill="rgb(83,83,233)" rx="2" ry="2" />
+<text  x="848.89" y="415.5" ></text>
+</g>
+<g >
+<title>ip_protocol_deliver_rcu (0 ms, 0.00%)</title><rect x="773.5" y="197" width="1.5" height="15.0" fill="rgb(102,102,198)" rx="2" ry="2" />
+<text  x="776.53" y="207.5" ></text>
+</g>
+<g >
+<title>tcp_rcv_state_process (0 ms, 0.00%)</title><rect x="1179.7" y="85" width="1.4" height="15.0" fill="rgb(131,131,239)" rx="2" ry="2" />
+<text  x="1182.66" y="95.5" ></text>
+</g>
+<g >
+<title>strcmp (0 ms, 0.00%)</title><rect x="931.6" y="341" width="1.4" height="15.0" fill="rgb(97,97,228)" rx="2" ry="2" />
+<text  x="934.55" y="351.5" ></text>
+</g>
+<g >
+<title>tcp_v4_rcv (0 ms, 0.00%)</title><rect x="773.5" y="181" width="1.5" height="15.0" fill="rgb(129,129,240)" rx="2" ry="2" />
+<text  x="776.53" y="191.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="758.8" y="373" width="1.4" height="15.0" fill="rgb(108,108,207)" rx="2" ry="2" />
+<text  x="761.76" y="383.5" ></text>
+</g>
+<g >
+<title>__irq_exit_rcu (0 ms, 0.00%)</title><rect x="683.4" y="485" width="3.0" height="15.0" fill="rgb(90,90,194)" rx="2" ry="2" />
+<text  x="686.44" y="495.5" ></text>
+</g>
+<g >
+<title>unix_write_space (0 ms, 0.00%)</title><rect x="1119.1" y="325" width="1.5" height="15.0" fill="rgb(138,138,208)" rx="2" ry="2" />
+<text  x="1122.11" y="335.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="944.8" y="405" width="1.5" height="15.0" fill="rgb(133,133,239)" rx="2" ry="2" />
+<text  x="947.84" y="415.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="732.2" y="325" width="1.5" height="15.0" fill="rgb(102,102,198)" rx="2" ry="2" />
+<text  x="735.18" y="335.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="760.2" y="389" width="1.5" height="15.0" fill="rgb(136,136,230)" rx="2" ry="2" />
+<text  x="763.24" y="399.5" ></text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="967.0" y="389" width="1.5" height="15.0" fill="rgb(101,101,205)" rx="2" ry="2" />
+<text  x="970.00" y="399.5" ></text>
+</g>
+<g >
+<title>pids_max_show (0 ms, 0.00%)</title><rect x="1113.2" y="405" width="1.5" height="15.0" fill="rgb(83,83,239)" rx="2" ry="2" />
+<text  x="1116.20" y="415.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1119.1" y="293" width="1.5" height="15.0" fill="rgb(122,122,211)" rx="2" ry="2" />
+<text  x="1122.11" y="303.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_node (0 ms, 0.00%)</title><rect x="1154.6" y="341" width="1.4" height="15.0" fill="rgb(118,118,203)" rx="2" ry="2" />
+<text  x="1157.56" y="351.5" ></text>
+</g>
+<g >
+<title>__handle_mm_fault (0 ms, 0.00%)</title><rect x="680.5" y="453" width="2.9" height="15.0" fill="rgb(99,99,232)" rx="2" ry="2" />
+<text  x="683.49" y="463.5" ></text>
+</g>
+<g >
+<title>tcp_close (0 ms, 0.00%)</title><rect x="1179.7" y="373" width="2.9" height="15.0" fill="rgb(97,97,239)" rx="2" ry="2" />
+<text  x="1182.66" y="383.5" ></text>
+</g>
+<g >
+<title>rb_next (0 ms, 0.00%)</title><rect x="1179.7" y="37" width="1.4" height="15.0" fill="rgb(95,95,242)" rx="2" ry="2" />
+<text  x="1182.66" y="47.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="717.4" y="341" width="1.5" height="15.0" fill="rgb(137,137,193)" rx="2" ry="2" />
+<text  x="720.41" y="351.5" ></text>
+</g>
+<g >
+<title>__fsnotify_parent (0 ms, 0.00%)</title><rect x="881.3" y="437" width="1.5" height="15.0" fill="rgb(114,114,243)" rx="2" ry="2" />
+<text  x="884.34" y="447.5" ></text>
+</g>
+<g >
+<title>cpumask_next (0 ms, 0.00%)</title><rect x="1122.1" y="325" width="1.4" height="15.0" fill="rgb(92,92,203)" rx="2" ry="2" />
+<text  x="1125.07" y="335.5" ></text>
+</g>
+<g >
+<title>do_tkill (0 ms, 0.00%)</title><rect x="953.7" y="469" width="1.5" height="15.0" fill="rgb(84,84,230)" rx="2" ry="2" />
+<text  x="956.70" y="479.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="922.7" y="421" width="10.3" height="15.0" fill="rgb(116,116,204)" rx="2" ry="2" />
+<text  x="925.69" y="431.5" ></text>
+</g>
+<g >
+<title>wake_up_bit (0 ms, 0.00%)</title><rect x="683.4" y="389" width="1.5" height="15.0" fill="rgb(82,82,209)" rx="2" ry="2" />
+<text  x="686.44" y="399.5" ></text>
+</g>
+<g >
+<title>__alloc_pages (0 ms, 0.00%)</title><rect x="680.5" y="421" width="2.9" height="15.0" fill="rgb(138,138,224)" rx="2" ry="2" />
+<text  x="683.49" y="431.5" ></text>
+</g>
+<g >
+<title>futex_wait (0 ms, 0.00%)</title><rect x="831.1" y="453" width="14.8" height="15.0" fill="rgb(124,124,206)" rx="2" ry="2" />
+<text  x="834.13" y="463.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="754.3" y="309" width="1.5" height="15.0" fill="rgb(135,135,205)" rx="2" ry="2" />
+<text  x="757.33" y="319.5" ></text>
+</g>
+<g >
+<title>map_id_up (0 ms, 0.00%)</title><rect x="690.8" y="421" width="1.5" height="15.0" fill="rgb(90,90,224)" rx="2" ry="2" />
+<text  x="693.83" y="431.5" ></text>
+</g>
+<g >
+<title>inet_recvmsg (0 ms, 0.00%)</title><rect x="1116.2" y="421" width="1.4" height="15.0" fill="rgb(93,93,217)" rx="2" ry="2" />
+<text  x="1119.16" y="431.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="905.0" y="421" width="1.4" height="15.0" fill="rgb(131,131,191)" rx="2" ry="2" />
+<text  x="907.97" y="431.5" ></text>
+</g>
+<g >
+<title>__netif_receive_skb_one_core (0 ms, 0.00%)</title><rect x="1179.7" y="165" width="1.4" height="15.0" fill="rgb(114,114,214)" rx="2" ry="2" />
+<text  x="1182.66" y="175.5" ></text>
+</g>
+<g >
+<title>from_kgid_munged (0 ms, 0.00%)</title><rect x="690.8" y="453" width="1.5" height="15.0" fill="rgb(114,114,230)" rx="2" ry="2" />
+<text  x="693.83" y="463.5" ></text>
+</g>
+<g >
+<title>do_epoll_wait (0 ms, 0.00%)</title><rect x="807.5" y="437" width="3.0" height="15.0" fill="rgb(88,88,193)" rx="2" ry="2" />
+<text  x="810.50" y="447.5" ></text>
+</g>
+<g >
+<title>skb_release_head_state (0 ms, 0.00%)</title><rect x="1119.1" y="373" width="1.5" height="15.0" fill="rgb(123,123,195)" rx="2" ry="2" />
+<text  x="1122.11" y="383.5" ></text>
+</g>
+<g >
+<title>alloc_skb_with_frags (0 ms, 0.00%)</title><rect x="1154.6" y="373" width="1.4" height="15.0" fill="rgb(114,114,231)" rx="2" ry="2" />
+<text  x="1157.56" y="383.5" ></text>
+</g>
+<g >
+<title>release_sock (0 ms, 0.00%)</title><rect x="1148.6" y="389" width="1.5" height="15.0" fill="rgb(113,113,191)" rx="2" ry="2" />
+<text  x="1151.65" y="399.5" ></text>
+</g>
+<g >
+<title>ext4_getblk (0 ms, 0.00%)</title><rect x="862.1" y="373" width="1.5" height="15.0" fill="rgb(91,91,237)" rx="2" ry="2" />
+<text  x="865.14" y="383.5" ></text>
+</g>
+<g >
+<title>do_readlinkat (0 ms, 0.00%)</title><rect x="944.8" y="469" width="4.5" height="15.0" fill="rgb(116,116,232)" rx="2" ry="2" />
+<text  x="947.84" y="479.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_xen_hvm_callback (0 ms, 0.00%)</title><rect x="1154.6" y="309" width="1.4" height="15.0" fill="rgb(81,81,233)" rx="2" ry="2" />
+<text  x="1157.56" y="319.5" ></text>
+</g>
+<g >
+<title>inet_release (0 ms, 0.00%)</title><rect x="1179.7" y="389" width="2.9" height="15.0" fill="rgb(87,87,207)" rx="2" ry="2" />
+<text  x="1182.66" y="399.5" ></text>
+</g>
+<g >
+<title>tcp_write_xmit (0 ms, 0.00%)</title><rect x="1179.7" y="325" width="1.4" height="15.0" fill="rgb(98,98,193)" rx="2" ry="2" />
+<text  x="1182.66" y="335.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="874.0" y="421" width="2.9" height="15.0" fill="rgb(110,110,192)" rx="2" ry="2" />
+<text  x="876.95" y="431.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="701.2" y="373" width="1.4" height="15.0" fill="rgb(86,86,193)" rx="2" ry="2" />
+<text  x="704.16" y="383.5" ></text>
+</g>
+<g >
+<title>_copy_from_user (0 ms, 0.00%)</title><rect x="767.6" y="453" width="1.5" height="15.0" fill="rgb(90,90,244)" rx="2" ry="2" />
+<text  x="770.62" y="463.5" ></text>
+</g>
+<g >
+<title>__tcp_ack_snd_check (0 ms, 0.00%)</title><rect x="1151.6" y="117" width="1.5" height="15.0" fill="rgb(110,110,208)" rx="2" ry="2" />
+<text  x="1154.60" y="127.5" ></text>
+</g>
+<g >
+<title>do_epoll_pwait.part.0 (0 ms, 0.00%)</title><rect x="804.5" y="469" width="22.2" height="15.0" fill="rgb(93,93,211)" rx="2" ry="2" />
+<text  x="807.54" y="479.5" >d..</text>
+</g>
+<g >
+<title>number (0 ms, 0.00%)</title><rect x="1141.3" y="341" width="1.4" height="15.0" fill="rgb(88,88,199)" rx="2" ry="2" />
+<text  x="1144.26" y="351.5" ></text>
+</g>
+<g >
+<title>filldir64 (0 ms, 0.00%)</title><rect x="860.7" y="405" width="1.4" height="15.0" fill="rgb(128,128,213)" rx="2" ry="2" />
+<text  x="863.66" y="415.5" ></text>
+</g>
+<g >
+<title>cgroup_rstat_flush (0 ms, 0.00%)</title><rect x="971.4" y="389" width="29.6" height="15.0" fill="rgb(89,89,195)" rx="2" ry="2" />
+<text  x="974.43" y="399.5" >cg..</text>
+</g>
+<g >
+<title>map_id_up (0 ms, 0.00%)</title><rect x="690.8" y="437" width="1.5" height="15.0" fill="rgb(87,87,207)" rx="2" ry="2" />
+<text  x="693.83" y="447.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save_xen_vcpu_stolen (0 ms, 0.00%)</title><rect x="804.5" y="405" width="1.5" height="15.0" fill="rgb(90,90,204)" rx="2" ry="2" />
+<text  x="807.54" y="415.5" ></text>
+</g>
+<g >
+<title>veth_get_stats64 (0 ms, 0.00%)</title><rect x="1123.5" y="357" width="17.8" height="15.0" fill="rgb(115,115,241)" rx="2" ry="2" />
+<text  x="1126.54" y="367.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_release (0 ms, 0.00%)</title><rect x="1173.8" y="421" width="2.9" height="15.0" fill="rgb(120,120,209)" rx="2" ry="2" />
+<text  x="1176.75" y="431.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="707.1" y="341" width="1.4" height="15.0" fill="rgb(127,127,240)" rx="2" ry="2" />
+<text  x="710.07" y="351.5" ></text>
+</g>
+<g >
+<title>seq_open (0 ms, 0.00%)</title><rect x="918.3" y="389" width="1.4" height="15.0" fill="rgb(111,111,227)" rx="2" ry="2" />
+<text  x="921.26" y="399.5" ></text>
+</g>
+<g >
+<title>__x64_sys_openat (0 ms, 0.00%)</title><rect x="910.9" y="485" width="32.5" height="15.0" fill="rgb(105,105,212)" rx="2" ry="2" />
+<text  x="913.88" y="495.5" >__..</text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="1114.7" y="421" width="1.5" height="15.0" fill="rgb(90,90,230)" rx="2" ry="2" />
+<text  x="1117.68" y="431.5" ></text>
+</g>
+<g >
+<title>ext4fs_dirhash (0 ms, 0.00%)</title><rect x="865.1" y="405" width="1.5" height="15.0" fill="rgb(122,122,191)" rx="2" ry="2" />
+<text  x="868.09" y="415.5" ></text>
+</g>
+<g >
+<title>blkcg_print_stat (0 ms, 0.00%)</title><rect x="971.4" y="421" width="29.6" height="15.0" fill="rgb(114,114,205)" rx="2" ry="2" />
+<text  x="974.43" y="431.5" >bl..</text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="811.9" y="405" width="14.8" height="15.0" fill="rgb(90,90,233)" rx="2" ry="2" />
+<text  x="814.93" y="415.5" ></text>
+</g>
+<g >
+<title>proc_fill_cache (0 ms, 0.00%)</title><rect x="872.5" y="437" width="1.5" height="15.0" fill="rgb(86,86,213)" rx="2" ry="2" />
+<text  x="875.48" y="447.5" ></text>
+</g>
+<g >
+<title>unregister_fair_sched_group (0 ms, 0.00%)</title><rect x="684.9" y="405" width="1.5" height="15.0" fill="rgb(120,120,215)" rx="2" ry="2" />
+<text  x="687.92" y="415.5" ></text>
+</g>
+<g >
+<title>_copy_to_user (0 ms, 0.00%)</title><rect x="689.3" y="453" width="1.5" height="15.0" fill="rgb(106,106,208)" rx="2" ry="2" />
+<text  x="692.35" y="463.5" ></text>
+</g>
+<g >
+<title>proc_pid_limits (0 ms, 0.00%)</title><rect x="1145.7" y="405" width="1.5" height="15.0" fill="rgb(89,89,231)" rx="2" ry="2" />
+<text  x="1148.69" y="415.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="893.2" y="405" width="7.3" height="15.0" fill="rgb(97,97,228)" rx="2" ry="2" />
+<text  x="896.15" y="415.5" ></text>
+</g>
+<g >
+<title>unroll_tree_refs (0 ms, 0.00%)</title><rect x="1187.0" y="437" width="1.5" height="15.0" fill="rgb(133,133,221)" rx="2" ry="2" />
+<text  x="1190.05" y="447.5" ></text>
+</g>
+<g >
+<title>loopback_get_stats64 (0 ms, 0.00%)</title><rect x="1122.1" y="357" width="1.4" height="15.0" fill="rgb(122,122,215)" rx="2" ry="2" />
+<text  x="1125.07" y="367.5" ></text>
+</g>
+<g >
+<title>d_splice_alias (0 ms, 0.00%)</title><rect x="754.3" y="373" width="1.5" height="15.0" fill="rgb(98,98,238)" rx="2" ry="2" />
+<text  x="757.33" y="383.5" ></text>
+</g>
+<g >
+<title>__fget_light (0 ms, 0.00%)</title><rect x="907.9" y="405" width="1.5" height="15.0" fill="rgb(94,94,217)" rx="2" ry="2" />
+<text  x="910.92" y="415.5" ></text>
+</g>
+<g >
+<title>tcp_v4_rcv (0 ms, 0.00%)</title><rect x="1151.6" y="149" width="1.5" height="15.0" fill="rgb(93,93,210)" rx="2" ry="2" />
+<text  x="1154.60" y="159.5" ></text>
+</g>
+<g >
+<title>rcu_all_qs (0 ms, 0.00%)</title><rect x="934.5" y="341" width="1.5" height="15.0" fill="rgb(107,107,240)" rx="2" ry="2" />
+<text  x="937.51" y="351.5" ></text>
+</g>
+<g >
+<title>security_inode_getattr (0 ms, 0.00%)</title><rect x="687.9" y="437" width="1.4" height="15.0" fill="rgb(99,99,242)" rx="2" ry="2" />
+<text  x="690.87" y="447.5" ></text>
+</g>
+<g >
+<title>lockref_put_return (0 ms, 0.00%)</title><rect x="721.8" y="357" width="1.5" height="15.0" fill="rgb(123,123,191)" rx="2" ry="2" />
+<text  x="724.84" y="367.5" ></text>
+</g>
+<g >
+<title>iterate_dir (0 ms, 0.00%)</title><rect x="860.7" y="469" width="13.3" height="15.0" fill="rgb(130,130,214)" rx="2" ry="2" />
+<text  x="863.66" y="479.5" ></text>
+</g>
+<g >
+<title>override_creds (0 ms, 0.00%)</title><rect x="925.6" y="373" width="1.5" height="15.0" fill="rgb(111,111,210)" rx="2" ry="2" />
+<text  x="928.64" y="383.5" ></text>
+</g>
+<g >
+<title>vfs_statx (0 ms, 0.00%)</title><rect x="692.3" y="469" width="75.3" height="15.0" fill="rgb(112,112,192)" rx="2" ry="2" />
+<text  x="695.30" y="479.5" >vfs_statx</text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="758.8" y="357" width="1.4" height="15.0" fill="rgb(134,134,198)" rx="2" ry="2" />
+<text  x="761.76" y="367.5" ></text>
+</g>
+<g >
+<title>rtnl_fill_ifinfo (0 ms, 0.00%)</title><rect x="949.3" y="405" width="4.4" height="15.0" fill="rgb(103,103,221)" rx="2" ry="2" />
+<text  x="952.27" y="415.5" ></text>
+</g>
+<g >
+<title>__check_object_size (0 ms, 0.00%)</title><rect x="958.1" y="421" width="1.5" height="15.0" fill="rgb(90,90,202)" rx="2" ry="2" />
+<text  x="961.14" y="431.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="702.6" y="373" width="16.3" height="15.0" fill="rgb(80,80,193)" rx="2" ry="2" />
+<text  x="705.64" y="383.5" ></text>
+</g>
+<g >
+<title>__fget_files (0 ms, 0.00%)</title><rect x="826.7" y="453" width="1.5" height="15.0" fill="rgb(92,92,207)" rx="2" ry="2" />
+<text  x="829.70" y="463.5" ></text>
+</g>
+<g >
+<title>up_read (0 ms, 0.00%)</title><rect x="739.6" y="341" width="7.3" height="15.0" fill="rgb(131,131,199)" rx="2" ry="2" />
+<text  x="742.56" y="351.5" ></text>
+</g>
+<g >
+<title>clear_page_erms (0 ms, 0.00%)</title><rect x="680.5" y="373" width="2.9" height="15.0" fill="rgb(139,139,227)" rx="2" ry="2" />
+<text  x="683.49" y="383.5" ></text>
+</g>
+<g >
+<title>__tcp_push_pending_frames (0 ms, 0.00%)</title><rect x="1179.7" y="341" width="1.4" height="15.0" fill="rgb(128,128,228)" rx="2" ry="2" />
+<text  x="1182.66" y="351.5" ></text>
+</g>
+<g >
+<title>putname (0 ms, 0.00%)</title><rect x="941.9" y="453" width="1.5" height="15.0" fill="rgb(95,95,232)" rx="2" ry="2" />
+<text  x="944.89" y="463.5" ></text>
+</g>
+<g >
+<title>do_sys_openat2 (0 ms, 0.00%)</title><rect x="881.3" y="469" width="29.6" height="15.0" fill="rgb(123,123,223)" rx="2" ry="2" />
+<text  x="884.34" y="479.5" >do..</text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="683.4" y="373" width="1.5" height="15.0" fill="rgb(88,88,209)" rx="2" ry="2" />
+<text  x="686.44" y="383.5" ></text>
+</g>
+<g >
+<title>sockfs_dname (0 ms, 0.00%)</title><rect x="947.8" y="421" width="1.5" height="15.0" fill="rgb(91,91,228)" rx="2" ry="2" />
+<text  x="950.80" y="431.5" ></text>
+</g>
+<g >
+<title>cgroup_seqfile_show (0 ms, 0.00%)</title><rect x="1001.0" y="405" width="1.4" height="15.0" fill="rgb(85,85,199)" rx="2" ry="2" />
+<text  x="1003.96" y="415.5" ></text>
+</g>
+<g >
+<title>__kmalloc_node_track_caller (0 ms, 0.00%)</title><rect x="1181.1" y="293" width="1.5" height="15.0" fill="rgb(121,121,206)" rx="2" ry="2" />
+<text  x="1184.14" y="303.5" ></text>
+</g>
+<g >
+<title>__virt_addr_valid (0 ms, 0.00%)</title><rect x="937.5" y="405" width="1.4" height="15.0" fill="rgb(82,82,233)" rx="2" ry="2" />
+<text  x="940.46" y="415.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="755.8" y="357" width="3.0" height="15.0" fill="rgb(119,119,244)" rx="2" ry="2" />
+<text  x="758.81" y="367.5" ></text>
+</g>
+<g >
+<title>sock_read_iter (0 ms, 0.00%)</title><rect x="1116.2" y="437" width="5.9" height="15.0" fill="rgb(90,90,234)" rx="2" ry="2" />
+<text  x="1119.16" y="447.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="903.5" y="373" width="1.5" height="15.0" fill="rgb(92,92,236)" rx="2" ry="2" />
+<text  x="906.49" y="383.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="801.6" y="453" width="2.9" height="15.0" fill="rgb(128,128,192)" rx="2" ry="2" />
+<text  x="804.59" y="463.5" ></text>
+</g>
+<g >
+<title>call_rcu (0 ms, 0.00%)</title><rect x="1182.6" y="421" width="1.5" height="15.0" fill="rgb(126,126,238)" rx="2" ry="2" />
+<text  x="1185.62" y="431.5" ></text>
+</g>
+<g >
+<title>ksys_read (0 ms, 0.00%)</title><rect x="956.7" y="485" width="190.5" height="15.0" fill="rgb(83,83,211)" rx="2" ry="2" />
+<text  x="959.66" y="495.5" >ksys_read</text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="711.5" y="341" width="3.0" height="15.0" fill="rgb(93,93,225)" rx="2" ry="2" />
+<text  x="714.50" y="351.5" ></text>
+</g>
+<g >
+<title>__x64_sys_connect (0 ms, 0.00%)</title><rect x="772.1" y="485" width="4.4" height="15.0" fill="rgb(102,102,236)" rx="2" ry="2" />
+<text  x="775.05" y="495.5" ></text>
+</g>
+<g >
+<title>nf_hook_slow (0 ms, 0.00%)</title><rect x="1150.1" y="165" width="1.5" height="15.0" fill="rgb(113,113,201)" rx="2" ry="2" />
+<text  x="1153.13" y="175.5" ></text>
+</g>
+<g >
+<title>__ip_local_out (0 ms, 0.00%)</title><rect x="772.1" y="341" width="1.4" height="15.0" fill="rgb(122,122,234)" rx="2" ry="2" />
+<text  x="775.05" y="351.5" ></text>
+</g>
+<g >
+<title>kfree (0 ms, 0.00%)</title><rect x="1173.8" y="405" width="1.4" height="15.0" fill="rgb(86,86,216)" rx="2" ry="2" />
+<text  x="1176.75" y="415.5" ></text>
+</g>
+<g >
+<title>ip_local_deliver_finish (0 ms, 0.00%)</title><rect x="773.5" y="213" width="1.5" height="15.0" fill="rgb(110,110,215)" rx="2" ry="2" />
+<text  x="776.53" y="223.5" ></text>
+</g>
+<g >
+<title>__ext4fs_dirhash (0 ms, 0.00%)</title><rect x="865.1" y="373" width="1.5" height="15.0" fill="rgb(129,129,213)" rx="2" ry="2" />
+<text  x="868.09" y="383.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="876.9" y="405" width="4.4" height="15.0" fill="rgb(113,113,222)" rx="2" ry="2" />
+<text  x="879.91" y="415.5" ></text>
+</g>
+<g >
+<title>do_dentry_open (0 ms, 0.00%)</title><rect x="887.2" y="421" width="6.0" height="15.0" fill="rgb(125,125,195)" rx="2" ry="2" />
+<text  x="890.25" y="431.5" ></text>
+</g>
+<g >
+<title>ext4_release_dir (0 ms, 0.00%)</title><rect x="1172.3" y="421" width="1.5" height="15.0" fill="rgb(115,115,234)" rx="2" ry="2" />
+<text  x="1175.28" y="431.5" ></text>
+</g>
+<g >
+<title>ext4_bread (0 ms, 0.00%)</title><rect x="862.1" y="389" width="1.5" height="15.0" fill="rgb(109,109,221)" rx="2" ry="2" />
+<text  x="865.14" y="399.5" ></text>
+</g>
+<g >
+<title>tcp_ack (0 ms, 0.00%)</title><rect x="1148.6" y="325" width="1.5" height="15.0" fill="rgb(125,125,243)" rx="2" ry="2" />
+<text  x="1151.65" y="335.5" ></text>
+</g>
+<g >
+<title>generic_fillattr (0 ms, 0.00%)</title><rect x="698.2" y="437" width="1.5" height="15.0" fill="rgb(111,111,242)" rx="2" ry="2" />
+<text  x="701.21" y="447.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="937.5" y="437" width="2.9" height="15.0" fill="rgb(109,109,233)" rx="2" ry="2" />
+<text  x="940.46" y="447.5" ></text>
+</g>
+<g >
+<title>d_alloc_parallel (0 ms, 0.00%)</title><rect x="885.8" y="405" width="1.4" height="15.0" fill="rgb(133,133,229)" rx="2" ry="2" />
+<text  x="888.77" y="415.5" ></text>
+</g>
+<g >
+<title>get_page_from_freelist (0 ms, 0.00%)</title><rect x="680.5" y="405" width="2.9" height="15.0" fill="rgb(86,86,203)" rx="2" ry="2" />
+<text  x="683.49" y="415.5" ></text>
+</g>
+<g >
+<title>proc_pid_readlink (0 ms, 0.00%)</title><rect x="947.8" y="437" width="1.5" height="15.0" fill="rgb(84,84,218)" rx="2" ry="2" />
+<text  x="950.80" y="447.5" ></text>
+</g>
+<g >
+<title>do_epoll_ctl (0 ms, 0.00%)</title><rect x="778.0" y="453" width="23.6" height="15.0" fill="rgb(104,104,240)" rx="2" ry="2" />
+<text  x="780.96" y="463.5" >d..</text>
+</g>
+<g >
+<title>netlink_recvmsg (0 ms, 0.00%)</title><rect x="949.3" y="453" width="4.4" height="15.0" fill="rgb(103,103,191)" rx="2" ry="2" />
+<text  x="952.27" y="463.5" ></text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="924.2" y="357" width="1.4" height="15.0" fill="rgb(127,127,233)" rx="2" ry="2" />
+<text  x="927.17" y="367.5" ></text>
+</g>
+<g >
+<title>seq_read (0 ms, 0.00%)</title><rect x="1122.1" y="437" width="23.6" height="15.0" fill="rgb(80,80,224)" rx="2" ry="2" />
+<text  x="1125.07" y="447.5" >s..</text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1145.7" y="373" width="1.5" height="15.0" fill="rgb(116,116,218)" rx="2" ry="2" />
+<text  x="1148.69" y="383.5" ></text>
+</g>
+<g >
+<title>__x64_sys_epoll_ctl (0 ms, 0.00%)</title><rect x="776.5" y="485" width="28.0" height="15.0" fill="rgb(102,102,208)" rx="2" ry="2" />
+<text  x="779.48" y="495.5" >_..</text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="938.9" y="421" width="1.5" height="15.0" fill="rgb(125,125,223)" rx="2" ry="2" />
+<text  x="941.94" y="431.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="930.1" y="357" width="1.5" height="15.0" fill="rgb(98,98,194)" rx="2" ry="2" />
+<text  x="933.08" y="367.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="953.7" y="405" width="1.5" height="15.0" fill="rgb(84,84,194)" rx="2" ry="2" />
+<text  x="956.70" y="415.5" ></text>
+</g>
+<g >
+<title>seq_buf_printf (0 ms, 0.00%)</title><rect x="1108.8" y="389" width="4.4" height="15.0" fill="rgb(134,134,215)" rx="2" ry="2" />
+<text  x="1111.77" y="399.5" ></text>
+</g>
+<g >
+<title>number (0 ms, 0.00%)</title><rect x="1141.3" y="325" width="1.4" height="15.0" fill="rgb(103,103,207)" rx="2" ry="2" />
+<text  x="1144.26" y="335.5" ></text>
+</g>
+<g >
+<title>d_alloc_parallel (0 ms, 0.00%)</title><rect x="752.9" y="357" width="1.4" height="15.0" fill="rgb(123,123,191)" rx="2" ry="2" />
+<text  x="755.85" y="367.5" ></text>
+</g>
+<g >
+<title>tcp_v4_do_rcv (0 ms, 0.00%)</title><rect x="773.5" y="405" width="3.0" height="15.0" fill="rgb(137,137,234)" rx="2" ry="2" />
+<text  x="776.53" y="415.5" ></text>
+</g>
+<g >
+<title>ip_protocol_deliver_rcu (0 ms, 0.00%)</title><rect x="1151.6" y="165" width="1.5" height="15.0" fill="rgb(115,115,230)" rx="2" ry="2" />
+<text  x="1154.60" y="175.5" ></text>
+</g>
+<g >
+<title>__x64_sys_getdents64 (0 ms, 0.00%)</title><rect x="859.2" y="485" width="14.8" height="15.0" fill="rgb(85,85,224)" rx="2" ry="2" />
+<text  x="862.19" y="495.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="754.3" y="293" width="1.5" height="15.0" fill="rgb(136,136,192)" rx="2" ry="2" />
+<text  x="757.33" y="303.5" ></text>
+</g>
+<g >
+<title>clear_page_erms (0 ms, 0.00%)</title><rect x="680.5" y="357" width="2.9" height="15.0" fill="rgb(118,118,208)" rx="2" ry="2" />
+<text  x="683.49" y="367.5" ></text>
+</g>
+<g >
+<title>refill_obj_stock (0 ms, 0.00%)</title><rect x="969.9" y="373" width="1.5" height="15.0" fill="rgb(81,81,192)" rx="2" ry="2" />
+<text  x="972.95" y="383.5" ></text>
+</g>
+<g >
+<title>alloc_empty_file (0 ms, 0.00%)</title><rect x="882.8" y="421" width="3.0" height="15.0" fill="rgb(86,86,244)" rx="2" ry="2" />
+<text  x="885.82" y="431.5" ></text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="1154.6" y="165" width="1.4" height="15.0" fill="rgb(119,119,210)" rx="2" ry="2" />
+<text  x="1157.56" y="175.5" ></text>
+</g>
+<g >
+<title>__x64_sys_fcntl (0 ms, 0.00%)</title><rect x="826.7" y="485" width="2.9" height="15.0" fill="rgb(108,108,201)" rx="2" ry="2" />
+<text  x="829.70" y="495.5" ></text>
+</g>
+<g >
+<title>ext4_htree_fill_tree (0 ms, 0.00%)</title><rect x="862.1" y="437" width="4.5" height="15.0" fill="rgb(86,86,242)" rx="2" ry="2" />
+<text  x="865.14" y="447.5" ></text>
+</g>
+<g >
+<title>free_rb_tree_fname (0 ms, 0.00%)</title><rect x="1172.3" y="405" width="1.5" height="15.0" fill="rgb(110,110,232)" rx="2" ry="2" />
+<text  x="1175.28" y="415.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="896.1" y="373" width="1.5" height="15.0" fill="rgb(113,113,205)" rx="2" ry="2" />
+<text  x="899.11" y="383.5" ></text>
+</g>
+<g >
+<title>__d_lookup_rcu (0 ms, 0.00%)</title><rect x="733.7" y="357" width="4.4" height="15.0" fill="rgb(137,137,190)" rx="2" ry="2" />
+<text  x="736.65" y="367.5" ></text>
+</g>
+<g >
+<title>__audit_syscall_exit (0 ms, 0.00%)</title><rect x="1185.6" y="453" width="2.9" height="15.0" fill="rgb(86,86,239)" rx="2" ry="2" />
+<text  x="1188.57" y="463.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1006.9" y="389" width="101.9" height="15.0" fill="rgb(119,119,194)" rx="2" ry="2" />
+<text  x="1009.87" y="399.5" >_raw_spin_un..</text>
+</g>
+<g >
+<title>vfs_getattr_nosec (0 ms, 0.00%)</title><rect x="764.7" y="453" width="2.9" height="15.0" fill="rgb(136,136,238)" rx="2" ry="2" />
+<text  x="767.67" y="463.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="890.2" y="341" width="1.5" height="15.0" fill="rgb(127,127,214)" rx="2" ry="2" />
+<text  x="893.20" y="351.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_trace (0 ms, 0.00%)</title><rect x="928.6" y="357" width="1.5" height="15.0" fill="rgb(106,106,241)" rx="2" ry="2" />
+<text  x="931.60" y="367.5" ></text>
+</g>
+<g >
+<title>___slab_alloc (0 ms, 0.00%)</title><rect x="751.4" y="309" width="1.5" height="15.0" fill="rgb(94,94,228)" rx="2" ry="2" />
+<text  x="754.38" y="319.5" ></text>
+</g>
+<g >
+<title>cgroup_file_open (0 ms, 0.00%)</title><rect x="887.2" y="389" width="1.5" height="15.0" fill="rgb(109,109,222)" rx="2" ry="2" />
+<text  x="890.25" y="399.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="755.8" y="373" width="3.0" height="15.0" fill="rgb(125,125,218)" rx="2" ry="2" />
+<text  x="758.81" y="383.5" ></text>
+</g>
+<g >
+<title>syscall_exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="1185.6" y="469" width="2.9" height="15.0" fill="rgb(105,105,221)" rx="2" ry="2" />
+<text  x="1188.57" y="479.5" ></text>
+</g>
+<g >
+<title>ip_finish_output2 (0 ms, 0.00%)</title><rect x="773.5" y="341" width="1.5" height="15.0" fill="rgb(96,96,237)" rx="2" ry="2" />
+<text  x="776.53" y="351.5" ></text>
+</g>
+<g >
+<title>__fget_files (0 ms, 0.00%)</title><rect x="907.9" y="373" width="1.5" height="15.0" fill="rgb(96,96,192)" rx="2" ry="2" />
+<text  x="910.92" y="383.5" ></text>
+</g>
+<g >
+<title>__release_sock (0 ms, 0.00%)</title><rect x="1148.6" y="373" width="1.5" height="15.0" fill="rgb(127,127,241)" rx="2" ry="2" />
+<text  x="1151.65" y="383.5" ></text>
+</g>
+<g >
+<title>set_root (0 ms, 0.00%)</title><rect x="749.9" y="373" width="1.5" height="15.0" fill="rgb(80,80,234)" rx="2" ry="2" />
+<text  x="752.90" y="383.5" ></text>
+</g>
+<g >
+<title>memcg_slab_free_hook (0 ms, 0.00%)</title><rect x="1175.2" y="357" width="1.5" height="15.0" fill="rgb(126,126,228)" rx="2" ry="2" />
+<text  x="1178.23" y="367.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="831.1" y="421" width="14.8" height="15.0" fill="rgb(105,105,197)" rx="2" ry="2" />
+<text  x="834.13" y="431.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1119.1" y="277" width="1.5" height="15.0" fill="rgb(99,99,208)" rx="2" ry="2" />
+<text  x="1122.11" y="287.5" ></text>
+</g>
+<g >
+<title>dev_seq_show (0 ms, 0.00%)</title><rect x="1122.1" y="405" width="23.6" height="15.0" fill="rgb(114,114,220)" rx="2" ry="2" />
+<text  x="1125.07" y="415.5" >d..</text>
+</g>
+<g >
+<title>tcp_v4_do_rcv (0 ms, 0.00%)</title><rect x="1151.6" y="133" width="1.5" height="15.0" fill="rgb(134,134,226)" rx="2" ry="2" />
+<text  x="1154.60" y="143.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1176.7" y="421" width="3.0" height="15.0" fill="rgb(84,84,194)" rx="2" ry="2" />
+<text  x="1179.71" y="431.5" ></text>
+</g>
+<g >
+<title>nf_hook_slow (0 ms, 0.00%)</title><rect x="1153.1" y="165" width="1.5" height="15.0" fill="rgb(139,139,190)" rx="2" ry="2" />
+<text  x="1156.08" y="175.5" ></text>
+</g>
+<g >
+<title>task_work_run (0 ms, 0.00%)</title><rect x="1170.8" y="453" width="13.3" height="15.0" fill="rgb(107,107,227)" rx="2" ry="2" />
+<text  x="1173.80" y="463.5" ></text>
+</g>
+<g >
+<title>__check_heap_object (0 ms, 0.00%)</title><rect x="958.1" y="405" width="1.5" height="15.0" fill="rgb(96,96,223)" rx="2" ry="2" />
+<text  x="961.14" y="415.5" ></text>
+</g>
+<g >
+<title>ip_rcv (0 ms, 0.00%)</title><rect x="1153.1" y="181" width="1.5" height="15.0" fill="rgb(96,96,192)" rx="2" ry="2" />
+<text  x="1156.08" y="191.5" ></text>
+</g>
+<g >
+<title>slab_free_freelist_hook.constprop.0 (0 ms, 0.00%)</title><rect x="940.4" y="437" width="1.5" height="15.0" fill="rgb(121,121,192)" rx="2" ry="2" />
+<text  x="943.41" y="447.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="930.1" y="389" width="2.9" height="15.0" fill="rgb(109,109,233)" rx="2" ry="2" />
+<text  x="933.08" y="399.5" ></text>
+</g>
+<g >
+<title>user_path_at_empty (0 ms, 0.00%)</title><rect x="944.8" y="453" width="3.0" height="15.0" fill="rgb(129,129,238)" rx="2" ry="2" />
+<text  x="947.84" y="463.5" ></text>
+</g>
+<g >
+<title>__tcp_send_ack.part.0 (0 ms, 0.00%)</title><rect x="1116.2" y="373" width="1.4" height="15.0" fill="rgb(120,120,225)" rx="2" ry="2" />
+<text  x="1119.16" y="383.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="903.5" y="389" width="1.5" height="15.0" fill="rgb(112,112,244)" rx="2" ry="2" />
+<text  x="906.49" y="399.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="930.1" y="373" width="1.5" height="15.0" fill="rgb(111,111,192)" rx="2" ry="2" />
+<text  x="933.08" y="383.5" ></text>
+</g>
+<g >
+<title>free_unref_page (0 ms, 0.00%)</title><rect x="1117.6" y="357" width="1.5" height="15.0" fill="rgb(123,123,237)" rx="2" ry="2" />
+<text  x="1120.63" y="367.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="891.7" y="357" width="1.5" height="15.0" fill="rgb(127,127,207)" rx="2" ry="2" />
+<text  x="894.68" y="367.5" ></text>
+</g>
+<g >
+<title>sysvec_xen_hvm_callback (0 ms, 0.00%)</title><rect x="683.4" y="501" width="3.0" height="15.0" fill="rgb(93,93,193)" rx="2" ry="2" />
+<text  x="686.44" y="511.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="868.0" y="421" width="1.5" height="15.0" fill="rgb(106,106,208)" rx="2" ry="2" />
+<text  x="871.05" y="431.5" ></text>
+</g>
+<g >
+<title>__d_add (0 ms, 0.00%)</title><rect x="754.3" y="357" width="1.5" height="15.0" fill="rgb(131,131,231)" rx="2" ry="2" />
+<text  x="757.33" y="367.5" ></text>
+</g>
+<g >
+<title>ext4_htree_store_dirent (0 ms, 0.00%)</title><rect x="863.6" y="405" width="1.5" height="15.0" fill="rgb(128,128,205)" rx="2" ry="2" />
+<text  x="866.62" y="415.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="718.9" y="389" width="1.5" height="15.0" fill="rgb(118,118,221)" rx="2" ry="2" />
+<text  x="721.89" y="399.5" ></text>
+</g>
+<g >
+<title>fsnotify_grab_connector (0 ms, 0.00%)</title><rect x="769.1" y="421" width="1.5" height="15.0" fill="rgb(84,84,190)" rx="2" ry="2" />
+<text  x="772.10" y="431.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_trace (0 ms, 0.00%)</title><rect x="928.6" y="373" width="1.5" height="15.0" fill="rgb(84,84,223)" rx="2" ry="2" />
+<text  x="931.60" y="383.5" ></text>
+</g>
+<g >
+<title>d_alloc_parallel (0 ms, 0.00%)</title><rect x="885.8" y="421" width="1.4" height="15.0" fill="rgb(106,106,229)" rx="2" ry="2" />
+<text  x="888.77" y="431.5" ></text>
+</g>
+<g >
+<title>__tcp_transmit_skb (0 ms, 0.00%)</title><rect x="773.5" y="373" width="1.5" height="15.0" fill="rgb(108,108,190)" rx="2" ry="2" />
+<text  x="776.53" y="383.5" ></text>
+</g>
+<g >
+<title>__fput (0 ms, 0.00%)</title><rect x="1170.8" y="437" width="11.8" height="15.0" fill="rgb(80,80,207)" rx="2" ry="2" />
+<text  x="1173.80" y="447.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="944.8" y="357" width="1.5" height="15.0" fill="rgb(137,137,236)" rx="2" ry="2" />
+<text  x="947.84" y="367.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="801.6" y="437" width="1.5" height="15.0" fill="rgb(110,110,213)" rx="2" ry="2" />
+<text  x="804.59" y="447.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (0 ms, 0.00%)</title><rect x="1169.3" y="469" width="14.8" height="15.0" fill="rgb(99,99,228)" rx="2" ry="2" />
+<text  x="1172.32" y="479.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="746.9" y="373" width="3.0" height="15.0" fill="rgb(115,115,223)" rx="2" ry="2" />
+<text  x="749.95" y="383.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="708.5" y="357" width="3.0" height="15.0" fill="rgb(88,88,239)" rx="2" ry="2" />
+<text  x="711.55" y="367.5" ></text>
+</g>
+<g >
+<title>putname (0 ms, 0.00%)</title><rect x="941.9" y="437" width="1.5" height="15.0" fill="rgb(91,91,244)" rx="2" ry="2" />
+<text  x="944.89" y="447.5" ></text>
+</g>
+<g >
+<title>getname_flags.part.0 (0 ms, 0.00%)</title><rect x="937.5" y="453" width="2.9" height="15.0" fill="rgb(119,119,192)" rx="2" ry="2" />
+<text  x="940.46" y="463.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_readdir (0 ms, 0.00%)</title><rect x="868.0" y="453" width="4.5" height="15.0" fill="rgb(135,135,219)" rx="2" ry="2" />
+<text  x="871.05" y="463.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="763.2" y="405" width="1.5" height="15.0" fill="rgb(137,137,224)" rx="2" ry="2" />
+<text  x="766.19" y="415.5" ></text>
+</g>
+<g >
+<title>cgroup_file_open (0 ms, 0.00%)</title><rect x="887.2" y="373" width="1.5" height="15.0" fill="rgb(133,133,242)" rx="2" ry="2" />
+<text  x="890.25" y="383.5" ></text>
+</g>
+<g >
+<title>kfree (0 ms, 0.00%)</title><rect x="1173.8" y="389" width="1.4" height="15.0" fill="rgb(83,83,214)" rx="2" ry="2" />
+<text  x="1176.75" y="399.5" ></text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="1119.1" y="309" width="1.5" height="15.0" fill="rgb(131,131,219)" rx="2" ry="2" />
+<text  x="1122.11" y="319.5" ></text>
+</g>
+<g >
+<title>lockref_put_return (0 ms, 0.00%)</title><rect x="699.7" y="405" width="1.5" height="15.0" fill="rgb(99,99,224)" rx="2" ry="2" />
+<text  x="702.69" y="415.5" ></text>
+</g>
+<g >
+<title>syscall_exit_to_user_mode (0 ms, 0.00%)</title><rect x="1184.1" y="469" width="1.5" height="15.0" fill="rgb(113,113,204)" rx="2" ry="2" />
+<text  x="1187.09" y="479.5" ></text>
+</g>
+<g >
+<title>do_dentry_open (0 ms, 0.00%)</title><rect x="913.8" y="421" width="5.9" height="15.0" fill="rgb(80,80,209)" rx="2" ry="2" />
+<text  x="916.83" y="431.5" ></text>
+</g>
+<g >
+<title>do_syscall_64 (0 ms, 0.00%)</title><rect x="686.4" y="501" width="502.1" height="15.0" fill="rgb(83,83,225)" rx="2" ry="2" />
+<text  x="689.40" y="511.5" >do_syscall_64</text>
+</g>
+<g >
+<title>copy_user_enhanced_fast_string (0 ms, 0.00%)</title><rect x="689.3" y="421" width="1.5" height="15.0" fill="rgb(124,124,240)" rx="2" ry="2" />
+<text  x="692.35" y="431.5" ></text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="1147.2" y="421" width="1.4" height="15.0" fill="rgb(122,122,205)" rx="2" ry="2" />
+<text  x="1150.17" y="431.5" ></text>
+</g>
+<g >
+<title>__kmalloc_node (0 ms, 0.00%)</title><rect x="959.6" y="405" width="1.5" height="15.0" fill="rgb(90,90,198)" rx="2" ry="2" />
+<text  x="962.61" y="415.5" ></text>
+</g>
+<g >
+<title>unix_stream_read_generic (0 ms, 0.00%)</title><rect x="1117.6" y="405" width="4.5" height="15.0" fill="rgb(134,134,224)" rx="2" ry="2" />
+<text  x="1120.63" y="415.5" ></text>
+</g>
+<g >
+<title>___slab_alloc (0 ms, 0.00%)</title><rect x="863.6" y="373" width="1.5" height="15.0" fill="rgb(99,99,211)" rx="2" ry="2" />
+<text  x="866.62" y="383.5" ></text>
+</g>
+<g >
+<title>__inet_stream_connect (0 ms, 0.00%)</title><rect x="772.1" y="437" width="1.4" height="15.0" fill="rgb(100,100,236)" rx="2" ry="2" />
+<text  x="775.05" y="447.5" ></text>
+</g>
+<g >
+<title>__check_heap_object (0 ms, 0.00%)</title><rect x="761.7" y="389" width="1.5" height="15.0" fill="rgb(127,127,221)" rx="2" ry="2" />
+<text  x="764.71" y="399.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="730.7" y="389" width="19.2" height="15.0" fill="rgb(111,111,194)" rx="2" ry="2" />
+<text  x="733.70" y="399.5" ></text>
+</g>
+<g >
+<title>__check_object_size (0 ms, 0.00%)</title><rect x="761.7" y="405" width="1.5" height="15.0" fill="rgb(105,105,216)" rx="2" ry="2" />
+<text  x="764.71" y="415.5" ></text>
+</g>
+<g >
+<title>entry_SYSCALL_64_after_hwframe (0 ms, 0.00%)</title><rect x="686.4" y="517" width="502.1" height="15.0" fill="rgb(134,134,216)" rx="2" ry="2" />
+<text  x="689.40" y="527.5" >entry_SYSCALL_64_after_hwframe</text>
+</g>
+<g >
+<title>kernel_init_free_pages.part.0 (0 ms, 0.00%)</title><rect x="680.5" y="389" width="2.9" height="15.0" fill="rgb(135,135,223)" rx="2" ry="2" />
+<text  x="683.49" y="399.5" ></text>
+</g>
+<g >
+<title>__fsnotify_parent (0 ms, 0.00%)</title><rect x="881.3" y="453" width="1.5" height="15.0" fill="rgb(93,93,237)" rx="2" ry="2" />
+<text  x="884.34" y="463.5" ></text>
+</g>
+<g >
+<title>tcp_schedule_loss_probe (0 ms, 0.00%)</title><rect x="775.0" y="357" width="1.5" height="15.0" fill="rgb(134,134,207)" rx="2" ry="2" />
+<text  x="778.01" y="367.5" ></text>
+</g>
+<g >
+<title>call_filldir (0 ms, 0.00%)</title><rect x="860.7" y="437" width="1.4" height="15.0" fill="rgb(84,84,237)" rx="2" ry="2" />
+<text  x="863.66" y="447.5" ></text>
+</g>
+<g >
+<title>blk_mq_end_request (0 ms, 0.00%)</title><rect x="683.4" y="437" width="1.5" height="15.0" fill="rgb(131,131,219)" rx="2" ry="2" />
+<text  x="686.44" y="447.5" ></text>
+</g>
+<g >
+<title>ipt_do_table (0 ms, 0.00%)</title><rect x="1153.1" y="133" width="1.5" height="15.0" fill="rgb(136,136,243)" rx="2" ry="2" />
+<text  x="1156.08" y="143.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="906.4" y="373" width="1.5" height="15.0" fill="rgb(102,102,202)" rx="2" ry="2" />
+<text  x="909.45" y="383.5" ></text>
+</g>
+<g >
+<title>alloc_empty_file (0 ms, 0.00%)</title><rect x="912.4" y="421" width="1.4" height="15.0" fill="rgb(106,106,226)" rx="2" ry="2" />
+<text  x="915.35" y="431.5" ></text>
+</g>
+<g >
+<title>asm_exc_page_fault (0 ms, 0.00%)</title><rect x="679.0" y="517" width="4.4" height="15.0" fill="rgb(88,88,236)" rx="2" ry="2" />
+<text  x="682.01" y="527.5" ></text>
+</g>
+<g >
+<title>path_openat (0 ms, 0.00%)</title><rect x="882.8" y="437" width="26.6" height="15.0" fill="rgb(90,90,214)" rx="2" ry="2" />
+<text  x="885.82" y="447.5" >p..</text>
+</g>
+<g >
+<title>vfs_read (0 ms, 0.00%)</title><rect x="956.7" y="469" width="190.5" height="15.0" fill="rgb(104,104,244)" rx="2" ry="2" />
+<text  x="959.66" y="479.5" >vfs_read</text>
+</g>
+<g >
+<title>___slab_alloc (0 ms, 0.00%)</title><rect x="751.4" y="293" width="1.5" height="15.0" fill="rgb(92,92,209)" rx="2" ry="2" />
+<text  x="754.38" y="303.5" ></text>
+</g>
+<g >
+<title>full_name_hash (0 ms, 0.00%)</title><rect x="872.5" y="389" width="1.5" height="15.0" fill="rgb(112,112,244)" rx="2" ry="2" />
+<text  x="875.48" y="399.5" ></text>
+</g>
+<g >
+<title>schedule_hrtimeout_range_clock (0 ms, 0.00%)</title><rect x="811.9" y="437" width="14.8" height="15.0" fill="rgb(138,138,214)" rx="2" ry="2" />
+<text  x="814.93" y="447.5" ></text>
+</g>
+<g >
+<title>up_read (0 ms, 0.00%)</title><rect x="899.1" y="373" width="1.4" height="15.0" fill="rgb(133,133,197)" rx="2" ry="2" />
+<text  x="902.06" y="383.5" ></text>
+</g>
+<g >
+<title>do_sys_openat2 (0 ms, 0.00%)</title><rect x="910.9" y="469" width="32.5" height="15.0" fill="rgb(105,105,206)" rx="2" ry="2" />
+<text  x="913.88" y="479.5" >do..</text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="738.1" y="341" width="1.5" height="15.0" fill="rgb(137,137,244)" rx="2" ry="2" />
+<text  x="741.09" y="351.5" ></text>
+</g>
+<g >
+<title>__local_bh_enable_ip (0 ms, 0.00%)</title><rect x="773.5" y="325" width="1.5" height="15.0" fill="rgb(123,123,213)" rx="2" ry="2" />
+<text  x="776.53" y="335.5" ></text>
+</g>
+<g >
+<title>task_work_add (0 ms, 0.00%)</title><rect x="770.6" y="421" width="1.5" height="15.0" fill="rgb(105,105,228)" rx="2" ry="2" />
+<text  x="773.58" y="431.5" ></text>
+</g>
+<g >
+<title>__kmalloc (0 ms, 0.00%)</title><rect x="863.6" y="389" width="1.5" height="15.0" fill="rgb(81,81,227)" rx="2" ry="2" />
+<text  x="866.62" y="399.5" ></text>
+</g>
+<g >
+<title>memory_stat_format (0 ms, 0.00%)</title><rect x="1006.9" y="405" width="106.3" height="15.0" fill="rgb(126,126,226)" rx="2" ry="2" />
+<text  x="1009.87" y="415.5" >memory_stat_f..</text>
+</g>
+<g >
+<title>seq_printf (0 ms, 0.00%)</title><rect x="1145.7" y="389" width="1.5" height="15.0" fill="rgb(119,119,229)" rx="2" ry="2" />
+<text  x="1148.69" y="399.5" ></text>
+</g>
+<g >
+<title>proc_readfd_common (0 ms, 0.00%)</title><rect x="872.5" y="453" width="1.5" height="15.0" fill="rgb(132,132,219)" rx="2" ry="2" />
+<text  x="875.48" y="463.5" ></text>
+</g>
+<g >
+<title>lookup_mnt (0 ms, 0.00%)</title><rect x="720.4" y="357" width="1.4" height="15.0" fill="rgb(120,120,244)" rx="2" ry="2" />
+<text  x="723.36" y="367.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="933.0" y="405" width="1.5" height="15.0" fill="rgb(124,124,232)" rx="2" ry="2" />
+<text  x="936.03" y="415.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="773.5" y="101" width="1.5" height="15.0" fill="rgb(112,112,194)" rx="2" ry="2" />
+<text  x="776.53" y="111.5" ></text>
+</g>
+<g >
+<title>syscall_enter_from_user_mode (0 ms, 0.00%)</title><rect x="1156.0" y="469" width="13.3" height="15.0" fill="rgb(130,130,224)" rx="2" ry="2" />
+<text  x="1159.03" y="479.5" ></text>
+</g>
+<g >
+<title>__do_sys_newfstatat (0 ms, 0.00%)</title><rect x="689.3" y="485" width="78.3" height="15.0" fill="rgb(88,88,206)" rx="2" ry="2" />
+<text  x="692.35" y="495.5" >__do_sys_..</text>
+</g>
+<g >
+<title>may_open (0 ms, 0.00%)</title><rect x="934.5" y="421" width="1.5" height="15.0" fill="rgb(108,108,193)" rx="2" ry="2" />
+<text  x="937.51" y="431.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1175.2" y="389" width="1.5" height="15.0" fill="rgb(83,83,230)" rx="2" ry="2" />
+<text  x="1178.23" y="399.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1147.2" y="389" width="1.4" height="15.0" fill="rgb(138,138,199)" rx="2" ry="2" />
+<text  x="1150.17" y="399.5" ></text>
+</g>
+<g >
+<title>sockfs_dname (0 ms, 0.00%)</title><rect x="947.8" y="405" width="1.5" height="15.0" fill="rgb(82,82,201)" rx="2" ry="2" />
+<text  x="950.80" y="415.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="905.0" y="389" width="1.4" height="15.0" fill="rgb(108,108,224)" rx="2" ry="2" />
+<text  x="907.97" y="399.5" ></text>
+</g>
+<g >
+<title>end_bio_bh_io_sync (0 ms, 0.00%)</title><rect x="683.4" y="405" width="1.5" height="15.0" fill="rgb(130,130,235)" rx="2" ry="2" />
+<text  x="686.44" y="415.5" ></text>
+</g>
+<g >
+<title>mutex_lock (0 ms, 0.00%)</title><rect x="859.2" y="453" width="1.5" height="15.0" fill="rgb(97,97,238)" rx="2" ry="2" />
+<text  x="862.19" y="463.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save___pv_queued_spin_unlock (0 ms, 0.00%)</title><rect x="730.7" y="325" width="1.5" height="15.0" fill="rgb(139,139,196)" rx="2" ry="2" />
+<text  x="733.70" y="335.5" ></text>
+</g>
+<g >
+<title>tcp_sendmsg_locked (0 ms, 0.00%)</title><rect x="1150.1" y="389" width="4.5" height="15.0" fill="rgb(122,122,192)" rx="2" ry="2" />
+<text  x="1153.13" y="399.5" ></text>
+</g>
+<g >
+<title>tcp_sendmsg (0 ms, 0.00%)</title><rect x="1148.6" y="405" width="6.0" height="15.0" fill="rgb(101,101,225)" rx="2" ry="2" />
+<text  x="1151.65" y="415.5" ></text>
+</g>
+<g >
+<title>do_filp_open (0 ms, 0.00%)</title><rect x="912.4" y="453" width="25.1" height="15.0" fill="rgb(99,99,198)" rx="2" ry="2" />
+<text  x="915.35" y="463.5" >d..</text>
+</g>
+<g >
+<title>generic_fillattr (0 ms, 0.00%)</title><rect x="695.3" y="405" width="1.4" height="15.0" fill="rgb(127,127,233)" rx="2" ry="2" />
+<text  x="698.26" y="415.5" ></text>
+</g>
+<g >
+<title>getname_flags.part.0 (0 ms, 0.00%)</title><rect x="760.2" y="437" width="4.5" height="15.0" fill="rgb(91,91,220)" rx="2" ry="2" />
+<text  x="763.24" y="447.5" ></text>
+</g>
+<g >
+<title>sock_write_iter (0 ms, 0.00%)</title><rect x="1148.6" y="437" width="7.4" height="15.0" fill="rgb(121,121,199)" rx="2" ry="2" />
+<text  x="1151.65" y="447.5" ></text>
+</g>
+<g >
+<title>dev_get_stats (0 ms, 0.00%)</title><rect x="1122.1" y="373" width="19.2" height="15.0" fill="rgb(97,97,239)" rx="2" ry="2" />
+<text  x="1125.07" y="383.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_open (0 ms, 0.00%)</title><rect x="916.8" y="405" width="2.9" height="15.0" fill="rgb(104,104,216)" rx="2" ry="2" />
+<text  x="919.78" y="415.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="931.6" y="373" width="1.4" height="15.0" fill="rgb(124,124,221)" rx="2" ry="2" />
+<text  x="934.55" y="383.5" ></text>
+</g>
+<g >
+<title>mutex_unlock (0 ms, 0.00%)</title><rect x="1120.6" y="373" width="1.5" height="15.0" fill="rgb(81,81,193)" rx="2" ry="2" />
+<text  x="1123.59" y="383.5" ></text>
+</g>
+<g >
+<title>snmp_get_cpu_field (0 ms, 0.00%)</title><rect x="949.3" y="341" width="4.4" height="15.0" fill="rgb(127,127,231)" rx="2" ry="2" />
+<text  x="952.27" y="351.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="751.4" y="325" width="1.5" height="15.0" fill="rgb(134,134,216)" rx="2" ry="2" />
+<text  x="754.38" y="335.5" ></text>
+</g>
+<g >
+<title>sched_unregister_group_rcu (0 ms, 0.00%)</title><rect x="684.9" y="421" width="1.5" height="15.0" fill="rgb(122,122,203)" rx="2" ry="2" />
+<text  x="687.92" y="431.5" ></text>
+</g>
+<g >
+<title>mutex_lock (0 ms, 0.00%)</title><rect x="916.8" y="389" width="1.5" height="15.0" fill="rgb(136,136,210)" rx="2" ry="2" />
+<text  x="919.78" y="399.5" ></text>
+</g>
+<g >
+<title>__x64_sys_epoll_pwait (0 ms, 0.00%)</title><rect x="804.5" y="485" width="22.2" height="15.0" fill="rgb(102,102,235)" rx="2" ry="2" />
+<text  x="807.54" y="495.5" >_..</text>
+</g>
+<g >
+<title>rcu_do_batch (0 ms, 0.00%)</title><rect x="1154.6" y="229" width="1.4" height="15.0" fill="rgb(111,111,222)" rx="2" ry="2" />
+<text  x="1157.56" y="239.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="868.0" y="437" width="1.5" height="15.0" fill="rgb(103,103,226)" rx="2" ry="2" />
+<text  x="871.05" y="447.5" ></text>
+</g>
+<g >
+<title>ipt_do_table (0 ms, 0.00%)</title><rect x="1150.1" y="149" width="1.5" height="15.0" fill="rgb(93,93,208)" rx="2" ry="2" />
+<text  x="1153.13" y="159.5" ></text>
+</g>
+<g >
+<title>nd_jump_root (0 ms, 0.00%)</title><rect x="936.0" y="405" width="1.5" height="15.0" fill="rgb(101,101,210)" rx="2" ry="2" />
+<text  x="938.98" y="415.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="801.6" y="421" width="1.5" height="15.0" fill="rgb(95,95,209)" rx="2" ry="2" />
+<text  x="804.59" y="431.5" ></text>
+</g>
+<g >
+<title>handle_mm_fault (0 ms, 0.00%)</title><rect x="680.5" y="469" width="2.9" height="15.0" fill="rgb(82,82,210)" rx="2" ry="2" />
+<text  x="683.49" y="479.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="761.7" y="421" width="3.0" height="15.0" fill="rgb(89,89,240)" rx="2" ry="2" />
+<text  x="764.71" y="431.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="876.9" y="421" width="4.4" height="15.0" fill="rgb(85,85,193)" rx="2" ry="2" />
+<text  x="879.91" y="431.5" ></text>
+</g>
+<g >
+<title>__fget_files (0 ms, 0.00%)</title><rect x="826.7" y="437" width="1.5" height="15.0" fill="rgb(105,105,194)" rx="2" ry="2" />
+<text  x="829.70" y="447.5" ></text>
+</g>
+<g >
+<title>__x64_sys_futex (0 ms, 0.00%)</title><rect x="829.6" y="485" width="29.6" height="15.0" fill="rgb(100,100,218)" rx="2" ry="2" />
+<text  x="832.65" y="495.5" >__..</text>
+</g>
+<g >
+<title>sock_def_readable (0 ms, 0.00%)</title><rect x="773.5" y="149" width="1.5" height="15.0" fill="rgb(85,85,233)" rx="2" ry="2" />
+<text  x="776.53" y="159.5" ></text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1108.8" y="373" width="4.4" height="15.0" fill="rgb(136,136,207)" rx="2" ry="2" />
+<text  x="1111.77" y="383.5" ></text>
+</g>
+<g >
+<title>strlen (0 ms, 0.00%)</title><rect x="871.0" y="421" width="1.5" height="15.0" fill="rgb(117,117,200)" rx="2" ry="2" />
+<text  x="874.00" y="431.5" ></text>
+</g>
+<g >
+<title>__napi_poll (0 ms, 0.00%)</title><rect x="773.5" y="261" width="1.5" height="15.0" fill="rgb(112,112,209)" rx="2" ry="2" />
+<text  x="776.53" y="271.5" ></text>
+</g>
+<g >
+<title>memory_stat_show (0 ms, 0.00%)</title><rect x="1006.9" y="421" width="106.3" height="15.0" fill="rgb(94,94,242)" rx="2" ry="2" />
+<text  x="1009.87" y="431.5" >memory_stat_s..</text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="930.1" y="405" width="2.9" height="15.0" fill="rgb(127,127,225)" rx="2" ry="2" />
+<text  x="933.08" y="415.5" ></text>
+</g>
+<g >
+<title>__alloc_file (0 ms, 0.00%)</title><rect x="882.8" y="405" width="3.0" height="15.0" fill="rgb(106,106,237)" rx="2" ry="2" />
+<text  x="885.82" y="415.5" ></text>
+</g>
+<g >
+<title>apparmor_task_getsecid (0 ms, 0.00%)</title><rect x="921.2" y="373" width="1.5" height="15.0" fill="rgb(126,126,194)" rx="2" ry="2" />
+<text  x="924.21" y="383.5" ></text>
+</g>
+<g >
+<title>vfs_getattr_nosec (0 ms, 0.00%)</title><rect x="764.7" y="437" width="2.9" height="15.0" fill="rgb(133,133,223)" rx="2" ry="2" />
+<text  x="767.67" y="447.5" ></text>
+</g>
+<g >
+<title>__fput (0 ms, 0.00%)</title><rect x="1170.8" y="421" width="1.5" height="15.0" fill="rgb(128,128,191)" rx="2" ry="2" />
+<text  x="1173.80" y="431.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_trace (0 ms, 0.00%)</title><rect x="888.7" y="389" width="1.5" height="15.0" fill="rgb(84,84,205)" rx="2" ry="2" />
+<text  x="891.72" y="399.5" ></text>
+</g>
+<g >
+<title>seq_printf (0 ms, 0.00%)</title><rect x="1002.4" y="405" width="1.5" height="15.0" fill="rgb(114,114,218)" rx="2" ry="2" />
+<text  x="1005.44" y="415.5" ></text>
+</g>
+<g >
+<title>seq_release (0 ms, 0.00%)</title><rect x="1175.2" y="405" width="1.5" height="15.0" fill="rgb(135,135,197)" rx="2" ry="2" />
+<text  x="1178.23" y="415.5" ></text>
+</g>
+<g >
+<title>ext4_getattr (0 ms, 0.00%)</title><rect x="692.3" y="421" width="3.0" height="15.0" fill="rgb(110,110,202)" rx="2" ry="2" />
+<text  x="695.30" y="431.5" ></text>
+</g>
+<g >
+<title>__do_softirq (0 ms, 0.00%)</title><rect x="773.5" y="293" width="1.5" height="15.0" fill="rgb(82,82,194)" rx="2" ry="2" />
+<text  x="776.53" y="303.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="803.1" y="437" width="1.4" height="15.0" fill="rgb(89,89,234)" rx="2" ry="2" />
+<text  x="806.07" y="447.5" ></text>
+</g>
+<g >
+<title>vfs_write (0 ms, 0.00%)</title><rect x="1147.2" y="469" width="8.8" height="15.0" fill="rgb(85,85,234)" rx="2" ry="2" />
+<text  x="1150.17" y="479.5" ></text>
+</g>
+<g >
+<title>ip_finish_output2 (0 ms, 0.00%)</title><rect x="1179.7" y="277" width="1.4" height="15.0" fill="rgb(81,81,193)" rx="2" ry="2" />
+<text  x="1182.66" y="287.5" ></text>
+</g>
+<g >
+<title>do_dentry_open (0 ms, 0.00%)</title><rect x="913.8" y="405" width="3.0" height="15.0" fill="rgb(118,118,231)" rx="2" ry="2" />
+<text  x="916.83" y="415.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_getattr (0 ms, 0.00%)</title><rect x="696.7" y="453" width="3.0" height="15.0" fill="rgb(115,115,215)" rx="2" ry="2" />
+<text  x="699.73" y="463.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1006.9" y="373" width="101.9" height="15.0" fill="rgb(127,127,198)" rx="2" ry="2" />
+<text  x="1009.87" y="383.5" >_raw_spin_un..</text>
+</g>
+<g >
+<title>kernfs_get_active (0 ms, 0.00%)</title><rect x="1005.4" y="389" width="1.5" height="15.0" fill="rgb(127,127,208)" rx="2" ry="2" />
+<text  x="1008.39" y="399.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1154.6" y="197" width="1.4" height="15.0" fill="rgb(125,125,238)" rx="2" ry="2" />
+<text  x="1157.56" y="207.5" ></text>
+</g>
+<g >
+<title>ep_item_poll.isra.0 (0 ms, 0.00%)</title><rect x="810.5" y="437" width="1.4" height="15.0" fill="rgb(134,134,235)" rx="2" ry="2" />
+<text  x="813.45" y="447.5" ></text>
+</g>
+<g >
+<title>__snmp6_fill_stats64.constprop.0 (0 ms, 0.00%)</title><rect x="949.3" y="357" width="4.4" height="15.0" fill="rgb(91,91,191)" rx="2" ry="2" />
+<text  x="952.27" y="367.5" ></text>
+</g>
+<g >
+<title>pagecache_get_page (0 ms, 0.00%)</title><rect x="862.1" y="309" width="1.5" height="15.0" fill="rgb(104,104,233)" rx="2" ry="2" />
+<text  x="865.14" y="319.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="918.3" y="373" width="1.4" height="15.0" fill="rgb(109,109,207)" rx="2" ry="2" />
+<text  x="921.26" y="383.5" ></text>
+</g>
+<g >
+<title>__x64_sys_openat2 (0 ms, 0.00%)</title><rect x="881.3" y="485" width="29.6" height="15.0" fill="rgb(82,82,196)" rx="2" ry="2" />
+<text  x="884.34" y="495.5" >__..</text>
+</g>
+<g >
+<title>fput_many (0 ms, 0.00%)</title><rect x="686.4" y="453" width="1.5" height="15.0" fill="rgb(99,99,230)" rx="2" ry="2" />
+<text  x="689.40" y="463.5" ></text>
+</g>
+<g >
+<title>__alloc_skb (0 ms, 0.00%)</title><rect x="1116.2" y="357" width="1.4" height="15.0" fill="rgb(129,129,214)" rx="2" ry="2" />
+<text  x="1119.16" y="367.5" ></text>
+</g>
+<g >
+<title>cpumask_next (0 ms, 0.00%)</title><rect x="1122.1" y="309" width="1.4" height="15.0" fill="rgb(137,137,239)" rx="2" ry="2" />
+<text  x="1125.07" y="319.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="701.2" y="389" width="17.7" height="15.0" fill="rgb(102,102,205)" rx="2" ry="2" />
+<text  x="704.16" y="399.5" ></text>
+</g>
+<g >
+<title>htree_dirblock_to_tree (0 ms, 0.00%)</title><rect x="862.1" y="421" width="4.5" height="15.0" fill="rgb(112,112,224)" rx="2" ry="2" />
+<text  x="865.14" y="431.5" ></text>
+</g>
+<g >
+<title>__do_softirq (0 ms, 0.00%)</title><rect x="1154.6" y="261" width="1.4" height="15.0" fill="rgb(116,116,243)" rx="2" ry="2" />
+<text  x="1157.56" y="271.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_trace (0 ms, 0.00%)</title><rect x="888.7" y="373" width="1.5" height="15.0" fill="rgb(120,120,242)" rx="2" ry="2" />
+<text  x="891.72" y="383.5" ></text>
+</g>
+<g >
+<title>sock_sendmsg (0 ms, 0.00%)</title><rect x="1148.6" y="421" width="7.4" height="15.0" fill="rgb(92,92,215)" rx="2" ry="2" />
+<text  x="1151.65" y="431.5" ></text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1002.4" y="389" width="1.5" height="15.0" fill="rgb(120,120,204)" rx="2" ry="2" />
+<text  x="1005.44" y="399.5" ></text>
+</g>
+<g >
+<title>__napi_poll (0 ms, 0.00%)</title><rect x="1179.7" y="197" width="1.4" height="15.0" fill="rgb(107,107,227)" rx="2" ry="2" />
+<text  x="1182.66" y="207.5" ></text>
+</g>
+<g >
+<title>mutex_unlock (0 ms, 0.00%)</title><rect x="1120.6" y="389" width="1.5" height="15.0" fill="rgb(83,83,191)" rx="2" ry="2" />
+<text  x="1123.59" y="399.5" ></text>
+</g>
+<g >
+<title>__napi_poll (0 ms, 0.00%)</title><rect x="1150.1" y="229" width="4.5" height="15.0" fill="rgb(80,80,203)" rx="2" ry="2" />
+<text  x="1153.13" y="239.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="701.2" y="405" width="48.7" height="15.0" fill="rgb(133,133,213)" rx="2" ry="2" />
+<text  x="704.16" y="415.5" >link..</text>
+</g>
+<g >
+<title>__slab_free (0 ms, 0.00%)</title><rect x="1172.3" y="357" width="1.5" height="15.0" fill="rgb(137,137,211)" rx="2" ry="2" />
+<text  x="1175.28" y="367.5" ></text>
+</g>
+<g >
+<title>__ext4fs_dirhash (0 ms, 0.00%)</title><rect x="865.1" y="389" width="1.5" height="15.0" fill="rgb(101,101,215)" rx="2" ry="2" />
+<text  x="868.09" y="399.5" ></text>
+</g>
+<g >
+<title>__check_heap_object (0 ms, 0.00%)</title><rect x="958.1" y="389" width="1.5" height="15.0" fill="rgb(126,126,226)" rx="2" ry="2" />
+<text  x="961.14" y="399.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="760.2" y="405" width="1.5" height="15.0" fill="rgb(123,123,208)" rx="2" ry="2" />
+<text  x="763.24" y="415.5" ></text>
+</g>
+<g >
+<title>do_softirq (0 ms, 0.00%)</title><rect x="773.5" y="309" width="1.5" height="15.0" fill="rgb(101,101,196)" rx="2" ry="2" />
+<text  x="776.53" y="319.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="708.5" y="341" width="3.0" height="15.0" fill="rgb(96,96,243)" rx="2" ry="2" />
+<text  x="711.55" y="351.5" ></text>
+</g>
+<g >
+<title>do_futex (0 ms, 0.00%)</title><rect x="831.1" y="469" width="28.1" height="15.0" fill="rgb(89,89,219)" rx="2" ry="2" />
+<text  x="834.13" y="479.5" >d..</text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="912.4" y="389" width="1.4" height="15.0" fill="rgb(115,115,238)" rx="2" ry="2" />
+<text  x="915.35" y="399.5" ></text>
+</g>
+<g >
+<title>alloc_fd (0 ms, 0.00%)</title><rect x="910.9" y="453" width="1.5" height="15.0" fill="rgb(118,118,221)" rx="2" ry="2" />
+<text  x="913.88" y="463.5" ></text>
+</g>
+<g >
+<title>tcp_rcv_established (0 ms, 0.00%)</title><rect x="1148.6" y="341" width="1.5" height="15.0" fill="rgb(108,108,216)" rx="2" ry="2" />
+<text  x="1151.65" y="351.5" ></text>
+</g>
+<g >
+<title>kernfs_dop_revalidate (0 ms, 0.00%)</title><rect x="738.1" y="357" width="8.8" height="15.0" fill="rgb(85,85,221)" rx="2" ry="2" />
+<text  x="741.09" y="367.5" ></text>
+</g>
+<g >
+<title>path_lookupat (0 ms, 0.00%)</title><rect x="701.2" y="421" width="59.0" height="15.0" fill="rgb(88,88,237)" rx="2" ry="2" />
+<text  x="704.16" y="431.5" >path_l..</text>
+</g>
+<g >
+<title>__do_softirq (0 ms, 0.00%)</title><rect x="1150.1" y="261" width="4.5" height="15.0" fill="rgb(128,128,236)" rx="2" ry="2" />
+<text  x="1153.13" y="271.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="906.4" y="405" width="1.5" height="15.0" fill="rgb(121,121,191)" rx="2" ry="2" />
+<text  x="909.45" y="415.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="906.4" y="389" width="1.5" height="15.0" fill="rgb(132,132,208)" rx="2" ry="2" />
+<text  x="909.45" y="399.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="933.0" y="421" width="1.5" height="15.0" fill="rgb(124,124,223)" rx="2" ry="2" />
+<text  x="936.03" y="431.5" ></text>
+</g>
+<g >
+<title>netlink_dump (0 ms, 0.00%)</title><rect x="949.3" y="437" width="4.4" height="15.0" fill="rgb(128,128,199)" rx="2" ry="2" />
+<text  x="952.27" y="447.5" ></text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="924.2" y="373" width="1.4" height="15.0" fill="rgb(139,139,201)" rx="2" ry="2" />
+<text  x="927.17" y="383.5" ></text>
+</g>
+<g >
+<title>step_into (0 ms, 0.00%)</title><rect x="720.4" y="389" width="10.3" height="15.0" fill="rgb(111,111,218)" rx="2" ry="2" />
+<text  x="723.36" y="399.5" ></text>
+</g>
+<g >
+<title>__ext4_read_dirblock (0 ms, 0.00%)</title><rect x="862.1" y="405" width="1.5" height="15.0" fill="rgb(125,125,218)" rx="2" ry="2" />
+<text  x="865.14" y="415.5" ></text>
+</g>
+<g >
+<title>__local_bh_enable_ip (0 ms, 0.00%)</title><rect x="1150.1" y="293" width="4.5" height="15.0" fill="rgb(135,135,230)" rx="2" ry="2" />
+<text  x="1153.13" y="303.5" ></text>
+</g>
+<g >
+<title>seq_read (0 ms, 0.00%)</title><rect x="1145.7" y="453" width="1.5" height="15.0" fill="rgb(107,107,238)" rx="2" ry="2" />
+<text  x="1148.69" y="463.5" ></text>
+</g>
+<g >
+<title>tcp_ack (0 ms, 0.00%)</title><rect x="775.0" y="373" width="1.5" height="15.0" fill="rgb(91,91,239)" rx="2" ry="2" />
+<text  x="778.01" y="383.5" ></text>
+</g>
+<g >
+<title>__tcp_transmit_skb (0 ms, 0.00%)</title><rect x="772.1" y="389" width="1.4" height="15.0" fill="rgb(115,115,230)" rx="2" ry="2" />
+<text  x="775.05" y="399.5" ></text>
+</g>
+<g >
+<title>put_dec (0 ms, 0.00%)</title><rect x="1002.4" y="341" width="1.5" height="15.0" fill="rgb(104,104,240)" rx="2" ry="2" />
+<text  x="1005.44" y="351.5" ></text>
+</g>
+<g >
+<title>ovl_permission (0 ms, 0.00%)</title><rect x="924.2" y="389" width="2.9" height="15.0" fill="rgb(90,90,201)" rx="2" ry="2" />
+<text  x="927.17" y="399.5" ></text>
+</g>
+<g >
+<title>release_sock (0 ms, 0.00%)</title><rect x="773.5" y="437" width="3.0" height="15.0" fill="rgb(118,118,219)" rx="2" ry="2" />
+<text  x="776.53" y="447.5" ></text>
+</g>
+<g >
+<title>__check_object_size (0 ms, 0.00%)</title><rect x="937.5" y="421" width="1.4" height="15.0" fill="rgb(97,97,222)" rx="2" ry="2" />
+<text  x="940.46" y="431.5" ></text>
+</g>
+<g >
+<title>do_send_sig_info (0 ms, 0.00%)</title><rect x="953.7" y="437" width="1.5" height="15.0" fill="rgb(114,114,231)" rx="2" ry="2" />
+<text  x="956.70" y="447.5" ></text>
+</g>
+<g >
+<title>ipt_do_table (0 ms, 0.00%)</title><rect x="772.1" y="293" width="1.4" height="15.0" fill="rgb(89,89,236)" rx="2" ry="2" />
+<text  x="775.05" y="303.5" ></text>
+</g>
+<g >
+<title>unroll_tree_refs (0 ms, 0.00%)</title><rect x="1187.0" y="421" width="1.5" height="15.0" fill="rgb(131,131,194)" rx="2" ry="2" />
+<text  x="1190.05" y="431.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="906.4" y="357" width="1.5" height="15.0" fill="rgb(80,80,241)" rx="2" ry="2" />
+<text  x="909.45" y="367.5" ></text>
+</g>
+<g >
+<title>hugetlb_events_show (0 ms, 0.00%)</title><rect x="1003.9" y="421" width="1.5" height="15.0" fill="rgb(134,134,195)" rx="2" ry="2" />
+<text  x="1006.92" y="431.5" ></text>
+</g>
+<g >
+<title>ext4_file_getattr (0 ms, 0.00%)</title><rect x="692.3" y="453" width="4.4" height="15.0" fill="rgb(106,106,207)" rx="2" ry="2" />
+<text  x="695.30" y="463.5" ></text>
+</g>
+<g >
+<title>generic_fillattr (0 ms, 0.00%)</title><rect x="698.2" y="421" width="1.5" height="15.0" fill="rgb(113,113,193)" rx="2" ry="2" />
+<text  x="701.21" y="431.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="696.7" y="437" width="1.5" height="15.0" fill="rgb(127,127,193)" rx="2" ry="2" />
+<text  x="699.73" y="447.5" ></text>
+</g>
+<g >
+<title>__x64_sys_recvfrom (0 ms, 0.00%)</title><rect x="949.3" y="485" width="4.4" height="15.0" fill="rgb(94,94,234)" rx="2" ry="2" />
+<text  x="952.27" y="495.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="707.1" y="357" width="1.4" height="15.0" fill="rgb(90,90,216)" rx="2" ry="2" />
+<text  x="710.07" y="367.5" ></text>
+</g>
+<g >
+<title>rb_next (0 ms, 0.00%)</title><rect x="1179.7" y="53" width="1.4" height="15.0" fill="rgb(124,124,210)" rx="2" ry="2" />
+<text  x="1182.66" y="63.5" ></text>
+</g>
+<g >
+<title>__mutex_lock.constprop.0 (0 ms, 0.00%)</title><rect x="776.5" y="453" width="1.5" height="15.0" fill="rgb(87,87,199)" rx="2" ry="2" />
+<text  x="779.48" y="463.5" ></text>
+</g>
+<g >
+<title>__tcp_ack_snd_check (0 ms, 0.00%)</title><rect x="1151.6" y="101" width="1.5" height="15.0" fill="rgb(115,115,213)" rx="2" ry="2" />
+<text  x="1154.60" y="111.5" ></text>
+</g>
+<g >
+<title>__cond_resched (0 ms, 0.00%)</title><rect x="934.5" y="357" width="1.5" height="15.0" fill="rgb(88,88,221)" rx="2" ry="2" />
+<text  x="937.51" y="367.5" ></text>
+</g>
+<g >
+<title>__irq_exit_rcu (0 ms, 0.00%)</title><rect x="1154.6" y="277" width="1.4" height="15.0" fill="rgb(90,90,216)" rx="2" ry="2" />
+<text  x="1157.56" y="287.5" ></text>
+</g>
+<g >
+<title>inet_stream_connect (0 ms, 0.00%)</title><rect x="772.1" y="453" width="4.4" height="15.0" fill="rgb(112,112,235)" rx="2" ry="2" />
+<text  x="775.05" y="463.5" ></text>
+</g>
+<g >
+<title>obj_cgroup_charge (0 ms, 0.00%)</title><rect x="969.9" y="405" width="1.5" height="15.0" fill="rgb(123,123,214)" rx="2" ry="2" />
+<text  x="972.95" y="415.5" ></text>
+</g>
+<g >
+<title>__sys_recvfrom (0 ms, 0.00%)</title><rect x="949.3" y="469" width="4.4" height="15.0" fill="rgb(97,97,220)" rx="2" ry="2" />
+<text  x="952.27" y="479.5" ></text>
+</g>
+<g >
+<title>process_backlog (0 ms, 0.00%)</title><rect x="1150.1" y="213" width="4.5" height="15.0" fill="rgb(82,82,205)" rx="2" ry="2" />
+<text  x="1153.13" y="223.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="944.8" y="389" width="1.5" height="15.0" fill="rgb(95,95,193)" rx="2" ry="2" />
+<text  x="947.84" y="399.5" ></text>
+</g>
+<g >
+<title>syscall_enter_from_user_mode (0 ms, 0.00%)</title><rect x="1156.0" y="485" width="13.3" height="15.0" fill="rgb(97,97,223)" rx="2" ry="2" />
+<text  x="1159.03" y="495.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="896.1" y="357" width="1.5" height="15.0" fill="rgb(112,112,210)" rx="2" ry="2" />
+<text  x="899.11" y="367.5" ></text>
+</g>
+<g >
+<title>__x64_sys_nanosleep (0 ms, 0.00%)</title><rect x="874.0" y="485" width="7.3" height="15.0" fill="rgb(131,131,235)" rx="2" ry="2" />
+<text  x="876.95" y="495.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="773.5" y="117" width="1.5" height="15.0" fill="rgb(87,87,207)" rx="2" ry="2" />
+<text  x="776.53" y="127.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="876.9" y="389" width="4.4" height="15.0" fill="rgb(102,102,226)" rx="2" ry="2" />
+<text  x="879.91" y="399.5" ></text>
+</g>
+<g >
+<title>do_epoll_wait (0 ms, 0.00%)</title><rect x="804.5" y="453" width="22.2" height="15.0" fill="rgb(91,91,237)" rx="2" ry="2" />
+<text  x="807.54" y="463.5" >d..</text>
+</g>
+<g >
+<title>__put_user_nocheck_4 (0 ms, 0.00%)</title><rect x="806.0" y="421" width="1.5" height="15.0" fill="rgb(126,126,222)" rx="2" ry="2" />
+<text  x="809.02" y="431.5" ></text>
+</g>
+<g >
+<title>security_inode_getattr (0 ms, 0.00%)</title><rect x="687.9" y="453" width="1.4" height="15.0" fill="rgb(139,139,204)" rx="2" ry="2" />
+<text  x="690.87" y="463.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="897.6" y="373" width="1.5" height="15.0" fill="rgb(87,87,215)" rx="2" ry="2" />
+<text  x="900.58" y="383.5" ></text>
+</g>
+<g >
+<title>sock_alloc_send_pskb (0 ms, 0.00%)</title><rect x="1154.6" y="389" width="1.4" height="15.0" fill="rgb(127,127,215)" rx="2" ry="2" />
+<text  x="1157.56" y="399.5" ></text>
+</g>
+<g >
+<title>mod_objcg_state (0 ms, 0.00%)</title><rect x="967.0" y="405" width="2.9" height="15.0" fill="rgb(109,109,198)" rx="2" ry="2" />
+<text  x="970.00" y="415.5" ></text>
+</g>
+<g >
+<title>tcp_v4_connect (0 ms, 0.00%)</title><rect x="772.1" y="421" width="1.4" height="15.0" fill="rgb(133,133,201)" rx="2" ry="2" />
+<text  x="775.05" y="431.5" ></text>
+</g>
+<g >
+<title>path_openat (0 ms, 0.00%)</title><rect x="912.4" y="437" width="25.1" height="15.0" fill="rgb(96,96,243)" rx="2" ry="2" />
+<text  x="915.35" y="447.5" >p..</text>
+</g>
+<g >
+<title>exc_page_fault (0 ms, 0.00%)</title><rect x="679.0" y="501" width="4.4" height="15.0" fill="rgb(106,106,232)" rx="2" ry="2" />
+<text  x="682.01" y="511.5" ></text>
+</g>
+<g >
+<title>filename_lookup (0 ms, 0.00%)</title><rect x="701.2" y="437" width="59.0" height="15.0" fill="rgb(97,97,237)" rx="2" ry="2" />
+<text  x="704.16" y="447.5" >filena..</text>
+</g>
+<g >
+<title>rcu_all_qs (0 ms, 0.00%)</title><rect x="934.5" y="325" width="1.5" height="15.0" fill="rgb(139,139,231)" rx="2" ry="2" />
+<text  x="937.51" y="335.5" ></text>
+</g>
+<g >
+<title>ip_local_out (0 ms, 0.00%)</title><rect x="772.1" y="357" width="1.4" height="15.0" fill="rgb(111,111,229)" rx="2" ry="2" />
+<text  x="775.05" y="367.5" ></text>
+</g>
+<g >
+<title>__getblk_gfp (0 ms, 0.00%)</title><rect x="862.1" y="357" width="1.5" height="15.0" fill="rgb(87,87,214)" rx="2" ry="2" />
+<text  x="865.14" y="367.5" ></text>
+</g>
+<g >
+<title>mutex_spin_on_owner (0 ms, 0.00%)</title><rect x="804.5" y="421" width="1.5" height="15.0" fill="rgb(121,121,201)" rx="2" ry="2" />
+<text  x="807.54" y="431.5" ></text>
+</g>
+<g >
+<title>__srcu_read_lock (0 ms, 0.00%)</title><rect x="769.1" y="389" width="1.5" height="15.0" fill="rgb(131,131,204)" rx="2" ry="2" />
+<text  x="772.10" y="399.5" ></text>
+</g>
+<g >
+<title>nf_hook_slow (0 ms, 0.00%)</title><rect x="772.1" y="325" width="1.4" height="15.0" fill="rgb(82,82,213)" rx="2" ry="2" />
+<text  x="775.05" y="335.5" ></text>
+</g>
+<g >
+<title>lockref_put_return (0 ms, 0.00%)</title><rect x="699.7" y="421" width="1.5" height="15.0" fill="rgb(80,80,217)" rx="2" ry="2" />
+<text  x="702.69" y="431.5" ></text>
+</g>
+<g >
+<title>__do_sys_newfstat (0 ms, 0.00%)</title><rect x="686.4" y="485" width="2.9" height="15.0" fill="rgb(100,100,240)" rx="2" ry="2" />
+<text  x="689.40" y="495.5" ></text>
+</g>
+<g >
+<title>__ip_queue_xmit (0 ms, 0.00%)</title><rect x="1150.1" y="325" width="4.5" height="15.0" fill="rgb(104,104,221)" rx="2" ry="2" />
+<text  x="1153.13" y="335.5" ></text>
+</g>
+<g >
+<title>lookup_mnt (0 ms, 0.00%)</title><rect x="720.4" y="341" width="1.4" height="15.0" fill="rgb(122,122,233)" rx="2" ry="2" />
+<text  x="723.36" y="351.5" ></text>
+</g>
+<g >
+<title>generic_permission (0 ms, 0.00%)</title><rect x="711.5" y="357" width="3.0" height="15.0" fill="rgb(136,136,194)" rx="2" ry="2" />
+<text  x="714.50" y="367.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="845.9" y="437" width="13.3" height="15.0" fill="rgb(118,118,203)" rx="2" ry="2" />
+<text  x="848.89" y="447.5" ></text>
+</g>
+<g >
+<title>wake_up_q (0 ms, 0.00%)</title><rect x="857.7" y="421" width="1.5" height="15.0" fill="rgb(136,136,191)" rx="2" ry="2" />
+<text  x="860.71" y="431.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="683.4" y="341" width="1.5" height="15.0" fill="rgb(99,99,209)" rx="2" ry="2" />
+<text  x="686.44" y="351.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="1176.7" y="405" width="3.0" height="15.0" fill="rgb(110,110,205)" rx="2" ry="2" />
+<text  x="1179.71" y="415.5" ></text>
+</g>
+<g >
+<title>cgroup_rstat_flush (0 ms, 0.00%)</title><rect x="971.4" y="405" width="29.6" height="15.0" fill="rgb(104,104,207)" rx="2" ry="2" />
+<text  x="974.43" y="415.5" >cg..</text>
+</g>
+<g >
+<title>__virt_addr_valid (0 ms, 0.00%)</title><rect x="946.3" y="373" width="1.5" height="15.0" fill="rgb(116,116,218)" rx="2" ry="2" />
+<text  x="949.32" y="383.5" ></text>
+</g>
+<g >
+<title>__fget_files (0 ms, 0.00%)</title><rect x="907.9" y="389" width="1.5" height="15.0" fill="rgb(105,105,207)" rx="2" ry="2" />
+<text  x="910.92" y="399.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="903.5" y="405" width="1.5" height="15.0" fill="rgb(98,98,201)" rx="2" ry="2" />
+<text  x="906.49" y="415.5" ></text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1110.3" y="357" width="2.9" height="15.0" fill="rgb(129,129,233)" rx="2" ry="2" />
+<text  x="1113.25" y="367.5" ></text>
+</g>
+<g >
+<title>pagecache_get_page (0 ms, 0.00%)</title><rect x="862.1" y="325" width="1.5" height="15.0" fill="rgb(126,126,206)" rx="2" ry="2" />
+<text  x="865.14" y="335.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="882.8" y="373" width="3.0" height="15.0" fill="rgb(122,122,203)" rx="2" ry="2" />
+<text  x="885.82" y="383.5" ></text>
+</g>
+<g >
+<title>user_path_at_empty (0 ms, 0.00%)</title><rect x="701.2" y="453" width="63.5" height="15.0" fill="rgb(127,127,210)" rx="2" ry="2" />
+<text  x="704.16" y="463.5" >user_p..</text>
+</g>
+<g >
+<title>__alloc_skb (0 ms, 0.00%)</title><rect x="1154.6" y="357" width="1.4" height="15.0" fill="rgb(85,85,216)" rx="2" ry="2" />
+<text  x="1157.56" y="367.5" ></text>
+</g>
+<g >
+<title>tcp_send_fin (0 ms, 0.00%)</title><rect x="1181.1" y="341" width="1.5" height="15.0" fill="rgb(94,94,233)" rx="2" ry="2" />
+<text  x="1184.14" y="351.5" ></text>
+</g>
+<g >
+<title>__alloc_file (0 ms, 0.00%)</title><rect x="912.4" y="405" width="1.4" height="15.0" fill="rgb(106,106,216)" rx="2" ry="2" />
+<text  x="915.35" y="415.5" ></text>
+</g>
+<g >
+<title>format_decode (0 ms, 0.00%)</title><rect x="1108.8" y="357" width="1.5" height="15.0" fill="rgb(126,126,200)" rx="2" ry="2" />
+<text  x="1111.77" y="367.5" ></text>
+</g>
+<g >
+<title>dev_seq_printf_stats (0 ms, 0.00%)</title><rect x="1122.1" y="389" width="23.6" height="15.0" fill="rgb(132,132,227)" rx="2" ry="2" />
+<text  x="1125.07" y="399.5" >d..</text>
+</g>
+<g >
+<title>filp_close (0 ms, 0.00%)</title><rect x="769.1" y="469" width="3.0" height="15.0" fill="rgb(138,138,199)" rx="2" ry="2" />
+<text  x="772.10" y="479.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="811.9" y="421" width="14.8" height="15.0" fill="rgb(94,94,242)" rx="2" ry="2" />
+<text  x="814.93" y="431.5" ></text>
+</g>
+<g >
+<title>skb_release_data (0 ms, 0.00%)</title><rect x="1117.6" y="373" width="1.5" height="15.0" fill="rgb(112,112,241)" rx="2" ry="2" />
+<text  x="1120.63" y="383.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_poll (0 ms, 0.00%)</title><rect x="810.5" y="421" width="1.4" height="15.0" fill="rgb(119,119,221)" rx="2" ry="2" />
+<text  x="813.45" y="431.5" ></text>
+</g>
+<g >
+<title>unix_stream_recvmsg (0 ms, 0.00%)</title><rect x="1117.6" y="421" width="4.5" height="15.0" fill="rgb(124,124,226)" rx="2" ry="2" />
+<text  x="1120.63" y="431.5" ></text>
+</g>
+<g >
+<title>do_softirq (0 ms, 0.00%)</title><rect x="1179.7" y="245" width="1.4" height="15.0" fill="rgb(98,98,218)" rx="2" ry="2" />
+<text  x="1182.66" y="255.5" ></text>
+</g>
+<g >
+<title>tcp_ack (0 ms, 0.00%)</title><rect x="1179.7" y="69" width="1.4" height="15.0" fill="rgb(127,127,214)" rx="2" ry="2" />
+<text  x="1182.66" y="79.5" ></text>
+</g>
+<g >
+<title>tcp_recvmsg_locked (0 ms, 0.00%)</title><rect x="1116.2" y="389" width="1.4" height="15.0" fill="rgb(102,102,217)" rx="2" ry="2" />
+<text  x="1119.16" y="399.5" ></text>
+</g>
+<g >
+<title>kmem_cache_free (0 ms, 0.00%)</title><rect x="940.4" y="453" width="1.5" height="15.0" fill="rgb(101,101,209)" rx="2" ry="2" />
+<text  x="943.41" y="463.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="962.6" y="389" width="4.4" height="15.0" fill="rgb(107,107,224)" rx="2" ry="2" />
+<text  x="965.57" y="399.5" ></text>
+</g>
+<g >
+<title>kernfs_generic_poll (0 ms, 0.00%)</title><rect x="810.5" y="389" width="1.4" height="15.0" fill="rgb(82,82,205)" rx="2" ry="2" />
+<text  x="813.45" y="399.5" ></text>
+</g>
+<g >
+<title>___slab_alloc (0 ms, 0.00%)</title><rect x="863.6" y="357" width="1.5" height="15.0" fill="rgb(114,114,220)" rx="2" ry="2" />
+<text  x="866.62" y="367.5" ></text>
+</g>
+<g >
+<title>tcp_schedule_loss_probe (0 ms, 0.00%)</title><rect x="775.0" y="341" width="1.5" height="15.0" fill="rgb(94,94,241)" rx="2" ry="2" />
+<text  x="778.01" y="351.5" ></text>
+</g>
+<g >
+<title>set_root (0 ms, 0.00%)</title><rect x="749.9" y="357" width="1.5" height="15.0" fill="rgb(122,122,237)" rx="2" ry="2" />
+<text  x="752.90" y="367.5" ></text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="773.5" y="133" width="1.5" height="15.0" fill="rgb(93,93,242)" rx="2" ry="2" />
+<text  x="776.53" y="143.5" ></text>
+</g>
+<g >
+<title>mod_objcg_state (0 ms, 0.00%)</title><rect x="968.5" y="389" width="1.4" height="15.0" fill="rgb(127,127,233)" rx="2" ry="2" />
+<text  x="971.47" y="399.5" ></text>
+</g>
+<g >
+<title>tcp_recvmsg (0 ms, 0.00%)</title><rect x="1116.2" y="405" width="1.4" height="15.0" fill="rgb(111,111,192)" rx="2" ry="2" />
+<text  x="1119.16" y="415.5" ></text>
+</g>
+<g >
+<title>proc_reg_read (0 ms, 0.00%)</title><rect x="1122.1" y="453" width="23.6" height="15.0" fill="rgb(85,85,239)" rx="2" ry="2" />
+<text  x="1125.07" y="463.5" >p..</text>
+</g>
+<g >
+<title>step_into (0 ms, 0.00%)</title><rect x="928.6" y="405" width="1.5" height="15.0" fill="rgb(116,116,239)" rx="2" ry="2" />
+<text  x="931.60" y="415.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="831.1" y="389" width="14.8" height="15.0" fill="rgb(84,84,216)" rx="2" ry="2" />
+<text  x="834.13" y="399.5" ></text>
+</g>
+<g >
+<title>may_open (0 ms, 0.00%)</title><rect x="906.4" y="421" width="1.5" height="15.0" fill="rgb(118,118,238)" rx="2" ry="2" />
+<text  x="909.45" y="431.5" ></text>
+</g>
+<g >
+<title>blk_complete_reqs (0 ms, 0.00%)</title><rect x="683.4" y="453" width="1.5" height="15.0" fill="rgb(102,102,216)" rx="2" ry="2" />
+<text  x="686.44" y="463.5" ></text>
+</g>
+<g >
+<title>__alloc_skb (0 ms, 0.00%)</title><rect x="1181.1" y="325" width="1.5" height="15.0" fill="rgb(100,100,234)" rx="2" ry="2" />
+<text  x="1184.14" y="335.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="890.2" y="357" width="1.5" height="15.0" fill="rgb(109,109,192)" rx="2" ry="2" />
+<text  x="893.20" y="367.5" ></text>
+</g>
+<g >
+<title>schedule (0 ms, 0.00%)</title><rect x="876.9" y="437" width="4.4" height="15.0" fill="rgb(133,133,198)" rx="2" ry="2" />
+<text  x="879.91" y="447.5" ></text>
+</g>
+<g >
+<title>number (0 ms, 0.00%)</title><rect x="1002.4" y="373" width="1.5" height="15.0" fill="rgb(96,96,229)" rx="2" ry="2" />
+<text  x="1005.44" y="383.5" ></text>
+</g>
+<g >
+<title>kfree_skbmem (0 ms, 0.00%)</title><rect x="1148.6" y="293" width="1.5" height="15.0" fill="rgb(82,82,234)" rx="2" ry="2" />
+<text  x="1151.65" y="303.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="696.7" y="421" width="1.5" height="15.0" fill="rgb(129,129,219)" rx="2" ry="2" />
+<text  x="699.73" y="431.5" ></text>
+</g>
+<g >
+<title>__virt_addr_valid (0 ms, 0.00%)</title><rect x="946.3" y="389" width="1.5" height="15.0" fill="rgb(113,113,223)" rx="2" ry="2" />
+<text  x="949.32" y="399.5" ></text>
+</g>
+<g >
+<title>__x64_sys_readlinkat (0 ms, 0.00%)</title><rect x="944.8" y="485" width="4.5" height="15.0" fill="rgb(97,97,199)" rx="2" ry="2" />
+<text  x="947.84" y="495.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="900.5" y="405" width="3.0" height="15.0" fill="rgb(112,112,200)" rx="2" ry="2" />
+<text  x="903.54" y="415.5" ></text>
+</g>
+<g >
+<title>nd_jump_root (0 ms, 0.00%)</title><rect x="936.0" y="389" width="1.5" height="15.0" fill="rgb(120,120,197)" rx="2" ry="2" />
+<text  x="938.98" y="399.5" ></text>
+</g>
+<g >
+<title>do_user_addr_fault (0 ms, 0.00%)</title><rect x="679.0" y="469" width="1.5" height="15.0" fill="rgb(116,116,222)" rx="2" ry="2" />
+<text  x="682.01" y="479.5" ></text>
+</g>
+<g >
+<title>strcmp (0 ms, 0.00%)</title><rect x="931.6" y="357" width="1.4" height="15.0" fill="rgb(101,101,235)" rx="2" ry="2" />
+<text  x="934.55" y="367.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="922.7" y="405" width="4.4" height="15.0" fill="rgb(118,118,231)" rx="2" ry="2" />
+<text  x="925.69" y="415.5" ></text>
+</g>
+<g >
+<title>__ip_queue_xmit (0 ms, 0.00%)</title><rect x="1179.7" y="293" width="1.4" height="15.0" fill="rgb(111,111,238)" rx="2" ry="2" />
+<text  x="1182.66" y="303.5" ></text>
+</g>
+<g >
+<title>__x64_sys_close (0 ms, 0.00%)</title><rect x="769.1" y="485" width="3.0" height="15.0" fill="rgb(115,115,216)" rx="2" ry="2" />
+<text  x="772.10" y="495.5" ></text>
+</g>
+<g >
+<title>tcp_v4_do_rcv (0 ms, 0.00%)</title><rect x="1148.6" y="357" width="1.5" height="15.0" fill="rgb(80,80,210)" rx="2" ry="2" />
+<text  x="1151.65" y="367.5" ></text>
+</g>
+<g >
+<title>__schedule (0 ms, 0.00%)</title><rect x="831.1" y="405" width="14.8" height="15.0" fill="rgb(89,89,208)" rx="2" ry="2" />
+<text  x="834.13" y="415.5" ></text>
+</g>
+<g >
+<title>__put_user_nocheck_4 (0 ms, 0.00%)</title><rect x="806.0" y="437" width="1.5" height="15.0" fill="rgb(124,124,199)" rx="2" ry="2" />
+<text  x="809.02" y="447.5" ></text>
+</g>
+<g >
+<title>dput (0 ms, 0.00%)</title><rect x="699.7" y="437" width="1.5" height="15.0" fill="rgb(104,104,235)" rx="2" ry="2" />
+<text  x="702.69" y="447.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="905.0" y="405" width="1.4" height="15.0" fill="rgb(87,87,209)" rx="2" ry="2" />
+<text  x="907.97" y="415.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="894.6" y="389" width="5.9" height="15.0" fill="rgb(125,125,190)" rx="2" ry="2" />
+<text  x="897.63" y="399.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="903.5" y="341" width="1.5" height="15.0" fill="rgb(107,107,228)" rx="2" ry="2" />
+<text  x="906.49" y="351.5" ></text>
+</g>
+<g >
+<title>dev_lstats_read (0 ms, 0.00%)</title><rect x="1122.1" y="341" width="1.4" height="15.0" fill="rgb(129,129,218)" rx="2" ry="2" />
+<text  x="1125.07" y="351.5" ></text>
+</g>
+<g >
+<title>fput_many (0 ms, 0.00%)</title><rect x="686.4" y="437" width="1.5" height="15.0" fill="rgb(121,121,225)" rx="2" ry="2" />
+<text  x="689.40" y="447.5" ></text>
+</g>
+<g >
+<title>__tcp_push_pending_frames (0 ms, 0.00%)</title><rect x="1150.1" y="373" width="4.5" height="15.0" fill="rgb(100,100,231)" rx="2" ry="2" />
+<text  x="1153.13" y="383.5" ></text>
+</g>
+<g >
+<title>cp_new_stat (0 ms, 0.00%)</title><rect x="689.3" y="469" width="3.0" height="15.0" fill="rgb(84,84,217)" rx="2" ry="2" />
+<text  x="692.35" y="479.5" ></text>
+</g>
+<g >
+<title>path_lookupat (0 ms, 0.00%)</title><rect x="944.8" y="421" width="1.5" height="15.0" fill="rgb(80,80,217)" rx="2" ry="2" />
+<text  x="947.84" y="431.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save_xen_vcpu_stolen (0 ms, 0.00%)</title><rect x="804.5" y="389" width="1.5" height="15.0" fill="rgb(139,139,239)" rx="2" ry="2" />
+<text  x="807.54" y="399.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="927.1" y="405" width="1.5" height="15.0" fill="rgb(122,122,207)" rx="2" ry="2" />
+<text  x="930.12" y="415.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="684.9" y="373" width="1.5" height="15.0" fill="rgb(113,113,225)" rx="2" ry="2" />
+<text  x="687.92" y="383.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="732.2" y="341" width="1.5" height="15.0" fill="rgb(101,101,232)" rx="2" ry="2" />
+<text  x="735.18" y="351.5" ></text>
+</g>
+<g >
+<title>__tcp_transmit_skb (0 ms, 0.00%)</title><rect x="1179.7" y="309" width="1.4" height="15.0" fill="rgb(92,92,233)" rx="2" ry="2" />
+<text  x="1182.66" y="319.5" ></text>
+</g>
+<g >
+<title>ip_finish_output2 (0 ms, 0.00%)</title><rect x="1150.1" y="309" width="4.5" height="15.0" fill="rgb(122,122,195)" rx="2" ry="2" />
+<text  x="1153.13" y="319.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="683.4" y="357" width="1.5" height="15.0" fill="rgb(80,80,244)" rx="2" ry="2" />
+<text  x="686.44" y="367.5" ></text>
+</g>
+<g >
+<title>getname_flags.part.0 (0 ms, 0.00%)</title><rect x="909.4" y="453" width="1.5" height="15.0" fill="rgb(116,116,238)" rx="2" ry="2" />
+<text  x="912.40" y="463.5" ></text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="958.1" y="437" width="158.1" height="15.0" fill="rgb(138,138,227)" rx="2" ry="2" />
+<text  x="961.14" y="447.5" >seq_read_iter</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="1147.2" y="405" width="1.4" height="15.0" fill="rgb(85,85,213)" rx="2" ry="2" />
+<text  x="1150.17" y="415.5" ></text>
+</g>
+<g >
+<title>kernfs_fop_open (0 ms, 0.00%)</title><rect x="887.2" y="405" width="6.0" height="15.0" fill="rgb(82,82,204)" rx="2" ry="2" />
+<text  x="890.25" y="415.5" ></text>
+</g>
+<g >
+<title>mutex_lock (0 ms, 0.00%)</title><rect x="916.8" y="373" width="1.5" height="15.0" fill="rgb(134,134,243)" rx="2" ry="2" />
+<text  x="919.78" y="383.5" ></text>
+</g>
+<g >
+<title>new_sync_write (0 ms, 0.00%)</title><rect x="1147.2" y="453" width="8.8" height="15.0" fill="rgb(110,110,238)" rx="2" ry="2" />
+<text  x="1150.17" y="463.5" ></text>
+</g>
+<g >
+<title>__sock_release (0 ms, 0.00%)</title><rect x="1179.7" y="405" width="2.9" height="15.0" fill="rgb(94,94,219)" rx="2" ry="2" />
+<text  x="1182.66" y="415.5" ></text>
+</g>
+<g >
+<title>__srcu_read_lock (0 ms, 0.00%)</title><rect x="769.1" y="405" width="1.5" height="15.0" fill="rgb(105,105,232)" rx="2" ry="2" />
+<text  x="772.10" y="415.5" ></text>
+</g>
+<g >
+<title>fsnotify (0 ms, 0.00%)</title><rect x="866.6" y="437" width="1.4" height="15.0" fill="rgb(120,120,200)" rx="2" ry="2" />
+<text  x="869.57" y="447.5" ></text>
+</g>
+<g >
+<title>process_backlog (0 ms, 0.00%)</title><rect x="1179.7" y="181" width="1.4" height="15.0" fill="rgb(113,113,225)" rx="2" ry="2" />
+<text  x="1182.66" y="191.5" ></text>
+</g>
+<g >
+<title>nd_jump_root (0 ms, 0.00%)</title><rect x="749.9" y="389" width="1.5" height="15.0" fill="rgb(85,85,241)" rx="2" ry="2" />
+<text  x="752.90" y="399.5" ></text>
+</g>
+<g >
+<title>__x64_sys_futex (0 ms, 0.00%)</title><rect x="829.6" y="469" width="1.5" height="15.0" fill="rgb(99,99,213)" rx="2" ry="2" />
+<text  x="832.65" y="479.5" ></text>
+</g>
+<g >
+<title>net_rx_action (0 ms, 0.00%)</title><rect x="773.5" y="277" width="1.5" height="15.0" fill="rgb(137,137,228)" rx="2" ry="2" />
+<text  x="776.53" y="287.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="946.3" y="421" width="1.5" height="15.0" fill="rgb(103,103,211)" rx="2" ry="2" />
+<text  x="949.32" y="431.5" ></text>
+</g>
+<g >
+<title>dnotify_flush (0 ms, 0.00%)</title><rect x="769.1" y="453" width="1.5" height="15.0" fill="rgb(94,94,221)" rx="2" ry="2" />
+<text  x="772.10" y="463.5" ></text>
+</g>
+<g >
+<title>ext4_readdir (0 ms, 0.00%)</title><rect x="860.7" y="453" width="5.9" height="15.0" fill="rgb(127,127,204)" rx="2" ry="2" />
+<text  x="863.66" y="463.5" ></text>
+</g>
+<g >
+<title>pipe_write (0 ms, 0.00%)</title><rect x="1147.2" y="437" width="1.4" height="15.0" fill="rgb(106,106,211)" rx="2" ry="2" />
+<text  x="1150.17" y="447.5" ></text>
+</g>
+<g >
+<title>memcg_slab_free_hook (0 ms, 0.00%)</title><rect x="1175.2" y="373" width="1.5" height="15.0" fill="rgb(126,126,216)" rx="2" ry="2" />
+<text  x="1178.23" y="383.5" ></text>
+</g>
+<g >
+<title>d_hash_and_lookup (0 ms, 0.00%)</title><rect x="872.5" y="421" width="1.5" height="15.0" fill="rgb(101,101,234)" rx="2" ry="2" />
+<text  x="875.48" y="431.5" ></text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="1145.7" y="437" width="1.5" height="15.0" fill="rgb(117,117,218)" rx="2" ry="2" />
+<text  x="1148.69" y="447.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="714.5" y="357" width="2.9" height="15.0" fill="rgb(131,131,194)" rx="2" ry="2" />
+<text  x="717.46" y="367.5" ></text>
+</g>
+<g >
+<title>__lookup_slow (0 ms, 0.00%)</title><rect x="751.4" y="389" width="4.4" height="15.0" fill="rgb(133,133,215)" rx="2" ry="2" />
+<text  x="754.38" y="399.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="755.8" y="389" width="4.4" height="15.0" fill="rgb(94,94,237)" rx="2" ry="2" />
+<text  x="758.81" y="399.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="893.2" y="389" width="1.4" height="15.0" fill="rgb(88,88,194)" rx="2" ry="2" />
+<text  x="896.15" y="399.5" ></text>
+</g>
+<g >
+<title>step_into (0 ms, 0.00%)</title><rect x="723.3" y="373" width="7.4" height="15.0" fill="rgb(85,85,238)" rx="2" ry="2" />
+<text  x="726.32" y="383.5" ></text>
+</g>
+<g >
+<title>tcp_connect (0 ms, 0.00%)</title><rect x="772.1" y="405" width="1.4" height="15.0" fill="rgb(93,93,214)" rx="2" ry="2" />
+<text  x="775.05" y="415.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="811.9" y="373" width="14.8" height="15.0" fill="rgb(123,123,217)" rx="2" ry="2" />
+<text  x="814.93" y="383.5" ></text>
+</g>
+<g >
+<title>unix_stream_sendmsg (0 ms, 0.00%)</title><rect x="1154.6" y="405" width="1.4" height="15.0" fill="rgb(138,138,240)" rx="2" ry="2" />
+<text  x="1157.56" y="415.5" ></text>
+</g>
+<g >
+<title>lockref_put_return (0 ms, 0.00%)</title><rect x="721.8" y="341" width="1.5" height="15.0" fill="rgb(112,112,243)" rx="2" ry="2" />
+<text  x="724.84" y="351.5" ></text>
+</g>
+<g >
+<title>cgroup_seqfile_show (0 ms, 0.00%)</title><rect x="1001.0" y="421" width="2.9" height="15.0" fill="rgb(87,87,208)" rx="2" ry="2" />
+<text  x="1003.96" y="431.5" ></text>
+</g>
+<g >
+<title>memset_erms (0 ms, 0.00%)</title><rect x="962.6" y="405" width="4.4" height="15.0" fill="rgb(137,137,212)" rx="2" ry="2" />
+<text  x="965.57" y="415.5" ></text>
+</g>
+<g >
+<title>full_name_hash (0 ms, 0.00%)</title><rect x="872.5" y="405" width="1.5" height="15.0" fill="rgb(124,124,205)" rx="2" ry="2" />
+<text  x="875.48" y="415.5" ></text>
+</g>
+<g >
+<title>all (1 ms, 100%)</title><rect x="10.0" y="549" width="1180.0" height="15.0" fill="rgb(112,112,240)" rx="2" ry="2" />
+<text  x="13.00" y="559.5" ></text>
+</g>
+<g >
+<title>__ip_queue_xmit (0 ms, 0.00%)</title><rect x="772.1" y="373" width="1.4" height="15.0" fill="rgb(129,129,218)" rx="2" ry="2" />
+<text  x="775.05" y="383.5" ></text>
+</g>
+<g >
+<title>strcmp (0 ms, 0.00%)</title><rect x="933.0" y="373" width="1.5" height="15.0" fill="rgb(112,112,211)" rx="2" ry="2" />
+<text  x="936.03" y="383.5" ></text>
+</g>
+<g >
+<title>kmalloc_slab (0 ms, 0.00%)</title><rect x="961.1" y="389" width="1.5" height="15.0" fill="rgb(124,124,190)" rx="2" ry="2" />
+<text  x="964.09" y="399.5" ></text>
+</g>
+<g >
+<title>arch_local_irq_enable (0 ms, 0.00%)</title><rect x="967.0" y="373" width="1.5" height="15.0" fill="rgb(122,122,190)" rx="2" ry="2" />
+<text  x="970.00" y="383.5" ></text>
+</g>
+<g >
+<title>conntrack_mt.isra.0 (0 ms, 0.00%)</title><rect x="1150.1" y="117" width="1.5" height="15.0" fill="rgb(100,100,232)" rx="2" ry="2" />
+<text  x="1153.13" y="127.5" ></text>
+</g>
+<g >
+<title>free_unref_page (0 ms, 0.00%)</title><rect x="1117.6" y="341" width="1.5" height="15.0" fill="rgb(135,135,235)" rx="2" ry="2" />
+<text  x="1120.63" y="351.5" ></text>
+</g>
+<g >
+<title>seq_open (0 ms, 0.00%)</title><rect x="890.2" y="389" width="3.0" height="15.0" fill="rgb(104,104,238)" rx="2" ry="2" />
+<text  x="893.20" y="399.5" ></text>
+</g>
+<g >
+<title>hugetlb_events_show (0 ms, 0.00%)</title><rect x="1003.9" y="405" width="1.5" height="15.0" fill="rgb(133,133,201)" rx="2" ry="2" />
+<text  x="1006.92" y="415.5" ></text>
+</g>
+<g >
+<title>__wake_up_common_lock (0 ms, 0.00%)</title><rect x="754.3" y="325" width="1.5" height="15.0" fill="rgb(103,103,220)" rx="2" ry="2" />
+<text  x="757.33" y="335.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="831.1" y="373" width="14.8" height="15.0" fill="rgb(93,93,236)" rx="2" ry="2" />
+<text  x="834.13" y="383.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_xen_hvm_callback (0 ms, 0.00%)</title><rect x="683.4" y="517" width="3.0" height="15.0" fill="rgb(127,127,236)" rx="2" ry="2" />
+<text  x="686.44" y="527.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="909.4" y="421" width="1.5" height="15.0" fill="rgb(82,82,234)" rx="2" ry="2" />
+<text  x="912.40" y="431.5" ></text>
+</g>
+<g >
+<title>apparmor_task_getsecid (0 ms, 0.00%)</title><rect x="921.2" y="389" width="1.5" height="15.0" fill="rgb(128,128,221)" rx="2" ry="2" />
+<text  x="924.21" y="399.5" ></text>
+</g>
+<g >
+<title>__do_softirq (0 ms, 0.00%)</title><rect x="1179.7" y="229" width="1.4" height="15.0" fill="rgb(117,117,241)" rx="2" ry="2" />
+<text  x="1182.66" y="239.5" ></text>
+</g>
+<g >
+<title>put_dec (0 ms, 0.00%)</title><rect x="1002.4" y="357" width="1.5" height="15.0" fill="rgb(108,108,195)" rx="2" ry="2" />
+<text  x="1005.44" y="367.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="934.5" y="405" width="1.5" height="15.0" fill="rgb(81,81,227)" rx="2" ry="2" />
+<text  x="937.51" y="415.5" ></text>
+</g>
+<g >
+<title>__find_get_block (0 ms, 0.00%)</title><rect x="862.1" y="341" width="1.5" height="15.0" fill="rgb(89,89,222)" rx="2" ry="2" />
+<text  x="865.14" y="351.5" ></text>
+</g>
+<g >
+<title>vfs_fstat (0 ms, 0.00%)</title><rect x="686.4" y="469" width="2.9" height="15.0" fill="rgb(130,130,238)" rx="2" ry="2" />
+<text  x="689.40" y="479.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="717.4" y="293" width="1.5" height="15.0" fill="rgb(82,82,193)" rx="2" ry="2" />
+<text  x="720.41" y="303.5" ></text>
+</g>
+<g >
+<title>strncpy_from_user (0 ms, 0.00%)</title><rect x="909.4" y="437" width="1.5" height="15.0" fill="rgb(91,91,210)" rx="2" ry="2" />
+<text  x="912.40" y="447.5" ></text>
+</g>
+<g >
+<title>kernfs_get_active (0 ms, 0.00%)</title><rect x="1005.4" y="405" width="1.5" height="15.0" fill="rgb(134,134,240)" rx="2" ry="2" />
+<text  x="1008.39" y="415.5" ></text>
+</g>
+<g >
+<title>mutex_spin_on_owner (0 ms, 0.00%)</title><rect x="776.5" y="437" width="1.5" height="15.0" fill="rgb(117,117,214)" rx="2" ry="2" />
+<text  x="779.48" y="447.5" ></text>
+</g>
+<g >
+<title>call_rcu (0 ms, 0.00%)</title><rect x="1182.6" y="437" width="1.5" height="15.0" fill="rgb(128,128,222)" rx="2" ry="2" />
+<text  x="1185.62" y="447.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="717.4" y="309" width="1.5" height="15.0" fill="rgb(106,106,192)" rx="2" ry="2" />
+<text  x="720.41" y="319.5" ></text>
+</g>
+<g >
+<title>__d_lookup_done (0 ms, 0.00%)</title><rect x="754.3" y="341" width="1.5" height="15.0" fill="rgb(115,115,244)" rx="2" ry="2" />
+<text  x="757.33" y="351.5" ></text>
+</g>
+<g >
+<title>tcp_write_xmit (0 ms, 0.00%)</title><rect x="1150.1" y="357" width="4.5" height="15.0" fill="rgb(104,104,241)" rx="2" ry="2" />
+<text  x="1153.13" y="367.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc_node (0 ms, 0.00%)</title><rect x="1116.2" y="341" width="1.4" height="15.0" fill="rgb(107,107,237)" rx="2" ry="2" />
+<text  x="1119.16" y="351.5" ></text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1141.3" y="357" width="4.4" height="15.0" fill="rgb(134,134,195)" rx="2" ry="2" />
+<text  x="1144.26" y="367.5" ></text>
+</g>
+<g >
+<title>__check_object_size (0 ms, 0.00%)</title><rect x="946.3" y="405" width="1.5" height="15.0" fill="rgb(88,88,213)" rx="2" ry="2" />
+<text  x="949.32" y="415.5" ></text>
+</g>
+<g >
+<title>ip_protocol_deliver_rcu (0 ms, 0.00%)</title><rect x="1179.7" y="133" width="1.4" height="15.0" fill="rgb(94,94,235)" rx="2" ry="2" />
+<text  x="1182.66" y="143.5" ></text>
+</g>
+<g >
+<title>path_init (0 ms, 0.00%)</title><rect x="936.0" y="421" width="1.5" height="15.0" fill="rgb(87,87,229)" rx="2" ry="2" />
+<text  x="938.98" y="431.5" ></text>
+</g>
+<g >
+<title>do_send_specific (0 ms, 0.00%)</title><rect x="953.7" y="453" width="1.5" height="15.0" fill="rgb(96,96,223)" rx="2" ry="2" />
+<text  x="956.70" y="463.5" ></text>
+</g>
+<g >
+<title>dput (0 ms, 0.00%)</title><rect x="1185.6" y="405" width="1.4" height="15.0" fill="rgb(137,137,244)" rx="2" ry="2" />
+<text  x="1188.57" y="415.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="894.6" y="373" width="1.5" height="15.0" fill="rgb(82,82,222)" rx="2" ry="2" />
+<text  x="897.63" y="383.5" ></text>
+</g>
+<g >
+<title>__x64_sys_read (0 ms, 0.00%)</title><rect x="943.4" y="485" width="1.4" height="15.0" fill="rgb(118,118,200)" rx="2" ry="2" />
+<text  x="946.37" y="495.5" ></text>
+</g>
+<g >
+<title>__slab_free (0 ms, 0.00%)</title><rect x="1172.3" y="373" width="1.5" height="15.0" fill="rgb(115,115,225)" rx="2" ry="2" />
+<text  x="1175.28" y="383.5" ></text>
+</g>
+<g >
+<title>process_backlog (0 ms, 0.00%)</title><rect x="773.5" y="245" width="1.5" height="15.0" fill="rgb(99,99,221)" rx="2" ry="2" />
+<text  x="776.53" y="255.5" ></text>
+</g>
+<g >
+<title>rwsem_wake.isra.0 (0 ms, 0.00%)</title><rect x="717.4" y="357" width="1.5" height="15.0" fill="rgb(133,133,237)" rx="2" ry="2" />
+<text  x="720.41" y="367.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="1154.6" y="325" width="1.4" height="15.0" fill="rgb(99,99,197)" rx="2" ry="2" />
+<text  x="1157.56" y="335.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="717.4" y="325" width="1.5" height="15.0" fill="rgb(83,83,214)" rx="2" ry="2" />
+<text  x="720.41" y="335.5" ></text>
+</g>
+<g >
+<title>_copy_from_user (0 ms, 0.00%)</title><rect x="767.6" y="437" width="1.5" height="15.0" fill="rgb(135,135,219)" rx="2" ry="2" />
+<text  x="770.62" y="447.5" ></text>
+</g>
+<g >
+<title>put_pid.part.0 (0 ms, 0.00%)</title><rect x="1154.6" y="213" width="1.4" height="15.0" fill="rgb(137,137,199)" rx="2" ry="2" />
+<text  x="1157.56" y="223.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save___pv_queued_spin_unlock (0 ms, 0.00%)</title><rect x="730.7" y="341" width="1.5" height="15.0" fill="rgb(106,106,208)" rx="2" ry="2" />
+<text  x="733.70" y="351.5" ></text>
+</g>
+<g >
+<title>__tcp_close (0 ms, 0.00%)</title><rect x="1179.7" y="357" width="2.9" height="15.0" fill="rgb(81,81,203)" rx="2" ry="2" />
+<text  x="1182.66" y="367.5" ></text>
+</g>
+<g >
+<title>hrtimer_nanosleep (0 ms, 0.00%)</title><rect x="874.0" y="469" width="7.3" height="15.0" fill="rgb(136,136,240)" rx="2" ry="2" />
+<text  x="876.95" y="479.5" ></text>
+</g>
+<g >
+<title>ext4_getattr (0 ms, 0.00%)</title><rect x="692.3" y="437" width="4.4" height="15.0" fill="rgb(130,130,193)" rx="2" ry="2" />
+<text  x="695.30" y="447.5" ></text>
+</g>
+<g >
+<title>ipt_do_table (0 ms, 0.00%)</title><rect x="772.1" y="309" width="1.4" height="15.0" fill="rgb(95,95,240)" rx="2" ry="2" />
+<text  x="775.05" y="319.5" ></text>
+</g>
+<g >
+<title>up_read (0 ms, 0.00%)</title><rect x="899.1" y="357" width="1.4" height="15.0" fill="rgb(106,106,224)" rx="2" ry="2" />
+<text  x="902.06" y="367.5" ></text>
+</g>
+<g >
+<title>walk_component (0 ms, 0.00%)</title><rect x="751.4" y="405" width="8.8" height="15.0" fill="rgb(138,138,226)" rx="2" ry="2" />
+<text  x="754.38" y="415.5" ></text>
+</g>
+<g >
+<title>filldir64 (0 ms, 0.00%)</title><rect x="869.5" y="421" width="1.5" height="15.0" fill="rgb(102,102,243)" rx="2" ry="2" />
+<text  x="872.52" y="431.5" ></text>
+</g>
+<g >
+<title>__d_alloc (0 ms, 0.00%)</title><rect x="751.4" y="341" width="1.5" height="15.0" fill="rgb(121,121,191)" rx="2" ry="2" />
+<text  x="754.38" y="351.5" ></text>
+</g>
+<g >
+<title>do_epoll_ctl (0 ms, 0.00%)</title><rect x="776.5" y="469" width="28.0" height="15.0" fill="rgb(89,89,207)" rx="2" ry="2" />
+<text  x="779.48" y="479.5" >d..</text>
+</g>
+<g >
+<title>filldir64 (0 ms, 0.00%)</title><rect x="860.7" y="421" width="1.4" height="15.0" fill="rgb(139,139,240)" rx="2" ry="2" />
+<text  x="863.66" y="431.5" ></text>
+</g>
+<g >
+<title>__do_softirq (0 ms, 0.00%)</title><rect x="683.4" y="469" width="3.0" height="15.0" fill="rgb(131,131,238)" rx="2" ry="2" />
+<text  x="686.44" y="479.5" ></text>
+</g>
+<g >
+<title>refill_obj_stock (0 ms, 0.00%)</title><rect x="969.9" y="389" width="1.5" height="15.0" fill="rgb(108,108,220)" rx="2" ry="2" />
+<text  x="972.95" y="399.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_get_link (0 ms, 0.00%)</title><rect x="928.6" y="389" width="1.5" height="15.0" fill="rgb(126,126,242)" rx="2" ry="2" />
+<text  x="931.60" y="399.5" ></text>
+</g>
+<g >
+<title>blkcg_maybe_throttle_current (0 ms, 0.00%)</title><rect x="1169.3" y="453" width="1.5" height="15.0" fill="rgb(129,129,240)" rx="2" ry="2" />
+<text  x="1172.32" y="463.5" ></text>
+</g>
+<g >
+<title>__d_lookup (0 ms, 0.00%)</title><rect x="730.7" y="357" width="3.0" height="15.0" fill="rgb(133,133,224)" rx="2" ry="2" />
+<text  x="733.70" y="367.5" ></text>
+</g>
+<g >
+<title>__check_heap_object (0 ms, 0.00%)</title><rect x="761.7" y="373" width="1.5" height="15.0" fill="rgb(112,112,222)" rx="2" ry="2" />
+<text  x="764.71" y="383.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="760.2" y="421" width="1.5" height="15.0" fill="rgb(120,120,195)" rx="2" ry="2" />
+<text  x="763.24" y="431.5" ></text>
+</g>
+<g >
+<title>new_sync_read (0 ms, 0.00%)</title><rect x="956.7" y="437" width="1.4" height="15.0" fill="rgb(124,124,219)" rx="2" ry="2" />
+<text  x="959.66" y="447.5" ></text>
+</g>
+<g >
+<title>down_read (0 ms, 0.00%)</title><rect x="934.5" y="373" width="1.5" height="15.0" fill="rgb(118,118,224)" rx="2" ry="2" />
+<text  x="937.51" y="383.5" ></text>
+</g>
+<g >
+<title>unix_destruct_scm (0 ms, 0.00%)</title><rect x="1119.1" y="357" width="1.5" height="15.0" fill="rgb(131,131,234)" rx="2" ry="2" />
+<text  x="1122.11" y="367.5" ></text>
+</g>
+<g >
+<title>new_sync_read (0 ms, 0.00%)</title><rect x="956.7" y="453" width="165.4" height="15.0" fill="rgb(98,98,196)" rx="2" ry="2" />
+<text  x="959.66" y="463.5" >new_sync_read</text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="845.9" y="389" width="11.8" height="15.0" fill="rgb(111,111,203)" rx="2" ry="2" />
+<text  x="848.89" y="399.5" ></text>
+</g>
+<g >
+<title>link_path_walk.part.0.constprop.0 (0 ms, 0.00%)</title><rect x="893.2" y="421" width="11.8" height="15.0" fill="rgb(115,115,232)" rx="2" ry="2" />
+<text  x="896.15" y="431.5" ></text>
+</g>
+<g >
+<title>fsnotify (0 ms, 0.00%)</title><rect x="866.6" y="453" width="1.4" height="15.0" fill="rgb(121,121,244)" rx="2" ry="2" />
+<text  x="869.57" y="463.5" ></text>
+</g>
+<g >
+<title>do_user_addr_fault (0 ms, 0.00%)</title><rect x="679.0" y="485" width="4.4" height="15.0" fill="rgb(131,131,244)" rx="2" ry="2" />
+<text  x="682.01" y="495.5" ></text>
+</g>
+<g >
+<title>sysvec_xen_hvm_callback (0 ms, 0.00%)</title><rect x="1154.6" y="293" width="1.4" height="15.0" fill="rgb(139,139,196)" rx="2" ry="2" />
+<text  x="1157.56" y="303.5" ></text>
+</g>
+<g >
+<title>xen_hypercall_event_channel_op (0 ms, 0.00%)</title><rect x="1188.5" y="517" width="1.5" height="15.0" fill="rgb(115,115,224)" rx="2" ry="2" />
+<text  x="1191.52" y="527.5" ></text>
+</g>
+<g >
+<title>xen_hypercall_event_channel_op (0 ms, 0.00%)</title><rect x="1188.5" y="501" width="1.5" height="15.0" fill="rgb(102,102,198)" rx="2" ry="2" />
+<text  x="1191.52" y="511.5" ></text>
+</g>
+<g >
+<title>tcp_rcv_state_process (0 ms, 0.00%)</title><rect x="773.5" y="389" width="3.0" height="15.0" fill="rgb(98,98,220)" rx="2" ry="2" />
+<text  x="776.53" y="399.5" ></text>
+</g>
+<g >
+<title>kernfs_seq_start (0 ms, 0.00%)</title><rect x="1005.4" y="421" width="1.5" height="15.0" fill="rgb(105,105,237)" rx="2" ry="2" />
+<text  x="1008.39" y="431.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="890.2" y="373" width="3.0" height="15.0" fill="rgb(119,119,242)" rx="2" ry="2" />
+<text  x="893.20" y="383.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="874.0" y="437" width="2.9" height="15.0" fill="rgb(120,120,240)" rx="2" ry="2" />
+<text  x="876.95" y="447.5" ></text>
+</g>
+<g >
+<title>sock_wfree (0 ms, 0.00%)</title><rect x="1119.1" y="341" width="1.5" height="15.0" fill="rgb(93,93,190)" rx="2" ry="2" />
+<text  x="1122.11" y="351.5" ></text>
+</g>
+<g >
+<title>do_filp_open (0 ms, 0.00%)</title><rect x="882.8" y="453" width="26.6" height="15.0" fill="rgb(89,89,231)" rx="2" ry="2" />
+<text  x="885.82" y="463.5" >d..</text>
+</g>
+<g >
+<title>kmalloc_slab (0 ms, 0.00%)</title><rect x="961.1" y="405" width="1.5" height="15.0" fill="rgb(83,83,242)" rx="2" ry="2" />
+<text  x="964.09" y="415.5" ></text>
+</g>
+<g >
+<title>restore_sigcontext (0 ms, 0.00%)</title><rect x="767.6" y="469" width="1.5" height="15.0" fill="rgb(129,129,239)" rx="2" ry="2" />
+<text  x="770.62" y="479.5" ></text>
+</g>
+<g >
+<title>seq_read_iter (0 ms, 0.00%)</title><rect x="1122.1" y="421" width="23.6" height="15.0" fill="rgb(99,99,218)" rx="2" ry="2" />
+<text  x="1125.07" y="431.5" >s..</text>
+</g>
+<g >
+<title>tcp_v4_do_rcv (0 ms, 0.00%)</title><rect x="1179.7" y="101" width="1.4" height="15.0" fill="rgb(114,114,234)" rx="2" ry="2" />
+<text  x="1182.66" y="111.5" ></text>
+</g>
+<g >
+<title>_raw_spin_unlock_irqrestore (0 ms, 0.00%)</title><rect x="953.7" y="421" width="1.5" height="15.0" fill="rgb(91,91,230)" rx="2" ry="2" />
+<text  x="956.70" y="431.5" ></text>
+</g>
+<g >
+<title>conntrack_mt.isra.0 (0 ms, 0.00%)</title><rect x="1150.1" y="133" width="1.5" height="15.0" fill="rgb(125,125,230)" rx="2" ry="2" />
+<text  x="1153.13" y="143.5" ></text>
+</g>
+<g >
+<title>syscall_exit_to_user_mode (0 ms, 0.00%)</title><rect x="1169.3" y="485" width="19.2" height="15.0" fill="rgb(108,108,225)" rx="2" ry="2" />
+<text  x="1172.32" y="495.5" ></text>
+</g>
+<g >
+<title>filldir64 (0 ms, 0.00%)</title><rect x="869.5" y="437" width="1.5" height="15.0" fill="rgb(136,136,190)" rx="2" ry="2" />
+<text  x="872.52" y="447.5" ></text>
+</g>
+<g >
+<title>rcu_core (0 ms, 0.00%)</title><rect x="684.9" y="453" width="1.5" height="15.0" fill="rgb(91,91,195)" rx="2" ry="2" />
+<text  x="687.92" y="463.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="912.4" y="373" width="1.4" height="15.0" fill="rgb(108,108,208)" rx="2" ry="2" />
+<text  x="915.35" y="383.5" ></text>
+</g>
+<g >
+<title>memcg_slab_free_hook (0 ms, 0.00%)</title><rect x="1154.6" y="181" width="1.4" height="15.0" fill="rgb(103,103,201)" rx="2" ry="2" />
+<text  x="1157.56" y="191.5" ></text>
+</g>
+<g >
+<title>kubelet (1 ms, 125.16%)</title><rect x="10.0" y="533" width="1180.0" height="15.0" fill="rgb(104,104,213)" rx="2" ry="2" />
+<text  x="13.00" y="543.5" >kubelet</text>
+</g>
+<g >
+<title>path_init (0 ms, 0.00%)</title><rect x="907.9" y="421" width="1.5" height="15.0" fill="rgb(97,97,230)" rx="2" ry="2" />
+<text  x="910.92" y="431.5" ></text>
+</g>
+<g >
+<title>tcp_v4_rcv (0 ms, 0.00%)</title><rect x="1179.7" y="117" width="1.4" height="15.0" fill="rgb(135,135,226)" rx="2" ry="2" />
+<text  x="1182.66" y="127.5" ></text>
+</g>
+<g >
+<title>net_rx_action (0 ms, 0.00%)</title><rect x="1150.1" y="245" width="4.5" height="15.0" fill="rgb(126,126,226)" rx="2" ry="2" />
+<text  x="1153.13" y="255.5" ></text>
+</g>
+<g >
+<title>do_nanosleep (0 ms, 0.00%)</title><rect x="874.0" y="453" width="7.3" height="15.0" fill="rgb(135,135,202)" rx="2" ry="2" />
+<text  x="876.95" y="463.5" ></text>
+</g>
+<g >
+<title>security_task_getsecid_subj (0 ms, 0.00%)</title><rect x="921.2" y="405" width="1.5" height="15.0" fill="rgb(99,99,231)" rx="2" ry="2" />
+<text  x="924.21" y="415.5" ></text>
+</g>
+<g >
+<title>net_rx_action (0 ms, 0.00%)</title><rect x="1179.7" y="213" width="1.4" height="15.0" fill="rgb(133,133,231)" rx="2" ry="2" />
+<text  x="1182.66" y="223.5" ></text>
+</g>
+<g >
+<title>__x64_sys_read (0 ms, 0.00%)</title><rect x="943.4" y="469" width="1.4" height="15.0" fill="rgb(136,136,222)" rx="2" ry="2" />
+<text  x="946.37" y="479.5" ></text>
+</g>
+<g >
+<title>__mutex_lock.constprop.0 (0 ms, 0.00%)</title><rect x="804.5" y="437" width="1.5" height="15.0" fill="rgb(136,136,237)" rx="2" ry="2" />
+<text  x="807.54" y="447.5" ></text>
+</g>
+<g >
+<title>do_syscall_64 (0 ms, 0.00%)</title><rect x="955.2" y="485" width="1.5" height="15.0" fill="rgb(108,108,196)" rx="2" ry="2" />
+<text  x="958.18" y="495.5" ></text>
+</g>
+<g >
+<title>ip_local_deliver (0 ms, 0.00%)</title><rect x="1150.1" y="181" width="1.5" height="15.0" fill="rgb(124,124,193)" rx="2" ry="2" />
+<text  x="1153.13" y="191.5" ></text>
+</g>
+<g >
+<title>vsnprintf (0 ms, 0.00%)</title><rect x="1145.7" y="357" width="1.5" height="15.0" fill="rgb(84,84,242)" rx="2" ry="2" />
+<text  x="1148.69" y="367.5" ></text>
+</g>
+<g >
+<title>finish_task_switch.isra.0 (0 ms, 0.00%)</title><rect x="811.9" y="389" width="14.8" height="15.0" fill="rgb(126,126,241)" rx="2" ry="2" />
+<text  x="814.93" y="399.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="910.9" y="421" width="1.5" height="15.0" fill="rgb(113,113,236)" rx="2" ry="2" />
+<text  x="913.88" y="431.5" ></text>
+</g>
+<g >
+<title>__sys_connect (0 ms, 0.00%)</title><rect x="772.1" y="469" width="4.4" height="15.0" fill="rgb(125,125,231)" rx="2" ry="2" />
+<text  x="775.05" y="479.5" ></text>
+</g>
+<g >
+<title>string (0 ms, 0.00%)</title><rect x="1142.7" y="325" width="3.0" height="15.0" fill="rgb(110,110,225)" rx="2" ry="2" />
+<text  x="1145.74" y="335.5" ></text>
+</g>
+<g >
+<title>kernfs_generic_poll (0 ms, 0.00%)</title><rect x="810.5" y="405" width="1.4" height="15.0" fill="rgb(95,95,190)" rx="2" ry="2" />
+<text  x="813.45" y="415.5" ></text>
+</g>
+<g >
+<title>d_alloc_parallel (0 ms, 0.00%)</title><rect x="751.4" y="373" width="2.9" height="15.0" fill="rgb(129,129,238)" rx="2" ry="2" />
+<text  x="754.38" y="383.5" ></text>
+</g>
+<g >
+<title>ima_file_check (0 ms, 0.00%)</title><rect x="919.7" y="405" width="1.5" height="15.0" fill="rgb(80,80,195)" rx="2" ry="2" />
+<text  x="922.74" y="415.5" ></text>
+</g>
+<g >
+<title>kmem_cache_alloc (0 ms, 0.00%)</title><rect x="882.8" y="389" width="3.0" height="15.0" fill="rgb(134,134,196)" rx="2" ry="2" />
+<text  x="885.82" y="399.5" ></text>
+</g>
+<g >
+<title>dput (0 ms, 0.00%)</title><rect x="721.8" y="373" width="1.5" height="15.0" fill="rgb(92,92,221)" rx="2" ry="2" />
+<text  x="724.84" y="383.5" ></text>
+</g>
+<g >
+<title>__virt_addr_valid (0 ms, 0.00%)</title><rect x="937.5" y="389" width="1.4" height="15.0" fill="rgb(135,135,192)" rx="2" ry="2" />
+<text  x="940.46" y="399.5" ></text>
+</g>
+<g >
+<title>__ip_queue_xmit (0 ms, 0.00%)</title><rect x="773.5" y="357" width="1.5" height="15.0" fill="rgb(91,91,205)" rx="2" ry="2" />
+<text  x="776.53" y="367.5" ></text>
+</g>
+<g >
+<title>__fget_light (0 ms, 0.00%)</title><rect x="826.7" y="469" width="1.5" height="15.0" fill="rgb(83,83,216)" rx="2" ry="2" />
+<text  x="829.70" y="479.5" ></text>
+</g>
+<g >
+<title>kernfs_iop_permission (0 ms, 0.00%)</title><rect x="934.5" y="389" width="1.5" height="15.0" fill="rgb(121,121,244)" rx="2" ry="2" />
+<text  x="937.51" y="399.5" ></text>
+</g>
+<g >
+<title>d_alloc (0 ms, 0.00%)</title><rect x="751.4" y="357" width="1.5" height="15.0" fill="rgb(118,118,231)" rx="2" ry="2" />
+<text  x="754.38" y="367.5" ></text>
+</g>
+<g >
+<title>__d_lookup_rcu (0 ms, 0.00%)</title><rect x="733.7" y="341" width="4.4" height="15.0" fill="rgb(128,128,241)" rx="2" ry="2" />
+<text  x="736.65" y="351.5" ></text>
+</g>
+<g >
+<title>pids_max_show (0 ms, 0.00%)</title><rect x="1113.2" y="421" width="1.5" height="15.0" fill="rgb(130,130,202)" rx="2" ry="2" />
+<text  x="1116.20" y="431.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="912.4" y="357" width="1.4" height="15.0" fill="rgb(89,89,232)" rx="2" ry="2" />
+<text  x="915.35" y="367.5" ></text>
+</g>
+<g >
+<title>string (0 ms, 0.00%)</title><rect x="1142.7" y="341" width="3.0" height="15.0" fill="rgb(130,130,202)" rx="2" ry="2" />
+<text  x="1145.74" y="351.5" ></text>
+</g>
+<g >
+<title>inode_permission (0 ms, 0.00%)</title><rect x="922.7" y="389" width="1.5" height="15.0" fill="rgb(129,129,225)" rx="2" ry="2" />
+<text  x="925.69" y="399.5" ></text>
+</g>
+<g >
+<title>format_decode (0 ms, 0.00%)</title><rect x="1108.8" y="341" width="1.5" height="15.0" fill="rgb(137,137,232)" rx="2" ry="2" />
+<text  x="1111.77" y="351.5" ></text>
+</g>
+<g >
+<title>__traverse_mounts (0 ms, 0.00%)</title><rect x="720.4" y="373" width="1.4" height="15.0" fill="rgb(105,105,231)" rx="2" ry="2" />
+<text  x="723.36" y="383.5" ></text>
+</g>
+<g >
+<title>mutex_lock (0 ms, 0.00%)</title><rect x="859.2" y="437" width="1.5" height="15.0" fill="rgb(132,132,229)" rx="2" ry="2" />
+<text  x="862.19" y="447.5" ></text>
+</g>
+<g >
+<title>dev_lstats_read (0 ms, 0.00%)</title><rect x="1123.5" y="341" width="17.8" height="15.0" fill="rgb(81,81,239)" rx="2" ry="2" />
+<text  x="1126.54" y="351.5" ></text>
+</g>
+<g >
+<title>__netif_receive_skb_one_core (0 ms, 0.00%)</title><rect x="1150.1" y="197" width="4.5" height="15.0" fill="rgb(107,107,221)" rx="2" ry="2" />
+<text  x="1153.13" y="207.5" ></text>
+</g>
+<g >
+<title>slab_free_freelist_hook.constprop.0 (0 ms, 0.00%)</title><rect x="940.4" y="421" width="1.5" height="15.0" fill="rgb(101,101,206)" rx="2" ry="2" />
+<text  x="943.41" y="431.5" ></text>
+</g>
+<g >
+<title>up_read (0 ms, 0.00%)</title><rect x="739.6" y="325" width="7.3" height="15.0" fill="rgb(124,124,207)" rx="2" ry="2" />
+<text  x="742.56" y="335.5" ></text>
+</g>
+<g >
+<title>path_put (0 ms, 0.00%)</title><rect x="699.7" y="453" width="1.5" height="15.0" fill="rgb(120,120,197)" rx="2" ry="2" />
+<text  x="702.69" y="463.5" ></text>
+</g>
+<g >
+<title>rcu_core (0 ms, 0.00%)</title><rect x="1154.6" y="245" width="1.4" height="15.0" fill="rgb(112,112,235)" rx="2" ry="2" />
+<text  x="1157.56" y="255.5" ></text>
+</g>
+<g >
+<title>_raw_spin_lock (0 ms, 0.00%)</title><rect x="894.6" y="357" width="1.5" height="15.0" fill="rgb(86,86,209)" rx="2" ry="2" />
+<text  x="897.63" y="367.5" ></text>
+</g>
+<g >
+<title>dput (0 ms, 0.00%)</title><rect x="1185.6" y="421" width="1.4" height="15.0" fill="rgb(138,138,209)" rx="2" ry="2" />
+<text  x="1188.57" y="431.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="918.3" y="357" width="1.4" height="15.0" fill="rgb(85,85,227)" rx="2" ry="2" />
+<text  x="921.26" y="367.5" ></text>
+</g>
+<g >
+<title>kfree_skbmem (0 ms, 0.00%)</title><rect x="1148.6" y="309" width="1.5" height="15.0" fill="rgb(92,92,205)" rx="2" ry="2" />
+<text  x="1151.65" y="319.5" ></text>
+</g>
+<g >
+<title>ip_local_deliver_finish (0 ms, 0.00%)</title><rect x="1151.6" y="181" width="1.5" height="15.0" fill="rgb(139,139,228)" rx="2" ry="2" />
+<text  x="1154.60" y="191.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (0 ms, 0.00%)</title><rect x="845.9" y="421" width="11.8" height="15.0" fill="rgb(84,84,228)" rx="2" ry="2" />
+<text  x="848.89" y="431.5" ></text>
+</g>
+<g >
+<title>__do_sys_rt_sigreturn (0 ms, 0.00%)</title><rect x="767.6" y="485" width="1.5" height="15.0" fill="rgb(107,107,206)" rx="2" ry="2" />
+<text  x="770.62" y="495.5" ></text>
+</g>
+<g >
+<title>__fdget_pos (0 ms, 0.00%)</title><rect x="859.2" y="469" width="1.5" height="15.0" fill="rgb(115,115,244)" rx="2" ry="2" />
+<text  x="862.19" y="479.5" ></text>
+</g>
+<g >
+<title>fput_many (0 ms, 0.00%)</title><rect x="770.6" y="453" width="1.5" height="15.0" fill="rgb(114,114,213)" rx="2" ry="2" />
+<text  x="773.58" y="463.5" ></text>
+</g>
+<g >
+<title>seq_printf (0 ms, 0.00%)</title><rect x="1141.3" y="373" width="4.4" height="15.0" fill="rgb(86,86,242)" rx="2" ry="2" />
+<text  x="1144.26" y="383.5" ></text>
+</g>
+<g >
+<title>lookup_fast (0 ms, 0.00%)</title><rect x="730.7" y="373" width="16.2" height="15.0" fill="rgb(134,134,210)" rx="2" ry="2" />
+<text  x="733.70" y="383.5" ></text>
+</g>
+<g >
+<title>blkcg_maybe_throttle_current (0 ms, 0.00%)</title><rect x="1169.3" y="437" width="1.5" height="15.0" fill="rgb(132,132,213)" rx="2" ry="2" />
+<text  x="1172.32" y="447.5" ></text>
+</g>
+<g >
+<title>rtnl_dump_ifinfo (0 ms, 0.00%)</title><rect x="949.3" y="421" width="4.4" height="15.0" fill="rgb(113,113,240)" rx="2" ry="2" />
+<text  x="952.27" y="431.5" ></text>
+</g>
+<g >
+<title>sock_close (0 ms, 0.00%)</title><rect x="1179.7" y="421" width="2.9" height="15.0" fill="rgb(123,123,199)" rx="2" ry="2" />
+<text  x="1182.66" y="431.5" ></text>
+</g>
+<g >
+<title>blk_update_request (0 ms, 0.00%)</title><rect x="683.4" y="421" width="1.5" height="15.0" fill="rgb(84,84,192)" rx="2" ry="2" />
+<text  x="686.44" y="431.5" ></text>
+</g>
+<g >
+<title>get_obj_cgroup_from_current (0 ms, 0.00%)</title><rect x="918.3" y="341" width="1.4" height="15.0" fill="rgb(109,109,231)" rx="2" ry="2" />
+<text  x="921.26" y="351.5" ></text>
+</g>
+<g >
+<title>ima_file_check (0 ms, 0.00%)</title><rect x="919.7" y="421" width="3.0" height="15.0" fill="rgb(136,136,231)" rx="2" ry="2" />
+<text  x="922.74" y="431.5" ></text>
+</g>
+<g >
+<title>inet6_fill_link_af (0 ms, 0.00%)</title><rect x="949.3" y="389" width="4.4" height="15.0" fill="rgb(85,85,207)" rx="2" ry="2" />
+<text  x="952.27" y="399.5" ></text>
+</g>
+<g >
+<title>__raw_callee_save___pv_queued_spin_unlock (0 ms, 0.00%)</title><rect x="702.6" y="357" width="4.5" height="15.0" fill="rgb(105,105,226)" rx="2" ry="2" />
+<text  x="705.64" y="367.5" ></text>
+</g>
+<g >
+<title>__netif_receive_skb_one_core (0 ms, 0.00%)</title><rect x="773.5" y="229" width="1.5" height="15.0" fill="rgb(86,86,227)" rx="2" ry="2" />
+<text  x="776.53" y="239.5" ></text>
+</g>
+<g >
+<title>strlen (0 ms, 0.00%)</title><rect x="871.0" y="437" width="1.5" height="15.0" fill="rgb(91,91,216)" rx="2" ry="2" />
+<text  x="874.00" y="447.5" ></text>
+</g>
+<g >
+<title>__kmalloc_node (0 ms, 0.00%)</title><rect x="959.6" y="421" width="11.8" height="15.0" fill="rgb(112,112,206)" rx="2" ry="2" />
+<text  x="962.61" y="431.5" ></text>
+</g>
+<g >
+<title>task_work_add (0 ms, 0.00%)</title><rect x="770.6" y="437" width="1.5" height="15.0" fill="rgb(135,135,194)" rx="2" ry="2" />
+<text  x="773.58" y="447.5" ></text>
+</g>
+<g >
+<title>copy_user_enhanced_fast_string (0 ms, 0.00%)</title><rect x="689.3" y="437" width="1.5" height="15.0" fill="rgb(123,123,210)" rx="2" ry="2" />
+<text  x="692.35" y="447.5" ></text>
+</g>
+</g>
+</svg>

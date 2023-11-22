@@ -1,0 +1,304 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: remote-local-setup
+  labels: {component: remote-local-setup}
+spec:
+  selector:
+    matchLabels: {component: remote-local-setup}
+  template:
+    metadata:
+      labels: {component: remote-local-setup}
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: dev
+          image: docker:23.0-dind
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -ex -o pipefail
+              cd
+              rm -f .startupSucceeded
+              mkdir -p ~/.cache/apk
+              ln -s ~/.cache/apk /etc/apk/cache
+              apk add apache2-utils bash bash-completion bat conntrack-tools coreutils curl diffutils findutils fzf gcompat git grep inotify-tools jq less lsof make mandoc mc ncurses parallel procps sed strace tar tcpdump tmux tmux-doc tzdata util-linux vim wget yq
+              apk add docker-bash-completion go --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+              apk add git-prompt                --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+              mkdir -p .cache/wget
+              cd .cache/wget
+              echo helm            && wget -N "https://get.helm.sh/helm-$(curl -sL https://api.github.com/repos/helm/helm/releases/latest | jq .tag_name -r)-linux-amd64.tar.gz" && tar -xzf helm-*-linux-amd64.tar.gz linux-amd64/helm && mv linux-amd64/helm /usr/local/bin/helm && rmdir linux-amd64
+              echo k9s             && wget -N "https://github.com/derailed/k9s/releases/download/$(curl -sL https://api.github.com/repos/derailed/k9s/releases/latest | jq .tag_name -r)/k9s_Linux_amd64.tar.gz" && tar -xzf k9s_Linux_amd64.tar.gz k9s && mv k9s /usr/local/bin/k9s \
+                                   && mkdir -p ~/.config/k9s \
+                                   && wget -N "https://raw.githubusercontent.com/derailed/k9s/master/skins/solarized_light.yml" && cp solarized_light.yml ~/.config/k9s/skin.yml
+              echo kind            && wget -N "https://kind.sigs.k8s.io/dl/$(curl -sL https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | jq .tag_name -r)/kind-linux-amd64" && cp kind-linux-amd64 /usr/local/bin/kind && chmod +x /usr/local/bin/kind
+              echo kns             && wget -N "https://raw.githubusercontent.com/blendle/kns/master/bin/kns" && cp kns /usr/local/bin/kns && chmod +x /usr/local/bin/kns
+              echo krew            && wget -N "https://github.com/kubernetes-sigs/krew/releases/download/$(curl -sL https://api.github.com/repos/kubernetes-sigs/krew/releases/latest | jq .tag_name -r)/krew-linux_amd64.tar.gz" && tar -xzf krew-linux_amd64.tar.gz ./krew-linux_amd64 && mv krew-linux_amd64 /usr/local/bin/krew && krew install krew
+              echo ktx             && wget -N "https://raw.githubusercontent.com/blendle/kns/master/bin/ktx" && cp ktx /usr/local/bin/ktx && chmod +x /usr/local/bin/ktx
+              echo kube-ps1        && wget -N "https://raw.githubusercontent.com/jonmosco/kube-ps1/master/kube-ps1.sh" && cp kube-ps1.sh ~/.kube-ps1.sh
+              echo kubectl         && wget -N "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && cp kubectl /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl && ln -s "$(which kubectl)" /usr/local/bin/k
+              echo tmux-completion && wget -N "https://raw.githubusercontent.com/imomaliev/tmux-bash-completion/master/completions/tmux" && cp tmux /usr/share/bash-completion/completions/tmux
+              echo yaml2json       && wget -N "https://github.com/bronze1man/yaml2json/releases/download/$(curl -sL https://api.github.com/repos/bronze1man/yaml2json/releases/latest | jq .tag_name -r)/yaml2json_linux_amd64" && cp yaml2json_linux_amd64 /usr/local/bin/yaml2json && chmod +x /usr/local/bin/yaml2json
+              echo delve           && go install github.com/go-delve/delve/cmd/dlv@latest
+              echo gron            && go install github.com/tomnomnom/gron@latest
+              echo neat            && krew install neat
+              cd
+              ln -s /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+              echo 'source ~/.bashrc' > ~/.bash_profile
+              cat > ~/greeting.sh <<"EOF"
+                [ -n "$TMUX" ] || {
+                  normal='\e[0m'; green='\e[1;32m'; yellow='\e[1;33m'; cyan='\e[1;36m'
+                  NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+                  echo -e "${cyan}Welcome${yellow} to the remote local setup of ${cyan}Gardener${yellow}!${normal}\n"
+                  echo -e "${cyan}Documentation:${normal} https://github.com/gardener/gardener/blob/master/docs/deployment/getting_started_locally.md"
+                  echo -e "${yellow}To ${cyan}connect${yellow} to this pod, run '${green}kubectl exec -it -n $NS remote-local-setup-0 -- sh${yellow}'${normal}"
+                  echo -e "${yellow}To attach to the ${cyan}tmux${yellow} session, run '${green}tmux -u a${yellow}'${normal}"
+                  echo -e "  - ${yellow}mouse${normal} support is enabled"
+                  echo -e "    - use the mouse to select panes or windows and to resize panes"
+                  echo -e "    - scroll the pane content with the mouse,\n      leave the "scroll mode" with '${yellow}q${normal}' or scroll to the very bottom"
+                  echo -e "  - '${yellow}CTRL-b${normal}, ?' is the tmux prefix: press and hold the 'CTRL' key,\n      press the 'b' key, let go of both keys and then press the '?' key"
+                  echo -e "    '${yellow}d${normal}' - detach from the tmux session"
+                  echo -e "    '${yellow}c${normal}' - new window"
+                  echo -e "    '${yellow}%${normal}' or '${yellow}\"${normal}' - new pane (horizontal or vertical split)"
+                  echo -e "    '${yellow}z${normal}' - zoom in/out"
+                  echo -e "    '${yellow},${normal}' - rename the tab"
+                  echo -e "    '${yellow}]${normal}' or '${yellow}=${normal}' - paste. The ${yellow}clipboard${normal} (with history) is managed by tmux:\n      copy with the ${yellow}mouse${normal}, paste with these shortcuts."
+                  echo -e "  - '${yellow}CTRL-d${normal}' - close a bash session. Not be confused with 'CTRL-b, d'"
+                  echo
+                  echo -e "${yellow}When this environment is not needed, consider ${cyan}hibernating${yellow} it\nby scaling the StatefulSet to zero:${normal}\n  kubectl scale -n $NS statefulset remote-local-setup --replicas 0\n"
+                  echo -e "${yellow}To ${cyan}unhibernate${yellow} it, simply scale it back:${normal}\n  kubectl scale -n $NS statefulset remote-local-setup --replicas 1\n"
+                  echo -e "Note that the persistent disk with the home folder containing\nthe git repository, the go build cache and\nthe local container registry is retained.\n"
+                  echo -e "${yellow}The purge this environment, delete both the StatefulSet and the pvc:${normal}\n  kubectl delete -n $NS statefulset remote-local-setup\n  kubectl delete -n $NS pvc home-remote-local-setup-0"
+                  echo
+                  if grep -q server ~/.kube/config; then
+                    echo -e "${yellow}To connect to the ${cyan}gardener${yellow} cluster from your ${cyan}laptop${yellow}, run:${normal}"
+                    echo -e "  kubectl exec -n $NS remote-local-setup-0 -- cat ~/.kube/config > kubeconfig"
+                    echo -e "  kubectl port-forward -n $NS remote-local-setup-0 $(< ~/gardener/example/gardener-local/kind/local/kubeconfig grep server | awk -F : '{print $4}')"
+                    echo -e "  # in another terminal"
+                    echo -e "  export KUBECONFIG=\$PWD/kubeconfig\n"
+                  fi
+                }
+              EOF
+              cat > ~/.bashrc <<"EOF"
+                export EDITOR=vim
+                export GOPATH=~/go
+                export HISTFILESIZE=10000
+                export HISTSIZE=10000
+                export HISTTIMEFORMAT="%F %T "
+                export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin:~/.krew/bin
+                export PROMPT_COMMAND='history -a'
+                export USER=root
+                export XDG_CONFIG_HOME=~/.config
+                shopt -s histappend
+                source <(kubectl completion bash)
+                complete -o default -F __start_kubectl k
+                source ~/.kube-ps1.sh
+                source /usr/share/git-core/git-prompt.sh
+                export PS1='[\w $(printf "$(kube_ps1)")] $(__git_ps1 "(%s)") [$(date +%H:%M)]\$ '
+                stty -ixon
+                cd ~/gardener
+                function pr      { [ "$#" -eq 1 ] && { git fetch origin pull/$1/head 2>/dev/null && git checkout FETCH_HEAD; git tag pr_$1_$(git log --format=%h -1 HEAD) 2>/dev/null; git log -1 --oneline; } || echo "Usage: pr <id> - checkout the HEAD of PR <id>"; }
+                function pr_base { [ "$#" -eq 1 ] && { git fetch origin 2>/dev/null && git fetch origin pull/$1/head 2>/dev/null && git checkout $(git merge-base FETCH_HEAD origin/master); git tag pr_base_$1_$(git log --format=%h -1 HEAD) 2>/dev/null; git log -1 --oneline; } || echo "Usage: pr_base <id> - checkout the BASE of PR <id>"; }
+                function sync_kubeconfig {
+                  FOLDER=$1
+                  while true; do # copy the kubeconfig for interactive editing when it is created by make kind-up
+                    if grep -q current-context $FOLDER/kubeconfig 2>/dev/null ; then
+                      echo "Copying kubeconfig for interactive editing"
+                      cp $FOLDER/kubeconfig ~/.kube/config
+                    fi
+                    echo "Waiting for a change on $FOLDER"
+                    if ! inotifywait -qq --include kubeconfig -e close_write,delete $FOLDER 2>/dev/null; then
+                      echo "Waiting for $FOLDER to be created"
+                      sleep 1
+                    fi
+                  done
+                }
+              EOF
+              cat > ~/.tmux.conf <<"EOF"
+                set -g mouse on
+                set -g mode-keys vi
+                set -g default-shell /bin/bash
+                set -g pane-border-status top
+                set -g pane-border-format " #{pane_index} #{pane_title} - #{pane_current_command} "
+              EOF
+              cat > /usr/local/bin/get_shoot_kubeconfig <<"EOF"
+              #!/bin/bash
+              shoot_namespace=garden-local
+              shoot_name=$1
+              echo '
+              apiVersion: authentication.gardener.cloud/v1alpha1
+              kind: AdminKubeconfigRequest
+              spec:
+                expirationSeconds: 604800
+              ' | yq -o json \
+                | kubectl create -f - --raw "/apis/core.gardener.cloud/v1beta1/namespaces/$shoot_namespace/shoots/$shoot_name/adminkubeconfig" \
+                | jq -r .status.kubeconfig | base64 -d
+              EOF
+              chmod +x /usr/local/bin/get_shoot_kubeconfig
+              bash -c "echo api.{e2e-managedseed.garden,{local,e2e-{managedseed,hibernated,unpriv,wake-up,migrate,rotate,default,update-node,update-zone,upgrade}}.local}.{internal,external}.local.gardener.cloud" \
+                | sed 's/ /\n/g' | sed 's/^/127.0.0.1 /' | sort >> /etc/hosts
+              mkdir -p ~/.kube
+              echo '{"current-context": "kind-gardener-local"}' > ~/.kube/config # dummy kubeconfig for the initial PS1 prompt
+              
+              # D060239: clone fork
+              [ -d ~/gardener/.git ] || git clone -q https://github.com/danielfoehrkn/gardener.git
+              cd gardener
+              mkdir -p ~/go/src/github.com/gardener
+              [ -d ~/go/src/github.com/gardener/gardener ] || ln -s ~/gardener ~/go/src/github.com/gardener/gardener
+              [ -h ~/gardener/protoc-gen-gogo ]            || ln -s ~/gardener/hack/tools/bin/protoc-gen-gogo ~/gardener/protoc-gen-gogo
+              
+              # run docker entrypoint script that starts-up the dockerd daemon
+              nice dockerd-entrypoint.sh &
+              until docker ps >/dev/null 2>&1; do sleep 1; done
+              
+              # ok, the docker daemon is up now
+              tmux new -d -s gardener -n "setup"
+              tmux select-pane -T top; rm -f ~/.config/procps/toprc
+              for k in top Enter z C i t t m m V s 5 Enter E e W; do sleep .2; tmux send $k; done
+              function new_window {
+                tmux new-window -n "$1"
+                tmux select-pane -T "$2"
+                sleep 1
+                shift; shift
+                tmux send "$(sed 's/^  //')" "$@"
+              }
+              function new_pane {
+                tmux split-window
+                tmux select-pane -T "$1"
+                tmux select-layout even-vertical
+                sleep 1
+                shift
+                tmux send "$(sed 's/^  //')" "$@"
+              }
+              function new_horizontal_pane {
+                tmux split-window -h
+                tmux select-pane -T "$1"
+                sleep 1
+                shift
+                tmux send "$(sed 's/^  //')" "$@"
+              }
+              new_pane "make kind-up" <<"EOF"
+                sync_kubeconfig ~/gardener/example/gardener-local/kind/local &
+                nice make kind-down kind-up && kubectl wait --for=condition=ready pod -A --all --timeout=-1s
+              EOF
+              new_pane "make gardener-up" <<"EOF"
+                export KUBECONFIG=$PWD/example/gardener-local/kind/local/kubeconfig
+                nice make gardener-up
+              EOF
+              new_window "shoot lifecycle" "Create" <<"EOF"
+                k apply -f example/provider-local/shoot.yaml
+              EOF
+              new_pane "Reconcile" <<"EOF"
+                k annotate shoot local -n garden-local 'gardener.cloud/operation=reconcile'
+              EOF
+              new_pane "Patch" <<"EOF"
+                k patch -n shoot--local--local cluster shoot--local--local --type merge -p '{"spec": {"shoot": {"status": {"gardener": {"version": "1.70"}}}}}'
+              EOF
+              new_pane "Delete" <<"EOF"
+                k annotate shoot local -n garden-local 'confirmation.gardener.cloud/deletion=true' && k delete shoot local -n garden-local
+              EOF
+              new_window "seed&shoots" "seed&shoots" Enter <<"EOF"
+                watch k -n garden-local get seeds,shoots
+              EOF
+              new_pane "seed conditions" Enter <<"EOF"
+                watch -c 'k get seed local -o yaml | yq -P -C "[.status.conditions[] | del(.lastTransitionTime, .lastUpdateTime)]" | grep --color=Always -E "( \"False\"| Unknown| Progressing)|$"'
+              EOF
+              new_horizontal_pane "shoot conditions" Enter <<"EOF"
+                watch -c 'k get -n garden-local shoot local -o yaml | yq -P -C "[.status.conditions[] | del(.lastTransitionTime, .lastUpdateTime)]" | grep --color=Always -E "( \"False\"| Unknown| Progressing)|$"'
+              EOF
+              new_window "seed pods" "pods" Enter <<"EOF"
+                # the while loop is used instead of watch to allow for scrolling in the tmux pane
+                while true; do clear; k get pods -A -o wide; sleep 10s; done
+              EOF
+              new_pane "not ready pods" Enter <<"EOF"
+                watch "k get pods -A -o wide | awk '{split(\$3,a,\"/\"); if (a[1]!=a[2] || \$4 != \"Running\") {print}}'"
+              EOF
+              new_window "shoot pods" "pods" <<"EOF"
+                get_shoot_kubeconfig local > /tmp/shoot.kubeconfig && watch k --kubeconfig /tmp/shoot.kubeconfig get pods -A
+              EOF
+              new_pane "not ready pods" <<"EOF"
+                get_shoot_kubeconfig local > /tmp/shoot.kubeconfig && watch "k --kubeconfig /tmp/shoot.kubeconfig get pods -A -o wide | awk '{split(\$3,a,\"/\"); if (a[1]!=a[2] || \$4 != \"Running\") {print}}'"
+              EOF
+              new_window "logs" "gardenlet logs" Enter <<"EOF"
+                while true; do k -n garden logs deployments/gardenlet -f 2>/dev/null; sleep 1; done >> gardenlet.logs &
+                touch gardenlet.logs
+                less -NS +F gardenlet.logs
+              EOF
+              new_pane "Loki2vali gardenlet logs" <<"EOF"
+                tail -f gardenlet.logs | grep --line-buffered -E 'Loki2vali|reconciliation' | grep --line-buffered shoot--local--local | jq --unbuffered '"\(.ts[-13:]) \(.msg)"' -r | grep --line-buffered -i --color -E "success|$"
+              EOF
+              new_pane "pods" <<"EOF"
+                watch 'k get pods | grep -E "loki|vali|grafana|plutono"'
+              EOF
+              new_pane "pvcs" <<"EOF"
+                watch 'k get pvc | grep -E "loki|vali"'
+              EOF
+              new_pane "pvs" <<"EOF"
+                watch 'k get pv | grep shoot | grep -E "loki|vali"'
+              EOF
+              new_window "git" "git" Enter <<"EOF"
+                # Use 'pr' or 'pr_base' to checkout the head or base commit of a PR
+                git log --oneline -1
+              EOF
+              new_window "monitoring&logging" "Monitoring credential" <<"EOF"
+                k get secrets -n garden-local local.monitoring -o json | jq '.data.password | @base64d' -r
+              EOF
+              new_pane "Generate constant stream of logs in the control plane" <<"EOF"
+                k run -n shoot--local--local --image=alpine alpine -- sh -c "ping localhost" && sleep 5 && k logs -n shoot--local--local alpine -f
+              EOF
+              new_pane "Generate constant stream of logs in the shoot" <<"EOF"
+                get_shoot_kubeconfig local > /tmp/shoot.kubeconfig; k -n kube-system --kubeconfig /tmp/shoot.kubeconfig exec deployment/blackbox-exporter -- sh -c 'while true; do echo $((i++)); sleep 1; done > /proc/1/fd/1' & k -n kube-system --kubeconfig /tmp/shoot.kubeconfig logs deployment/blackbox-exporter -f
+              EOF
+              new_pane "port-forward to all the Grafana and Prometheus instances" <<"EOF"
+                jobs -p | xargs kill; eval $(
+                  i=0
+                  for ns in $(k get ns | grep "shoot--local--local" | awk '{print $1}'); do
+                    echo k port-forward -n $ns deployments/grafana $((3000+i)):3000 \&
+                    echo k port-forward -n $ns prometheus-0 $((9090+i)):9090 \&
+                    let i++
+                  done); sleep .5; jobs
+              EOF
+              new_window "make generate" "make generate" <<"EOF"
+                cd ~/go/src/github.com/gardener/gardener
+                make generate check test test-integration
+              EOF
+              tmux select-window -t 0
+              tmux select-pane -t 1
+              # tmux send-key Enter
+              tmux select-pane -t 1
+              touch ~/.startupSucceeded
+              wait
+          startupProbe:
+            exec: {command: [cat, /root/.startupSucceeded]}
+            failureThreshold: 18
+          env: [{name: ENV, value: /root/greeting.sh}]
+          resources:
+            requests: {cpu: "14", memory: 28G}
+#            limits:   {cpu: 14, memory: 28G}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            # Without bind mounting `/sys/fs/cgroup` the shoot worker node fails currently; all the other components work fine
+            # Due to bind mounting `/sys/fs/cgroup` from the host, the docker container in this dind pod (i.e. the KinD cluster) uses a top level cgroup and hence is not constrained by the resource limits of this pod
+            # These host cgroups might leak, but it is probably not an issue e.g. due to hibernating the hosting Gardener dev k8s cluster so that the nodes are recreated regularly anyway
+            # To avoid conflicts on the top level docker cgroup, one dev pod per node is recommended
+            # See
+            # https://github.com/kubernetes-sigs/kind/issues/303
+            # https://github.com/kubernetes/test-infra/blob/dcf27e157932c3e8680be4ae6cb8a4e2c7acf8cf/config/prow/config.yaml#L978-L988
+            # https://github.com/gardener/ci-infra/blob/dff565bced0f386dd1acb0743beb3831dae6c10d/config/prow/config.yaml#L288-L298
+            - {name: cgroup,  mountPath: /sys/fs/cgroup}
+            - {name: home, mountPath: /var/lib/docker, subPath: .docker}
+            - {name: home, mountPath: /root}
+            - {name: modules, mountPath: /lib/modules, readOnly: true}
+      volumes:
+        - {name: cgroup,  hostPath: {type: Directory, path: /sys/fs/cgroup}}
+        - {name: modules, hostPath: {type: Directory, path: /lib/modules}}
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata: {name: home}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 100Gi}}
+        volumeMode: Filesystem

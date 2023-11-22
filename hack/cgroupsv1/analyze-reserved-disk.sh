@@ -50,10 +50,6 @@ echo " - Reserved: $reserved_human"
 content_store_size_bytes=$(du -sb /var/lib/containerd/io.containerd.content.v1.content/ | awk '{ print $1 }')
 # echo "Containerd content store size (images): $content_store_size_bytes"
 
-snapshot_store_size_bytes=$(du -sb /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs | awk '{ print $1 }')
-snapshot_store_size_human=$(bytesToHumanReadable $snapshot_store_size_bytes)
-echo "Containerd snapshot store size (snapshots including working directories of containers): $snapshot_store_size_human"
-
 # containerd root contains content store and snapshot size
 containerd_state_size_bytes=$(du -sb --exclude="rootfs" /run/containerd | awk '{ print $1 }')
 containerd_state_size_bytes_human=$(bytesToHumanReadable $containerd_state_size_bytes)
@@ -67,8 +63,8 @@ echo "Size of container logs: $container_logs_size_human"
 # totalContainerLogSizeBytesMetrics=$(curl http://localhost:8001/api/v1/nodes/shoot--d060239--dev-seed-gcp-cpu-worker-z1-66bf7-xjzzn/proxy/stats/summary | jq '.pods[].containers[].logs.usedBytes' | awk '{s+=$1} END {printf "%.0f", s}')
 
 # includes all pod volumes (secret, configMap, projected, ...)
-# excludes CSI attached network-disks + tmps-based emptyDir (always 0 size reported) + hostPath mounts are not included in the directory at all
-container_volume_size_bytes=$(du -sb --exclude="kubernetes.io~csi" /var/lib/kubelet/pods | awk '{ print $1 }')
+# excludes CSI attached network-disks + NGS disks + tmps-based emptyDir (always 0 size reported) + hostPath mounts are not included in the directory at all
+container_volume_size_bytes=$(du -sb --exclude="kubernetes.io~csi" --exclude="kubernetes.io~nfs" /var/lib/kubelet/pods | awk '{ print $1 }')
 container_volume_size_bytes_human=$(bytesToHumanReadable $container_volume_size_bytes)
 echo "Size of pod volumes (only on root disk): $container_volume_size_bytes_human"
 
@@ -76,6 +72,12 @@ container_plugins_size_bytes=$(du -sb --exclude="csi" /var/lib/kubelet/plugins |
 container_plugins_size_bytes_human=$(bytesToHumanReadable $container_plugins_size_bytes)
 echo "Size of kubelet plugins: $container_plugins_size_bytes_human"
 
+
+# See size by snapshot: for f in /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/*; do echo "Processing $f file..."; du -sh $f; done
+# - When useful: the working directories of containers can contain directories mounted from NFS block devices -> using du on those block devices can be terribly slow and look like the command is hung!
+snapshot_store_size_bytes=$(du -sb /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs | awk '{ print $1 }')
+snapshot_store_size_human=$(bytesToHumanReadable $snapshot_store_size_bytes)
+echo "Containerd snapshot store size (snapshots including working directories of containers): $snapshot_store_size_human"
 
 # Disk_Reservation == disk_space_used_by_non_pods = Capacity - reservation(by filesystem) - available_bytes - disk_use_pods (without content store/only images)
 # Logic:

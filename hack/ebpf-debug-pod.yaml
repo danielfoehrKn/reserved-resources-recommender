@@ -1,0 +1,154 @@
+# Run from nerdctl in GL like so:
+#  nerdctl run -ti --rm -v /sys/kernel/debug:/sys/kernel/debug -v /sys/fs/cgroup:/sys/fs/cgroup -v /sys/fs/bpf:/sys/fs/bpf --privileged --net host debian:bookworm /usr/bin/bash
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubernetes.io/psp: gardener.privileged
+  labels:
+    pod: d060239
+    networking.gardener.cloud/to-dns: allowed
+    networking.gardener.cloud/to-shoot-apiserver: allowed
+  name: "ebpf-debugpod"
+spec:
+  priorityClassName: system-cluster-critical
+  containers:
+    - image: debian:latest # use latest image as GL kernel is typically up to date
+      #command: ["/usr/bin/bash"]
+      imagePullPolicy: Always
+      name: root-container
+        #resources:
+        #       QoS guaranteed to make sure evicted late by kubelet and Linux OOM killer (oom_score_adj is low)
+        #        requests:
+        #          memory: "1Gi"
+        #          cpu: "500m"
+        # limits:
+        #   memory: "1Gi"
+      #   cpu: "500m"
+      securityContext:
+        privileged: true
+        runAsUser: 0
+      stdin: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+        - mountPath: /host
+          name: root-volume
+        - mountPath: /sys/kernel/debug
+          name: kernel-debug
+        - mountPath: /sys/fs/cgroup
+          name: cgroupfs
+        - mountPath: /sys/fs/bpf
+          name: bpf
+      command:
+        - /bin/bash
+        - -c
+        - |
+          #!/bin/bash
+          set -x
+          
+          # use a recent debian image (e.g debian:latest) - GL kernel is typically up-to date so you want to match that. Also be able to get recent bcc package.
+          # then fetch the kernel headers for the underlying GL OS. The kernel headers must match the GL host's kernel version
+          
+          # check if host runs Gardenlinx
+          if grep -q "GARDENLINUX" /host/etc/os-release
+          then
+          echo "host is using gardenlinux"
+          else
+          # code if not found
+          echo "host is not running gardenlinux. This script is only for GL. For other OS's please install generic headers"
+          exit 0
+          fi
+          
+          # runnning GL, try to install via package manager, as Gardenlinux does not use
+          # a stock Kernel from  https://www.kernel.org/pub/linux/kernel/v${major_version}.x/linux-$kernel_version.tar.gz 
+          # - adds drivers and apply Debian Kernel patches from debian
+          
+          # CAVEAT: container image where this script is run, must be able to install all dependent packages required by the GL kernel-headers package (check curl -s http://repo.gardenlinux.io/gardenlinux/dists/934.10/main/binary-amd64/Packages)
+          # - if the image is older, than e.g gcc-13 is not available yet, hence headers cannot be installed.
+          
+          apt update
+
+          # curl is required to obtain GL apt repository public key
+          apt -y install curl procps tree htop
+          
+          # get GL version
+          GL_VERSION=$(cat /host/etc/os-release | grep "GARDENLINUX_VERSION_AT_BUILD" | cut -d "=" -f 2)
+          
+          touch /etc/apt/sources.list
+          
+          # add unstable because contains newer packages that might be required for the GL Kernel Headers
+          echo "deb http://deb.debian.org/debian/ unstable main contrib" >> /etc/apt/sources.list
+          
+          # add the GL apt repository for the GL correct version (not kernel version, but GL apt-repository has the kernel headers for the kernel used in the GL version)
+          echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/gardenlinux.asc] https://repo.gardenlinux.io/gardenlinux $GL_VERSION main" >> /etc/apt/sources.list
+          
+          # requires the public key for the apt-repository
+          curl https://raw.githubusercontent.com/gardenlinux/gardenlinux/main/gardenlinux.asc -o /etc/apt/trusted.gpg.d/gardenlinux.asc
+          
+          #install required packages
+          apt update
+          
+          # install bcc
+          apt-get install -y bpfcc-tools libbpfcc libbpfcc-dev
+          
+          # install kernel headers for GL
+          KERNEL_VERSION="${KERNEL_VERSION:-$(uname -r)}"
+          kernel_version="$(echo "${KERNEL_VERSION}" | awk -vFS='[-+]' '{ print $1 }')"
+          echo "Fetching upstream kernel sources for ${kernel_version}."
+          
+          # should show the kernel headers for the container image (because sources.list contains the container images default package repository) as well as for the host's GL kernel
+          # - linux-headers-5.15.125-gardenlinux-cloud-amd64/934.10
+          apt search linux-headers- | grep -i "gardenlinux"
+          
+          # only works for amd64 architecture at the moment
+          echo "installing Kernel headers for GL $GL_VERSION: linux-headers-$kernel_version-gardenlinux-cloud-amd64"
+          
+          apt install -y linux-headers-$kernel_version-gardenlinux-cloud-amd64
+          
+          /bin/bash
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: false
+  hostNetwork: true
+  hostPID: true
+  nodeName: shoot--prow--prow-build-test-pods-z1-5469c-pp25k
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: { }
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+    - operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: pool.worker.gardener.cloud/dedicated-for
+      operator: Equal
+      value: etcd
+  volumes:
+    - hostPath:
+        path: /
+        type: ""
+      name: root-volume
+    - hostPath:
+        path: /sys/kernel/debug
+        type: ""
+      name: kernel-debug
+    - hostPath:
+        path: /sys/fs/cgroup
+        type: ""
+      name: cgroupfs
+    - hostPath:
+        path: /sys/fs/bpf
+        type: ""
+      name: bpf
+
+
+

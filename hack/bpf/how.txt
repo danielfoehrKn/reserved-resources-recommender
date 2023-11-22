@@ -1,0 +1,9 @@
+docker login first
+docker build -t danielfoehrkn/debian-gardenlinux-bpf:934.7  -f Dockerfile .
+
+Then push to my dockerhub
+docker push danielfoehrkn/debian-gardenlinux-bpf:934.7
+
+See the iamge here: https://hub.docker.com/repository/docker/danielfoehrkn/debian-gardenlinux-bpf/general
+
+
